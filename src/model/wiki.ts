@@ -1,4 +1,5 @@
-import {WikiNSManager, EditableType, EditableTextType, EditableFileType} from './wiki_location';
+import {EditableType, EditableTextType, EditableFileType} from './wiki_constant';
+import {WikiNSManager} from './wiki_location';
 import {HistoricalData, TextData, FileData, WikiHistory, TextWikiHistory, FileWikiHistory} from './wiki_history';
 
 

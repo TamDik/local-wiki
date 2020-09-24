@@ -11,28 +11,15 @@
 // Template: テンプレートファイル
 // (User, Project, Help, Category)
 // [ CAUTION ] Special の扱いに注意。
+import {WikiType, DEFAULT_NS} from './wiki_constant';
 import * as path from 'path';
 import * as fs from 'fs';
 
-type EditableTextType = 'Main' | 'Template';
-type EditableFileType = 'File';
-type EditableType = EditableTextType | EditableFileType;
-type WikiType = EditableType | 'Special';
-type WikiLocation = {ns: string, type: WikiType, name: string};
-
-
 const APP_ROOT = path.join(__dirname, '..', '..', '..');
-const wikiTypeMap: Map<string, WikiType> = new Map([
-    ['Main', 'Main'],
-    ['File', 'File'],
-    ['Special', 'Special'],
-    ['Template', 'Template']
-]);
 
 
 // WikiNSManager
 class WikiNSManager {
-    public static readonly DEFAULT_WIKI_NS: string = 'Wiki';
     private readonly filename: string;
     private static __data: Map<string, string>|null = null;
 
@@ -47,14 +34,14 @@ class WikiNSManager {
     public static shape(wikiNS: string): string {
         const shapedNS = wikiNS.trim();
         if (wikiNS === '') {
-            return WikiNSManager.DEFAULT_WIKI_NS;
+            return DEFAULT_NS
         }
         return shapedNS;
     }
 
     public static isDefaultNS(wikiNS: string): boolean {
         const shapedNS: string = WikiNSManager.shape(wikiNS);
-        return shapedNS === WikiNSManager.DEFAULT_WIKI_NS;
+        return shapedNS === DEFAULT_NS;
     }
 
     public add(wikiNS: string, dataDir: string): void {
@@ -74,14 +61,14 @@ class WikiNSManager {
     }
 
     public getList(): string[] {
-        return [WikiNSManager.DEFAULT_WIKI_NS, ...this.data.keys()];
+        return [DEFAULT_NS, ...this.data.keys()];
     }
 
     public getDataDirectory(wikiNS: string): string {
         if (!this.has(wikiNS)) {
             throw new Error(`WikiNS was not found: ${wikiNS}`);
         }
-        if (wikiNS === WikiNSManager.DEFAULT_WIKI_NS) {
+        if (wikiNS === DEFAULT_NS) {
             return path.join(APP_ROOT, 'data')
         }
         return <string>this.data.get(wikiNS);
@@ -154,4 +141,4 @@ function parseWikiLocation(str: string): WikiLocation {
 }
 
 
-export {EditableType, EditableTextType, EditableFileType, WikiType, WikiNSManager, parseWikiLocation};
+export {WikiNSManager};
