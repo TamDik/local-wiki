@@ -1,4 +1,4 @@
-import {WikiType} from '../model/wiki_location';
+import {WikiType} from '../model/wiki_constant';
 import {Wiki, EditableTextContent, EditableFileContent} from '../model/wiki';
 
 class ViewManager {
