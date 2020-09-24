@@ -1,0 +1,35 @@
+{
+  "name": "PerfectNote",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/js/main.js",
+  "scripts": {
+    "test": "jest",
+    "b": "npx electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "build": {
+    "directories": {
+      "output": "build"
+    },
+    "files": [
+      "dist/**/*"
+    ]
+  },
+  "dependencies": {
+    "bootstrap": "^4.5.0",
+    "highlight.js": "^10.1.2",
+    "jquery": "^3.5.1",
+    "jsdifflib": "^1.1.0",
+    "marked": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/bootstrap": "^4.5.0",
+    "@types/marked": "^1.1.0",
+    "electron": "^9.2.1",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7"
+  }
+}
