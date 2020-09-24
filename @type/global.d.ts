@@ -1,16 +1,13 @@
-declare global {
+export declare global {
     interface Window {
         ipcRenderer: IpcRendererApi;
-        dialog: Dialog;
-        hljs: hljs;
-        marked: marked;
-        difflib: any;
+        hljs: any;
+        marked: any;
     }
-
 }
 
 type Listener = (event: any, ...arg: any[]) => void;
-export interface IpcRendererApi {
+interface IpcRendererApi {
     send: (change: string, ...arg: any[]) => void;
     sendSync: <T>(change: string, ...arg: any[]) => T;
     on: (change: string, listener: Listener) => void;
