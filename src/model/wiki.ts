@@ -25,7 +25,7 @@ class Wiki {
 
     // Page
     public hasPage(wikiNS: string, wikiName: string): boolean {
-        const wikiHistory: TextWikiHistory = WikiHistoryFactory.createMainHistory(wikiNS);
+        const wikiHistory: TextWikiHistory = WikiHistoryFactory.createTextHistory(wikiNS, 'Main');
         return this.existsCheck(wikiHistory, wikiName);
     }
 
@@ -38,14 +38,14 @@ class Wiki {
     }
 
     public getPageList(wikiNS: string): string[] {
-        const wikiHistory: TextWikiHistory = WikiHistoryFactory.createMainHistory(wikiNS);
+        const wikiHistory: TextWikiHistory = WikiHistoryFactory.createTextHistory(wikiNS, 'Main');
         return this.getNameList(wikiHistory);
     }
 
 
     // Template
     public hasTemplate(wikiNS: string, wikiName: string): boolean {
-        const wikiHistory: TextWikiHistory = WikiHistoryFactory.createTemplateHistory(wikiNS);
+        const wikiHistory: TextWikiHistory = WikiHistoryFactory.createTextHistory(wikiNS, 'Template');
         return this.existsCheck(wikiHistory, wikiName);
     }
 
@@ -58,14 +58,14 @@ class Wiki {
     }
 
     public getTemplateList(wikiNS: string): string[] {
-        const wikiHistory: TextWikiHistory = WikiHistoryFactory.createTemplateHistory(wikiNS);
+        const wikiHistory: TextWikiHistory = WikiHistoryFactory.createTextHistory(wikiNS, 'Template');
         return this.getNameList(wikiHistory);
     }
 
 
     // File
     public hasFile(wikiNS: string, wikiName: string): boolean {
-        const wikiHistory: FileWikiHistory = WikiHistoryFactory.createFileHistory(wikiNS);
+        const wikiHistory: FileWikiHistory = WikiHistoryFactory.createFileHistory(wikiNS, 'File');
         return this.existsCheck(wikiHistory, wikiName);
     }
 
@@ -78,7 +78,7 @@ class Wiki {
     }
 
     public getFileList(wikiNS: string): string[] {
-        const wikiHistory: FileWikiHistory = WikiHistoryFactory.createFileHistory(wikiNS);
+        const wikiHistory: FileWikiHistory = WikiHistoryFactory.createFileHistory(wikiNS, 'File');
         return this.getNameList(wikiHistory);
     }
 
@@ -117,16 +117,20 @@ class WikiHistoryFactory {
 
     private constructor() {};
 
-    public static createMainHistory(wikiNS: string): TextWikiHistory {
-        return WikiHistoryFactory.createHistoryObj(wikiNS).Main;
+    public static createTextHistory(wikiNS: string, wikiType: EditableTextType): TextWikiHistory {
+        switch (wikiType) {
+            case 'Main':
+                return WikiHistoryFactory.createHistoryObj(wikiNS).Main;
+            case 'Template':
+                return WikiHistoryFactory.createHistoryObj(wikiNS).Template;
+        }
     }
 
-    public static createTemplateHistory(wikiNS: string): TextWikiHistory {
-        return WikiHistoryFactory.createHistoryObj(wikiNS).Template;
-    }
-
-    public static createFileHistory(wikiNS: string): FileWikiHistory {
-        return WikiHistoryFactory.createHistoryObj(wikiNS).File;
+    public static createFileHistory(wikiNS: string, wikiType: EditableFileType): FileWikiHistory {
+        switch (wikiType) {
+            case 'File':
+                return WikiHistoryFactory.createHistoryObj(wikiNS).File;
+        }
     }
 
     private static addHistoryObj(shapedNS: string): WikiHistoryObj {
@@ -217,22 +221,14 @@ abstract class EditableContent<S extends HistoricalData, T extends WikiHistory<S
 class EditableTextContent extends EditableContent<TextData, TextWikiHistory> {
     public constructor(wikiNS: string, wikiType: EditableTextType, wikiName: string, version: number=0) {
         let wikiHistory: TextWikiHistory;
-        if (wikiType === 'Main') {
-            wikiHistory = WikiHistoryFactory.createMainHistory(wikiNS);
-        } else {
-            wikiHistory = WikiHistoryFactory.createTemplateHistory(wikiNS);
-        }
+        wikiHistory = WikiHistoryFactory.createTextHistory(wikiNS, wikiType);
         super(wikiNS, wikiType, wikiName, version, wikiHistory);
     }
 
     public static create(wikiNS: string, wikiType: EditableTextType, wikiName: string,
                          body: string, comment: string): EditableTextContent {
         let wikiHistory: TextWikiHistory;
-        if (wikiType === 'Main') {
-            wikiHistory = WikiHistoryFactory.createMainHistory(wikiNS);
-        } else {
-            wikiHistory = WikiHistoryFactory.createTemplateHistory(wikiNS);
-        }
+        wikiHistory = WikiHistoryFactory.createTextHistory(wikiNS, wikiType);
         if (wikiHistory.hasName(wikiName)) {
             throw new Error(`The specified wikiName already exists.: ${wikiName}`);
         }
@@ -257,13 +253,13 @@ class EditableTextContent extends EditableContent<TextData, TextWikiHistory> {
 // content は ファイルの保存場所を示すパス。src 属性に指定するなどして利用されることを想定している。
 class EditableFileContent extends EditableContent<FileData, FileWikiHistory> {
     public constructor(wikiNS: string, wikiType: EditableFileType, wikiName: string, version: number=0) {
-        const wikiHistory: FileWikiHistory = WikiHistoryFactory.createFileHistory(wikiNS);
+        const wikiHistory: FileWikiHistory = WikiHistoryFactory.createFileHistory(wikiNS, wikiType);
         super(wikiNS, wikiType, wikiName, version, wikiHistory);
     }
 
     public static create(wikiNS: string, wikiType: EditableFileType, wikiName: string,
                          source: string, comment: string): EditableFileContent {
-        const wikiHistory: FileWikiHistory = WikiHistoryFactory.createFileHistory(wikiNS);;
+        const wikiHistory: FileWikiHistory = WikiHistoryFactory.createFileHistory(wikiNS, wikiType);
         if (wikiHistory.hasName(wikiName)) {
             throw new Error(`The specified wikiName already exists.: ${wikiName}`);
         }
