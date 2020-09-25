@@ -6,6 +6,20 @@ import {HistoricalData, TextData, FileData, WikiHistory, TextWikiHistory, FileWi
 // Wiki の内部データに対する操作を管理する。このクラスのメソッドと、生成した WikiContent クラスに対する操作手順を記録して、
 // 再実行すれば全く同じ内部状態にすることができる。
 class Wiki {
+    public hasContent(wikiNS: string, wikiType: EditableType, wikiName: string): boolean {
+        if (!this.hasNS(wikiNS)) {
+            return false;
+        }
+        switch (wikiType) {
+            case 'Main':
+                return this.hasPage(wikiNS, wikiName);
+            case 'Template':
+                return this.hasTemplate(wikiNS, wikiName);
+            case 'File':
+                return this.hasFile(wikiNS, wikiName);
+        }
+    }
+
     // WikiNS
     public hasNS(wikiNS: string): boolean {
         const nsmanager: WikiNSManager = new WikiNSManager();
