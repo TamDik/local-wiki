@@ -2,7 +2,72 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <script src="./js/renderer.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css" type="text/css">
+    <link rel="stylesheet" href="../node_modules/highlight.js/styles/github-gist.css" type="text/css">
+    <link rel="stylesheet" href="./css/index.css" type="text/css">
+
+    <script>const exports = {};</script>
+    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./js/model/wiki_constant.js" charset="utf-8"></script>
+    <script src="./js/view/location_parser.js" charset="utf-8"></script>
+    <script src="./js/view/toc.js" charset="utf-8"></script>
+    <script src="./js/view/markdown_parser.js" charset="utf-8"></script>
+    <script src="./js/renderer.js" charset="utf-8" defer="defer"></script>
   </head>
-  <body></body>
+  <body>
+
+    <div class="container-fluid">
+
+      <div class="row">
+        <div class="col-1 p-0">
+          <a href="#" id="p-logo"></a>
+          <ul class="p-1" id="p-navigation">
+            <li><a href="#">home</a></li>
+            <li><a href="#">special pages</a></li>
+            <li><a href="#">upload file</a></li>
+          </ul>
+        </div>
+
+        <div class="col-11">
+          <div id="navigation" class="row">
+            <div class="col-12">
+              <!-- input -->
+              <div class="row">
+                <div class="col-12 p-2">
+                  <div class="input-group">
+                    <input type="text" id="wiki-path-input" class="form-control">
+                  </div>
+                </div>
+              </div>
+              <!-- tags -->
+              <div class="row">
+                <div class="col-12">
+                  <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item">
+                      <a class="nav-link active" id="main-tab" href="#">home</a>
+                    </li>
+                    <li class="nav-item ml-auto">
+                      <a class="nav-link active" id="read-tab" href="#">Read</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" id="eidt-tab" href="#">Edit</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" id="history-tab" href="#">History</a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- main content -->
+          <div id="main-content" class="row">
+            <div id="main-content-wrapper" class="col-12"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>

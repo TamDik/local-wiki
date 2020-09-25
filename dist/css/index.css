@@ -37,3 +37,67 @@ table th {
 table tr:nth-child(2n) {
     background-color: #f6f8fa;
 }
+
+.external-link:after {
+    /* margin-left: 3px; */
+    /* content: url(../image/external-link.svg); */
+}
+
+.internal-link.not-exists {
+    color: #ba0000;
+}
+
+
+/* TOC */
+.toc {
+    display: table;
+    border: 1px solid #a2a9b1;
+    background-color: #f8f9fa;
+    padding: 7px;
+    font-size: 13.5px;
+}
+
+.toc-title {
+    text-align: center;
+}
+
+.toc-heading {
+    display: inline;
+    font-weight: bold;
+    font-size: 100%;
+}
+
+.toc-toggle {
+    color: var(--primary);
+    cursor: pointer;
+}
+
+.toc-toggle:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.toc-toggle:before {
+    content: '[';
+    color: #212529;
+}
+
+.toc-toggle:after {
+    content: ']';
+    color: #212529;
+}
+
+.toc ul {
+    list-style-type: none;
+    margin: 0.3em 0;
+    padding: 0;
+}
+
+.toc ul ul {
+    margin-left: 2em;
+}
+
+.toc-number {
+    padding-right: 0.5em;
+    color: #222;
+}
