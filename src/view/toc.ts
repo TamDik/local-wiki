@@ -5,7 +5,7 @@ class TOC {
     public constructor(html: string) {
         const parser: DOMParser = new DOMParser();
         const doc: Document = parser.parseFromString(html, "text/html");
-        const nodeList: NodeList = doc.querySelectorAll(':scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > h5, :scope > h6');
+        const nodeList: NodeList = doc.querySelectorAll('body > h1, body > h2, body > h3, body > h4, body > h5, body > h6');
 
         for (let i = 0, len = nodeList.length; i < len; i++) {
             const node: Node = nodeList[i];
