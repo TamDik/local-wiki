@@ -1,3 +1,4 @@
+type WikiType = 'Main' | 'Template' | 'File' | 'Special';
 type WikiAction = 'view' | 'edit' | 'history' | 'revert' | 'raw'; /* 'delete' */
 
 // ユーザーの操作

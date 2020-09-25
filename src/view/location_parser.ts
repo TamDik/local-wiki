@@ -1,5 +1,3 @@
-/* import {WikiType} from '../model/wiki_constant'; */
-type WikiType = 'Main' | 'Template' | 'File' | 'Special';
 type WikiLocation = {wikiNS: string, wikiType: WikiType, wikiName: string};
 
 const wikiTypeMap: Map<string, WikiType> = new Map([
