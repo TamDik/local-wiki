@@ -46,7 +46,7 @@ class TOC {
         toggle.className = 'toc-toggle';
         toggle.textContent = 'hide';
         toggle.addEventListener('click', event => {
-            const fromHidden: boolean = toggle.style.display === 'none';
+            const fromHidden: boolean = tocList.style.display === 'none';
             tocList.style.display = fromHidden ? 'block' : 'none';
             toggle.textContent    = fromHidden ? 'hide'  : 'show';
         });
