@@ -4,6 +4,34 @@ export declare global {
         hljs: any;
         marked: any;
     }
+
+    interface HistoricalData {
+        id: string;
+        name: string;
+        version: number;
+        next: string|null;
+        prev: string|null;
+        updated: string;
+        comment: string;
+        filename: string;
+        filepath: string;
+    }
+
+    interface HistoricalTextData extends HistoricalData {
+        text: string;
+    };
+
+    interface HistoricalFileData extends HistoricalData {
+        filesize: number;
+        filetype: FileType;
+    };
+
+    type EditableTextType = 'Main' | 'Template';
+    type EditableFileType = 'File';
+    type EditableType = EditableTextType | EditableFileType;
+    type WikiType = EditableType | 'Special';
+    type FileType = 'image' | 'pdf' | 'page' | 'other';
+    type WikiAction = 'view' | 'edit' | 'history';/* | 'revert' | 'raw' | 'delete' */
 }
 
 type Listener = (event: any, ...arg: any[]) => void;

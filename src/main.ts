@@ -1,5 +1,4 @@
 import {app, BrowserWindow, screen, ipcMain} from 'electron';
-import {EditableType} from './model/wiki_constant';
 import {Wiki, IEditableContent} from './model/wiki';
 
 const wiki: Wiki = new Wiki();

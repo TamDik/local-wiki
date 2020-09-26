@@ -15,19 +15,6 @@ interface HistoricalDataToSave {
     filename: string;
 }
 
-interface HistoricalData extends HistoricalDataToSave {
-    filepath: string;
-}
-
-interface TextData extends HistoricalData {
-    text: string;
-};
-
-interface FileData extends HistoricalData {
-    filesize: number;
-    filetype: 'image'|'pdf'|'page'|'other';
-};
-
 // WikiHistory
 abstract class WikiHistory<T extends HistoricalData> {
     private currentFile: string;
@@ -79,7 +66,18 @@ abstract class WikiHistory<T extends HistoricalData> {
         if (data === undefined) {
             throw new Error('Not found the data by id: ' + id);
         }
-        return this.extendHistoricalData({...data, filepath: this.filenameToFilepath(data.filename)});
+        const historicalData: HistoricalData = {
+            id: data.id,
+            name: data.name,
+            version: data.version,
+            next: data.next,
+            prev: data.prev,
+            updated: data.created,
+            comment: data.comment,
+            filename: data.filename,
+            filepath: this.filenameToFilepath(data.filename)
+        };
+        return this.extendHistoricalData(historicalData);
     }
 
     public getByName(name: string): T {
@@ -211,7 +209,7 @@ abstract class WikiHistory<T extends HistoricalData> {
 }
 
 
-class TextWikiHistory extends WikiHistory<TextData> {
+class TextWikiHistory extends WikiHistory<HistoricalTextData> {
     public add(name: string, text: string, comment: string): void {
         const filename: string = util.createId() + '.json';
         this.addData(name, filename, comment);
@@ -219,23 +217,46 @@ class TextWikiHistory extends WikiHistory<TextData> {
         fs.writeFileSync(this.filenameToFilepath(filename), JSON.stringify(data));
     }
 
-    protected extendHistoricalData(data: HistoricalData): TextData {
+    protected extendHistoricalData(data: HistoricalData): HistoricalTextData {
         const {text} = JSON.parse(fs.readFileSync(data.filepath, 'utf-8'));
-        return {...data, text};
+        return {
+            id: data.id,
+            name: data.name,
+            version: data.version,
+            next: data.next,
+            prev: data.prev,
+            updated: data.updated,
+            comment: data.comment,
+            filename: data.filename,
+            filepath: data.filepath,
+            text: text
+        }
     }
 }
 
 
-class FileWikiHistory extends WikiHistory<FileData> {
+class FileWikiHistory extends WikiHistory<HistoricalFileData> {
     public add(name: string, source: string, comment: string): void {
         const filename: string = this.createFilename(source);
         this.addData(name, filename, comment);
         fs.copyFileSync(source, this.filenameToFilepath(filename));
     }
 
-    protected extendHistoricalData(data: HistoricalData): FileData {
+    protected extendHistoricalData(data: HistoricalData): HistoricalFileData {
         const filename: string = data.filename;
-        return {...data, filesize: this.filenameToSize(filename), filetype: this.filenameToFiletype(filename)};
+        return {
+            id: data.id,
+            name: data.name,
+            version: data.version,
+            next: data.next,
+            prev: data.prev,
+            updated: data.updated,
+            comment: data.comment,
+            filename: data.filename,
+            filepath: data.filepath,
+            filesize: this.filenameToSize(filename),
+            filetype: this.filenameToFiletype(filename)
+        }
     }
 
     private createFilename(source: string): string {
@@ -254,7 +275,7 @@ class FileWikiHistory extends WikiHistory<FileData> {
         return sizeInt;
     }
 
-    private filenameToFiletype(filename: string): 'image'|'pdf'|'page'|'other' {
+    private filenameToFiletype(filename: string): FileType{
         const IMAGE_EXTENTIONS = ['png', 'jpg', 'jpeg', 'gif'];
         const PDF_EXTENTIONS = ['pdf'];
         const PAGE_EXTENTIONS = ['md'];
@@ -273,4 +294,4 @@ class FileWikiHistory extends WikiHistory<FileData> {
 }
 
 
-export {HistoricalData, TextData, FileData, WikiHistory, TextWikiHistory, FileWikiHistory};
+export {WikiHistory, TextWikiHistory, FileWikiHistory};

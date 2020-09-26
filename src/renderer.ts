@@ -1,6 +1,3 @@
-type WikiType = 'Main' | 'Template' | 'File' | 'Special';
-type WikiAction = 'view' | 'edit' | 'history';/* | 'revert' | 'raw' | 'delete' */
-
 function isWikiAction(arg: any): arg is WikiAction {
     return ['view', 'edit', 'history'].includes(arg);
 }

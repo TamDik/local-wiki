@@ -1,6 +1,5 @@
-import {EditableType, EditableTextType, EditableFileType} from './wiki_constant';
 import {WikiNSManager} from './wiki_location';
-import {HistoricalData, TextData, FileData, WikiHistory, TextWikiHistory, FileWikiHistory} from './wiki_history';
+import {WikiHistory, TextWikiHistory, FileWikiHistory} from './wiki_history';
 
 
 // Wiki の内部データに対する操作を管理する。このクラスのメソッドに対する操作手順を記録して
@@ -289,7 +288,7 @@ abstract class EditableContent<S extends HistoricalData, T extends WikiHistory<S
 // 変更可能なテキストコンテンツ。
 // 基本ページやテンプレートページの文章を扱う。将来的にはトークページなどもこのクラスを継承する可能性がある。
 // content は表示本文の文字列。
-class EditableTextContent extends EditableContent<TextData, TextWikiHistory> {
+class EditableTextContent extends EditableContent<HistoricalTextData, TextWikiHistory> {
     public constructor(wikiNS: string, wikiType: EditableTextType, wikiName: string, version: number=0) {
         let wikiHistory: TextWikiHistory;
         wikiHistory = WikiHistoryFactory.createTextHistory(wikiNS, wikiType);
@@ -322,7 +321,7 @@ class EditableTextContent extends EditableContent<TextData, TextWikiHistory> {
 
 // 変更可能なファイルコンテンツ。画像ファイルやPDFファイルなどを扱う。
 // content は ファイルの保存場所を示すパス。src 属性に指定するなどして利用されることを想定している。
-class EditableFileContent extends EditableContent<FileData, FileWikiHistory> {
+class EditableFileContent extends EditableContent<HistoricalFileData, FileWikiHistory> {
     public constructor(wikiNS: string, wikiType: EditableFileType, wikiName: string, version: number=0) {
         const wikiHistory: FileWikiHistory = WikiHistoryFactory.createFileHistory(wikiNS, wikiType);
         super(wikiNS, wikiType, wikiName, version, wikiHistory);

@@ -11,7 +11,7 @@
 // Template: テンプレートファイル
 // (User, Project, Help, Category)
 // [ CAUTION ] Special の扱いに注意。
-import {WikiType, DEFAULT_NS} from './wiki_constant';
+import {DEFAULT_NS} from './wiki_constant';
 import * as path from 'path';
 import * as fs from 'fs';
 
