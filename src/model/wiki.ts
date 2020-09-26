@@ -3,23 +3,9 @@ import {WikiNSManager} from './wiki_location';
 import {HistoricalData, TextData, FileData, WikiHistory, TextWikiHistory, FileWikiHistory} from './wiki_history';
 
 
-// Wiki の内部データに対する操作を管理する。このクラスのメソッドと、生成した WikiContent クラスに対する操作手順を記録して、
+// Wiki の内部データに対する操作を管理する。このクラスのメソッドに対する操作手順を記録して
 // 再実行すれば全く同じ内部状態にすることができる。
 class Wiki {
-    public hasContent(wikiNS: string, wikiType: EditableType, wikiName: string): boolean {
-        if (!this.hasNS(wikiNS)) {
-            return false;
-        }
-        switch (wikiType) {
-            case 'Main':
-                return this.hasPage(wikiNS, wikiName);
-            case 'Template':
-                return this.hasTemplate(wikiNS, wikiName);
-            case 'File':
-                return this.hasFile(wikiNS, wikiName);
-        }
-    }
-
     // WikiNS
     public hasNS(wikiNS: string): boolean {
         const nsmanager: WikiNSManager = new WikiNSManager();
@@ -36,62 +22,123 @@ class Wiki {
         return nsmanager.getList();
     }
 
+    public hasContent(wikiNS: string, wikiType: EditableType, wikiName: string): boolean {
+        if (!this.hasNS(wikiNS)) {
+            return false;
+        }
+        switch (wikiType) {
+            case 'Main':
+                return this.hasPage(wikiNS, wikiName);
+            case 'Template':
+                return this.hasTemplate(wikiNS, wikiName);
+            case 'File':
+                return this.hasFile(wikiNS, wikiName);
+        }
+    }
+
+
+    // EditableContent
+    public getContent(wikiNS: string, wikiType: EditableType, wikiName: string, version: number=0): string {
+        const editableContent: IEditableContent = this.getEditableContent(wikiNS, wikiType, wikiName, version);
+        return editableContent.content;
+    }
+
+    public latestVersion(wikiNS: string, wikiType: EditableType, wikiName: string): number {
+        const editableContent: IEditableContent = this.getEditableContent(wikiNS, wikiType, wikiName);
+        return editableContent.latestVersion;
+    }
+
+    public createEditableContent(wikiNS: string, wikiType: EditableType, wikiName: string, content: string, comment: string): void {
+        switch (wikiType) {
+            case 'Main':
+                this.createPage(wikiNS, wikiName, content, comment);
+                break;
+            case 'Template':
+                this.createTemplate(wikiNS, wikiName, content, comment);
+                break;
+            case 'File':
+                this.createFile(wikiNS, wikiName, content, comment);
+                break;
+        }
+    }
+
+    public updateEditableContent(wikiNS: string, wikiType: EditableType, wikiName: string, content: string, comment: string): void {
+        const editableContent: IEditableContent = this.getEditableContent(wikiNS, wikiType, wikiName);
+        editableContent.update(content, comment);
+    }
+
+    public revertEditableContent(wikiNS: string, wikiType: EditableType, wikiName: string, version: number, comment: string): void {
+        const editableContent: IEditableContent = this.getEditableContent(wikiNS, wikiType, wikiName);
+        editableContent.revert(version, comment);
+    }
+
+    private getEditableContent(wikiNS: string, wikiType: EditableType, wikiName: string, version: number=0): IEditableContent {
+        switch (wikiType) {
+            case 'Main':
+                return this.getPage(wikiNS, wikiName, version);
+            case 'Template':
+                return this.getTemplate(wikiNS, wikiName, version);
+            case 'File':
+                return this.getFile(wikiNS, wikiName, version);
+        }
+    }
+
 
     // Page
-    public hasPage(wikiNS: string, wikiName: string): boolean {
+    private hasPage(wikiNS: string, wikiName: string): boolean {
         const wikiHistory: TextWikiHistory = WikiHistoryFactory.createTextHistory(wikiNS, 'Main');
         return this.existsCheck(wikiHistory, wikiName);
     }
 
-    public createPage(wikiNS: string, wikiName: string, body: string, comment: string): EditableTextContent {
+    private createPage(wikiNS: string, wikiName: string, body: string, comment: string): EditableTextContent {
         return EditableTextContent.create(wikiNS, 'Main', wikiName, body, comment);
     }
 
-    public getPage(wikiNS: string, wikiName: string, version=0): EditableTextContent {
+    private getPage(wikiNS: string, wikiName: string, version: number=0): EditableTextContent {
         return new EditableTextContent(wikiNS, 'Main', wikiName, version);
     }
 
-    public getPageList(wikiNS: string): string[] {
+    private getPageList(wikiNS: string): string[] {
         const wikiHistory: TextWikiHistory = WikiHistoryFactory.createTextHistory(wikiNS, 'Main');
         return this.getNameList(wikiHistory);
     }
 
 
     // Template
-    public hasTemplate(wikiNS: string, wikiName: string): boolean {
+    private hasTemplate(wikiNS: string, wikiName: string): boolean {
         const wikiHistory: TextWikiHistory = WikiHistoryFactory.createTextHistory(wikiNS, 'Template');
         return this.existsCheck(wikiHistory, wikiName);
     }
 
-    public createTemplate(wikiNS: string, wikiName: string, body: string, comment: string): EditableTextContent {
+    private createTemplate(wikiNS: string, wikiName: string, body: string, comment: string): EditableTextContent {
         return EditableTextContent.create(wikiNS, 'Template', wikiName, body, comment);
     }
 
-    public getTemplate(wikiNS: string, wikiName: string, version=0): EditableTextContent {
+    private getTemplate(wikiNS: string, wikiName: string, version: number=0): EditableTextContent {
         return new EditableTextContent(wikiNS, 'Template', wikiName, version);
     }
 
-    public getTemplateList(wikiNS: string): string[] {
+    private getTemplateList(wikiNS: string): string[] {
         const wikiHistory: TextWikiHistory = WikiHistoryFactory.createTextHistory(wikiNS, 'Template');
         return this.getNameList(wikiHistory);
     }
 
 
     // File
-    public hasFile(wikiNS: string, wikiName: string): boolean {
+    private hasFile(wikiNS: string, wikiName: string): boolean {
         const wikiHistory: FileWikiHistory = WikiHistoryFactory.createFileHistory(wikiNS, 'File');
         return this.existsCheck(wikiHistory, wikiName);
     }
 
-    public createFile(wikiNS: string, wikiName: string, body: string, comment: string): EditableFileContent {
-        return EditableFileContent.create(wikiNS, 'File', wikiName, body, comment);
+    private createFile(wikiNS: string, wikiName: string, source: string, comment: string): EditableFileContent {
+        return EditableFileContent.create(wikiNS, 'File', wikiName, source, comment);
     }
 
-    public getFile(wikiNS: string, wikiName: string, version=0): EditableFileContent {
+    private getFile(wikiNS: string, wikiName: string, version: number=0): EditableFileContent {
         return new EditableFileContent(wikiNS, 'File', wikiName, version);
     }
 
-    public getFileList(wikiNS: string): string[] {
+    private getFileList(wikiNS: string): string[] {
         const wikiHistory: FileWikiHistory = WikiHistoryFactory.createFileHistory(wikiNS, 'File');
         return this.getNameList(wikiHistory);
     }
@@ -172,8 +219,11 @@ class WikiHistoryFactory {
 // コンテンツの最も基本となるクラス。
 // View とは別であることに注意する。例えば、Main type について WikiContent で扱うのは、どのように表示するかではなく、
 // 表示するときに必要となる文字列を管理する。
-abstract class WikiContent {
-    abstract content: string;
+interface IContent {
+    readonly content: string;
+}
+abstract class WikiContent implements IContent{
+    public readonly abstract content: string;
 
     public constructor(public readonly wikiNS: string, public readonly wikiType: string, public readonly wikiName: string) {
     }
@@ -184,7 +234,14 @@ abstract class WikiContent {
 // version は正のときはそのバージョンを示す。ゼロのときは最新バージョンを示す。負のときはその大きさ分だけ遡ったバージョンを示す。
 // 例えば、-3 の時には最新より3つ前のバージョンを示す。
 // version に代入して変更すれば、そのバージョンのデータが反映される。
-abstract class EditableContent<S extends HistoricalData, T extends WikiHistory<S>> extends WikiContent {
+interface IEditableContent extends IContent {
+    version: number;
+    update(content: string, comment: string): void;
+    revert(version: number, comment: string): void;
+    readonly latestVersion: number;
+}
+
+abstract class EditableContent<S extends HistoricalData, T extends WikiHistory<S>> extends WikiContent implements IEditableContent {
     private __version!: number;
 
     public constructor(wikiNS: string, wikiType: EditableType, wikiName: string, version: number, protected readonly wikiHistory: T) {
@@ -300,4 +357,4 @@ class EditableFileContent extends EditableContent<FileData, FileWikiHistory> {
 }
 
 
-export {Wiki, EditableTextContent, EditableFileContent};
+export {Wiki, IEditableContent}

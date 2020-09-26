@@ -182,7 +182,7 @@ async function getInternalImageFilepath(img: Element): Promise<string|null> {
     }
     try {
         const [wikiNS, wikiName] = title.split(':');
-        return window.ipcRenderer.invoke<string | null>('get-content', wikiNS, 'File', wikiName);
+        return IpcAdapter.getFilepath(wikiNS, wikiName);
     } catch (e) {
         return null;
     }
@@ -214,7 +214,7 @@ async function existsInternalLink(anchor: Element): Promise<boolean> {
     }
     try {
         const {wikiNS, wikiType, wikiName} = parseWikiLocation(href);
-        return window.ipcRenderer.invoke<boolean>('exists-content', wikiNS, wikiType, wikiName);
+        return IpcAdapter.existsContent(wikiNS, wikiType, wikiName);
     } catch (e) {
         return false;
     }

@@ -1,6 +1,6 @@
 import {app, BrowserWindow, screen, ipcMain} from 'electron';
 import {EditableType} from './model/wiki_constant';
-import {Wiki} from './model/wiki';
+import {Wiki, IEditableContent} from './model/wiki';
 
 const wiki: Wiki = new Wiki();
 
@@ -27,17 +27,13 @@ app.on('ready', () => {
 });
 
 
-// event.returnValue を設定し忘れるとレンダラプロセスが停止してしまうので、ipcRenderer.sendSync に対する
-// コールバックはこの関数を通して利用する。
-// 型宣言された listener の返戻値が event.returnValue に渡されるので型の面でも安全。
-function safeSyncIpcMainOn<S, T>(change: string, listener: (params: S) => T): void {
-    ipcMain.on(change, (event, params: S) => {
-        event.returnValue = listener(params);
-    });
-};
-
-/* safeSyncIpcMainOn<[string, EditableType, string], string|null>('get-content', ([wikiNS, wikiType, wikiName]) => { */
-/* }); */
+ipcMain.handle('create-wikins', async (event, wikiNS: string, dataDir: string): Promise<boolean> => {
+    if (wiki.hasNS(wikiNS)) {
+        return false;
+    }
+    wiki.createNS(wikiNS, dataDir);
+    return true;
+});
 
 ipcMain.handle('exists-content', async (event, wikiNS: string, wikiType: EditableType, wikiName: string): Promise<boolean> => {
     return wiki.hasContent(wikiNS, wikiType, wikiName);
@@ -47,12 +43,24 @@ ipcMain.handle('get-content', async (event, wikiNS: string, wikiType: EditableTy
     if (!wiki.hasContent(wikiNS, wikiType, wikiName)) {
         return null;
     }
-    switch (wikiType) {
-        case 'Main':
-            return wiki.getPage(wikiNS, wikiName).content;
-        case 'Template':
-            return wiki.getTemplate(wikiNS, wikiName).content;
-        case 'File':
-            return wiki.getFile(wikiNS, wikiName).content;
+    return wiki.getContent(wikiNS, wikiType, wikiName);
+});
+
+ipcMain.handle('update-content', async (event, wikiNS: string, wikiType: EditableType, wikiName: string,
+                                        content: string, comment: string): Promise<boolean> => {
+    if (wiki.hasContent(wikiNS, wikiType, wikiName)) {
+        wiki.createEditableContent(wikiNS, wikiType, wikiName, content, comment);
+    } else {
+        wiki.updateEditableContent(wikiNS, wikiType, wikiName, content, comment);
     }
+    return true;
+});
+
+ipcMain.handle('revert-content', async (event, wikiNS: string, wikiType: EditableType, wikiName: string,
+                                        version: number, comment: string): Promise<boolean> => {
+    if (!wiki.hasContent(wikiNS, wikiType, wikiName)) {
+        return false;
+    }
+    wiki.revertEditableContent(wikiNS, wikiType, wikiName, version, comment);
+    return true;
 });
