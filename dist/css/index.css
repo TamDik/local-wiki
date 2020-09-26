@@ -101,3 +101,9 @@ table tr:nth-child(2n) {
     padding-right: 0.5em;
     color: #222;
 }
+
+/* editor */
+#markdown-edit-form {
+    font-family: SFMono-Regular;
+    height: 280px;
+}
