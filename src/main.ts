@@ -49,9 +49,9 @@ ipcMain.handle('get-content', async (event, wikiNS: string, wikiType: EditableTy
 ipcMain.handle('update-content', async (event, wikiNS: string, wikiType: EditableType, wikiName: string,
                                         content: string, comment: string): Promise<boolean> => {
     if (wiki.hasContent(wikiNS, wikiType, wikiName)) {
-        wiki.createEditableContent(wikiNS, wikiType, wikiName, content, comment);
-    } else {
         wiki.updateEditableContent(wikiNS, wikiType, wikiName, content, comment);
+    } else {
+        wiki.createEditableContent(wikiNS, wikiType, wikiName, content, comment);
     }
     return true;
 });
