@@ -21,6 +21,10 @@ class MainInputArea {
         });
     }
 
+    public set val(val: string) {
+        this.$object.val(val);
+    }
+
     private pathInputEnterAction(): void {
         try {
             const val: string = <string>this.$object.val();
@@ -109,6 +113,7 @@ class WikiController {
 
     private update(): void {
         this.updateMainContent();
+        this.updateInputArea();
         this.updateTabs();
     }
 
@@ -116,6 +121,18 @@ class WikiController {
         const contentView: IContentView = this.dispatchWikiType();
         this.$mainContentWrapper.empty();
         contentView.update();
+    }
+
+    private updateInputArea(): void {
+        let val: string = '';
+        if (this.wikiNS !== 'Wiki') {
+            val += this.wikiNS + ':';
+        }
+        if (this.wikiType !== 'Main') {
+            val += this.wikiType;
+        }
+        val += this.wikiName;
+        this.inputArea.val = val;
     }
 
     private dispatchWikiType(): IContentView {
