@@ -12,7 +12,22 @@ function isWikiLink(href: string): boolean {
     return href.match(PATTERN) === null;
 }
 
+function parseParameters(href: string): Map<string, string> {
+    const paramMap: Map<string, string> = new Map();
+    const paramsStr: string = href.replace(/^.*\?/, '').replace(/#.*$/, '');
+    const params: string[] = paramsStr.split('&');
+    for (const param of params) {
+        const pair: string[] = param.split('=');
+        if (pair.length !== 2) {
+            continue;
+        }
+        paramMap.set(pair[0], pair[1]);
+    }
+    return paramMap;
+}
+
 function parseWikiLocation(href: string): WikiLocation {
+    href = href.split(/[?#]/)[0];
     const loc: WikiLocation = {wikiNS: 'Wiki', wikiType: 'Main', wikiName: ''};
     const arr: string[] = href.split(':');
     const v1: WikiType|undefined = wikiTypeMap.get(arr[0]);

@@ -172,6 +172,10 @@ jQuery(() => {
     const controller: WikiController = new WikiController('#main-content-wrapper');
 
     $document.on('click', 'a', event => {
+        const href: string | null = event.currentTarget.getAttribute('href');
+        if (typeof(href) === 'string' && href.startsWith('#')) {
+            return;
+        }
         event.preventDefault();
     });
 
@@ -179,5 +183,17 @@ jQuery(() => {
     });
 
     $document.on('click', '.internal-link', event => {
+        const href: string | null = event.currentTarget.getAttribute('href');
+        if (href === null) {
+            return;
+        }
+        const action: string | undefined = parseParameters(href).get('action');
+        const wikiAction: WikiAction = isWikiAction(action) ? action : 'view';
+        try {
+            const wikiLocation: WikiLocation = parseWikiLocation(href);
+            controller.change({wikiAction, wikiLocation});
+        } catch (e) {
+            controller.change({wikiAction});
+        }
     });
 });
