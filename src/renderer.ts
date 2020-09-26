@@ -145,8 +145,8 @@ class WikiController {
                 break;
             case 'history':
                 this.tabs.read.active = false;
-                this.tabs.history.active = true;
                 this.tabs.history.active = false;
+                this.tabs.history.active = true;
                 break;
         }
 
