@@ -107,3 +107,57 @@ table tr:nth-child(2n) {
     font-family: SFMono-Regular;
     height: 280px;
 }
+
+/* history */
+.history-mode-toggle {
+    color: var(--primary);
+    cursor: pointer;
+}
+
+.history-mode-toggle:before {
+    content: '[';
+    color: #212529;
+}
+
+.history-mode-toggle:after {
+    content: ']';
+    color: #212529;
+}
+
+.history ol {
+    list-style-type: none;
+    padding: 2px;
+}
+
+.history li {
+    white-space: nowrap;
+    /* overflow-x: hidden; */
+}
+
+.history input[type="radio"] {
+    margin: 3px 3px 0px 5px;
+}
+
+.history .before input[name="old"],
+.history .after input[name="diff"] {
+    visibility: hidden;
+}
+
+.history .selected {
+    background-color: #f8f9fa;
+    outline: 1px dashed #a2a9b1;
+}
+
+.comment-icon:before {
+    content: '';
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    background-image: url(../image/comment.svg);
+    margin-left: 3px;
+    cursor:pointer;
+}
+
+.comment-icon:hover:before {
+    background-image: url(../image/comment-hover.svg);
+}
