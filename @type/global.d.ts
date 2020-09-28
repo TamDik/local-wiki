@@ -3,6 +3,7 @@ export declare global {
         ipcRenderer: IpcRendererApi;
         hljs: any;
         marked: any;
+        difflib: any;
     }
 
     interface HistoricalData {
