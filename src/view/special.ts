@@ -86,16 +86,40 @@ class AllPagesView extends SpecialView {
 }
 
 
+// ファイル一覧
 class AllFilesView extends SpecialView {
     public description: string = 'File list';
     public categoryKey: SpecialPageCategory = 'MEDIA_REPORT_AND_UPLOAD';
 
+    constructor(controller: WikiController, private wikiNS: string) {
+        super(controller);
+    }
+
     public update(): void {
-        this.controller.$mainContentWrapper.append('all files');
+        this.controller.$mainContentWrapper.append('<p>This special page shows all uploaded files.</p>');
+        this.appendFileList();
+    }
+
+    // IDEA: サムネイル
+    private appendFileList(): void {
+        IpcAdapter.getNameList(this.wikiNS, 'File')
+        .then(nameList => {
+            console.log(nameList);
+            const lines: string[] = [];
+            lines.push('<div class="all-files-body"><ul>');
+            for (const fileName of nameList) {
+                lines.push(`<li>`);
+                lines.push(`<a href="${this.wikiNS}:File:${fileName}" class="internal-link">${fileName}</a>`);
+                lines.push(`</li>`);
+            }
+            lines.push('</ul></div>');
+            this.controller.$mainContentWrapper.append(lines.join(''));
+        });
     }
 }
 
 
+// スペシャルページ一覧
 class SpecialPagesView extends SpecialView {
     public description: string = 'Special pages';
     constructor(controller: WikiController, private specialViewMap: Map<string, SpecialView>) {
