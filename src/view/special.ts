@@ -1,9 +1,8 @@
 function dispatchWikiActionSpecial(controller: WikiController, wikiNS: string, wikiName: string, wikiAction: WikiAction): IContentView {
-    const specialViews: Map<string, SpecialView> = new Map([
-        ['AllPages', new AllPagesView(controller)],
-        ['UploadFile', new UploadFileView(controller)],
-        ['AllFiles', new AllFilesView(controller)]
-    ]);
+    const specialViews: Map<string, SpecialView> = new Map();
+    specialViews.set('AllPages', new AllPagesView(controller, wikiNS));
+    specialViews.set('UploadFile', new UploadFileView(controller, wikiNS));
+    specialViews.set('AllFiles', new AllFilesView(controller, wikiNS));
     specialViews.set('SpecialPages', new SpecialPagesView(controller, specialViews));
 
     const view: SpecialView | undefined = specialViews.get(wikiName);
@@ -55,12 +54,34 @@ class NotFoundSpecialView extends SpecialView {
 }
 
 
+// ページ一覧
 class AllPagesView extends SpecialView {
     public description: string = 'All pages';
     public categoryKey: SpecialPageCategory = 'LIST_OF_PAGES';
 
+    constructor(controller: WikiController, private wikiNS: string) {
+        super(controller);
+    }
+
     public update(): void {
-        this.controller.$mainContentWrapper.append('all pages');
+        // TODO 絞り込み
+        this.appendPageList();
+    }
+
+    private appendPageList(): void {
+        IpcAdapter.getNameList(this.wikiNS, 'Main')
+        .then(nameList => {
+            console.log(nameList);
+            const lines: string[] = [];
+            lines.push('<div class="all-pages-body"><ul>');
+            for (const pageName of nameList) {
+                lines.push(`<li>`);
+                lines.push(`<a href="${this.wikiNS}:${pageName}" class="internal-link">${pageName}</a>`);
+                lines.push(`</li>`);
+            }
+            lines.push('</ul></div>');
+            this.controller.$mainContentWrapper.append(lines.join(''));
+        });
     }
 }
 

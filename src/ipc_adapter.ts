@@ -2,6 +2,10 @@
 // プロセス間通信を集約してメインプロセスとレンダラプロセスの間の関係を疎にする。
 
 class IpcAdapter {
+    public static async getNameList(wikiNS: string, wikiType: EditableType): Promise<string[]> {
+        return window.ipcRenderer.invoke<string[]>('get-name-list', wikiNS, wikiType);
+    }
+
     // wikiNS
     public static async createNS(wikiNS: string, dataDir: string): Promise<boolean> {
         return window.ipcRenderer.invoke<boolean>('create-wikins', wikiNS, dataDir)

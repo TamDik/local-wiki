@@ -35,6 +35,16 @@ class Wiki {
         }
     }
 
+    public getWikiNameList(wikiNS: string, wikiType: EditableType): string[] {
+        switch (wikiType) {
+            case 'Main':
+                return this.getPageList(wikiNS);
+            case 'Template':
+                return this.getTemplateList(wikiNS);
+            case 'File':
+                return this.getFileList(wikiNS);
+        }
+    }
 
     // EditableContent
     public getContent(wikiNS: string, wikiType: EditableType, wikiName: string, version: number=0): string {

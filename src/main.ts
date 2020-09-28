@@ -38,6 +38,10 @@ ipcMain.handle('exists-content', async (event, wikiNS: string, wikiType: Editabl
     return wiki.hasContent(wikiNS, wikiType, wikiName);
 });
 
+ipcMain.handle('get-name-list', async (event, wikiNS: string, wikiType: EditableType): Promise<string[]> => {
+    return wiki.getWikiNameList(wikiNS, wikiType);
+});
+
 ipcMain.handle('get-content', async (event, wikiNS: string, wikiType: EditableType, wikiName: string,
                                      version: number): Promise<string|null> => {
     if (!wiki.hasContent(wikiNS, wikiType, wikiName)) {

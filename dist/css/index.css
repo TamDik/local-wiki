@@ -267,6 +267,6 @@ table tr:nth-child(2n) {
     /* background-image: url(../image/code-expand.svg); */
 }
 
-.allpages-body {
+.all-pages-body {
     columns: 22em 3;
 }
