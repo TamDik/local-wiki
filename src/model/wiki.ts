@@ -71,6 +71,45 @@ class Wiki {
         editableContent.revert(version, comment);
     }
 
+    public latestEditableContentVersion(wikiNS: string, wikiType: EditableType, wikiName: string): number {
+        const editableContent: IEditableContent = this.getEditableContent(wikiNS, wikiType, wikiName);
+        return editableContent.latestVersion;
+    }
+
+    public getHistoricalData(wikiNS: string, wikiType: EditableType, wikiName: string, version: number): HistoricalData {
+        switch (wikiType) {
+            case 'File':
+                const fileData: HistoricalFileData = this.getFile(wikiNS, wikiName, version).historicalData;
+                delete fileData.filesize;
+                delete fileData.filetype;
+                return fileData;
+            case 'Main':
+                const mainData: HistoricalTextData = this.getPage(wikiNS, wikiName, version).historicalData;
+                delete mainData.text;
+                return mainData;
+            case 'Template':
+                const templateData: HistoricalTextData = this.getTemplate(wikiNS, wikiName, version).historicalData;
+                delete templateData.text;
+                return templateData;
+        }
+    }
+
+    public getHistoricalTextData(wikiNS: string, wikiType: EditableTextType, wikiName: string, version: number): HistoricalTextData {
+        switch (wikiType) {
+            case 'Main':
+                return this.getPage(wikiNS, wikiName, version).historicalData;
+            case 'Template':
+                return this.getTemplate(wikiNS, wikiName, version).historicalData;
+        }
+    }
+
+    public getHistoricalFileData(wikiNS: string, wikiType: EditableFileType, wikiName: string, version: number): HistoricalFileData {
+        switch (wikiType) {
+            case 'File':
+                return this.getFile(wikiNS, wikiName, version).historicalData;
+        }
+    }
+
     private getEditableContent(wikiNS: string, wikiType: EditableType, wikiName: string, version: number=0): IEditableContent {
         switch (wikiType) {
             case 'Main':
@@ -242,6 +281,7 @@ interface IEditableContent extends IContent {
 
 abstract class EditableContent<S extends HistoricalData, T extends WikiHistory<S>> extends WikiContent implements IEditableContent {
     private __version!: number;
+    public abstract readonly historicalData: S;
 
     public constructor(wikiNS: string, wikiType: EditableType, wikiName: string, version: number, protected readonly wikiHistory: T) {
         super(wikiNS, wikiType, wikiName);
@@ -306,6 +346,10 @@ class EditableTextContent extends EditableContent<HistoricalTextData, TextWikiHi
         return new EditableTextContent(wikiNS, wikiType, wikiName);
     }
 
+    public get historicalData(): HistoricalTextData {
+        return this.wikiHistory.getByVersion(this.wikiName, this.version);
+    }
+
     // body
     public get content(): string {
         const text: string = this.wikiHistory.getByVersion(this.wikiName, this.version).text;
@@ -337,17 +381,13 @@ class EditableFileContent extends EditableContent<HistoricalFileData, FileWikiHi
         return new EditableFileContent(wikiNS, wikiType, wikiName);
     }
 
+    public get historicalData(): HistoricalFileData {
+        return this.wikiHistory.getByVersion(this.wikiName, this.version);
+    }
+
     // filepath
     public get content(): string {
         return this.wikiHistory.getByVersion(this.wikiName, this.version).filepath;
-    }
-
-    public get filetype(): 'image'|'pdf'|'page'|'other' {
-        return this.wikiHistory.getByVersion(this.wikiName, this.version).filetype;
-    }
-
-    public get filesize(): number {
-        return this.wikiHistory.getByVersion(this.wikiName, this.version).filesize;
     }
 
     public update(source: string, comment: string): void {

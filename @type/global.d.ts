@@ -12,7 +12,7 @@ export declare global {
         version: number;
         next: string|null;
         prev: string|null;
-        updated: string;
+        updated: Date;
         comment: string;
         filename: string;
         filepath: string;

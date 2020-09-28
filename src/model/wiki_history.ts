@@ -72,7 +72,7 @@ abstract class WikiHistory<T extends HistoricalData> {
             version: data.version,
             next: data.next,
             prev: data.prev,
-            updated: data.created,
+            updated: util.str2date(data.created),
             comment: data.comment,
             filename: data.filename,
             filepath: this.filenameToFilepath(data.filename)
