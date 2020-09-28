@@ -1,6 +1,5 @@
 // TOC
 class TOC {
-    public INTERNAL_LINK_CLASS_NAME: string = 'internal-link';
     private table: {level: number, text: string, id: string}[] = [];
     public constructor(html: string) {
         const parser: DOMParser = new DOMParser();
@@ -92,7 +91,7 @@ class TOC {
 
     private createTocListItem(sectionNumber: string, text: string, id: string): HTMLElement {
         const tocLink: HTMLElement = document.createElement('a');
-        tocLink.className = `${this.INTERNAL_LINK_CLASS_NAME} toc-link`;
+        tocLink.className = 'toc-link';
         tocLink.setAttribute('href', '#' + id);
         tocLink.setAttribute('title', id);
 
