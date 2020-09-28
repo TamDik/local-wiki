@@ -133,17 +133,17 @@ class HistoryListItem {
     public setMode(): void {
         this.$li.removeClass('selected');
         if (this.historyList.getMode() === 'diff') {
-            this.$viewRadio.addClass('d-none');
-            this.$oldRadio.removeClass('d-none');
-            this.$diffRadio.removeClass('d-none');
+            this.$viewRadio.hide();
+            this.$oldRadio.show();
+            this.$diffRadio.show();
             if (this.$oldRadio.prop('checked') || this.$diffRadio.prop('checked')) {
                 this.$li.addClass('selected');
             }
 
         } else {
-            this.$viewRadio.removeClass('d-none');
-            this.$oldRadio.addClass('d-none');
-            this.$diffRadio.addClass('d-none');
+            this.$viewRadio.show();
+            this.$oldRadio.show();
+            this.$diffRadio.hide();
             if (this.$viewRadio.prop('checked')) {
                 this.$li.addClass('selected');
             }

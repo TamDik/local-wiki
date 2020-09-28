@@ -62,11 +62,11 @@ class NavTab {
     }
 
     public hide(): void {
-        this.$object.addClass('d-none');
+        this.$object.hide();
     }
 
     public show(): void {
-        this.$object.removeClass('d-none');
+        this.$object.show();
     }
 }
 
