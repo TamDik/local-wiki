@@ -181,22 +181,6 @@ class Wiki {
         return this.getNameList(wikiHistory);
     }
 
-
-    // 特殊ページ
-    // TODO 特殊ページはアクションが前提としてあるので、View で実装すべきか要検討。
-    //      cf) Main ページの編集は WikiContent を元に view で処理を行う。
-    //      getSpecialList() も不要。
-    //      !!! Special ページの存在確認が他のタイプと異なってしまうことが課題 !!!
-    //          他のタイプの存在確認も含めて、別クラスとして抽出する ???
-    //          Special ページの存在確認は、view の存在を確認する行為である一方で、Page や File の存在確認は
-    //          データが存在するかを確認する行為であるので、全く性質が異なる。
-    //
-    //      Special:UploadFile は wiki.createFile or EditableFileContent.update で実現可能。
-    //      Special:AllPages, Special:AllFiles は wiki.getSome() メソッドを呼び出せば実現可能。
-    //      Special:SpecialPages は 他の Special ページを定義したファイルであれば実現可能 ???
-    //
-
-
     private existsCheck(wikiHistory: WikiHistory<HistoricalData>, wikiName: string): boolean {
         return wikiHistory.hasName(wikiName);
     }
