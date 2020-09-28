@@ -126,7 +126,7 @@ class WikiController {
             val += this.wikiNS + ':';
         }
         if (this.wikiType !== 'Main') {
-            val += this.wikiType;
+            val += this.wikiType + ':';
         }
         val += this.wikiName;
         this.inputArea.val = val;
