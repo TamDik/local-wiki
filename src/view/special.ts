@@ -104,11 +104,118 @@ class SpecialPagesView extends SpecialView {
 }
 
 
+// ファイルのアップロード
 class UploadFileView extends SpecialView {
     public categoryKey: SpecialPageCategory = 'MEDIA_REPORT_AND_UPLOAD';
     public description: string = 'Upload file';
 
+    private filepath: string = '';
+    private readonly NO_FILE_CHOSEN: string = 'No file chosen';
+
+    private $file: JQuery;
+    private $filename: JQuery;
+    private $comment: JQuery;
+    private $uploadButton: JQuery;
+    private $chosenFileLabel: JQuery;
+
+    public constructor(controller: WikiController, private wikiNS: string) {
+        super(controller);
+        this.$file = $('<button class="form-control btn btn-outline-secondary" id="source-file">').html('Choose File');
+        this.$filename = $('<input type="text" class="form-control" id="destination-filename" placeholder="Filename">');
+        this.$comment = $('<input type="text" class="form-control" id="upload-comment" placeholder="Comment">')
+        this.$uploadButton = $('<button type="submit" class="btn btn-outline-primary">Upload file</button>');
+        this.$chosenFileLabel = $('<label for="source-file" class="form-control" id="chosen-file">').html(this.NO_FILE_CHOSEN);
+    }
+
+    private extentions: Map<FileType, string[]> = new Map([
+        ['image', ['png', 'jpg', 'jpeg', 'gif']],
+        ['pdf', ['pdf']],
+        ['page', ['markdown', 'md']]
+    ]);
+
+    private get permittedExtentions(): string[] {
+        const permittedExtentions: string[] = [];
+        for (const extentions of this.extentions.values()) {
+            permittedExtentions.push(...extentions);
+        }
+        return permittedExtentions;
+    }
+
     public update(): void {
-        this.controller.$mainContentWrapper.append('upload');
+        const filetypes: string = this.permittedExtentions.join(', ');
+
+        const $form1: JQuery = $('<div class="form-group">').append(
+            '<label for="source-file">Source filename: </label>',
+            $('<div class="input-group">').append(
+                $('<div class="input-group-prepend">').append(this.$file),
+                $('<div class="input-group-append">').append(this.$chosenFileLabel)
+            ),
+            `<small class="form-text text-muted">Permitted file types: ${filetypes}.</small>`
+        );
+
+        const $form2: JQuery = $('<div class="form-group">').append(
+            '<label for="destination-filename">Destination filename: </label>', this.$filename
+        );
+
+        const $form3: JQuery = $('<div class="form-group">').append(
+            '<label for="upload-comment">Comment: </label>', this.$comment
+        );
+
+        const $wrapper: JQuery = $('<div class="border rounded p-3">').append(
+            $form1, $form2, $form3, this.$uploadButton
+        );
+
+        this.setEvent();
+        this.controller.$mainContentWrapper.append($wrapper);
+    }
+
+    private setEvent(): void {
+        this.setChooseFileAction();
+        this.setUploadFileEvent();
+    }
+
+    private setChooseFileAction(): void {
+        this.$file.on('click', event => {
+            window.dialog.showOpenDialog({properties: ['openFile']})
+            .then((result: {canceled: boolean, filePaths: string[]}) => {
+                if (result.canceled || result.filePaths.length !== 1) {
+                    this.filepath = '';
+                    this.$chosenFileLabel.html(this.NO_FILE_CHOSEN);
+                } else {
+                    const filename: string = result.filePaths[0];
+                    const extention: string = filename.replace(/^.*\./, '');
+                    if (!this.permittedExtentions.includes(extention)) {
+                        this.filepath = '';
+                        this.$chosenFileLabel.html(this.NO_FILE_CHOSEN);
+                        alert('Invalid file extention');
+                        return;
+                    }
+                    this.filepath = filename;
+                    this.$chosenFileLabel.html(filename);
+                }
+            });
+        });
+    }
+
+    private setUploadFileEvent(): void {
+        this.$uploadButton.on('click', event => {
+            if (this.filepath === '') {
+                alert('No file chosen. Choose a file.');
+                return;
+            }
+            const filename: string = <string>this.$filename.val();
+            const comment: string = <string>this.$comment.val();
+            if (filename === '') {
+                alert('The destination filename is empty.');
+                return;
+            }
+            IpcAdapter.uploadFile(this.wikiNS, filename, this.filepath, comment)
+            .then(success => {
+                if (success) {
+                    const wikiLocation: WikiLocation = {wikiNS: this.wikiNS, wikiType: 'File', wikiName: filename};
+                    this.controller.change({wikiLocation});
+                }
+            });
+        });
     }
 }

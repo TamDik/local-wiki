@@ -1,6 +1,7 @@
 export declare global {
     interface Window {
         ipcRenderer: IpcRendererApi;
+        dialog: Dialog;
         hljs: any;
         marked: any;
         difflib: any;
