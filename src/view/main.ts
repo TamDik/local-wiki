@@ -47,9 +47,9 @@ class MainEditView implements IContentView {
 
     public constructor(private controller: WikiController, private wikiNS: string, private wikiName: string) {
         this.$previewAlert = this.createPreviewAlert();
-        this.$markdownPreview = $('<div class="col-12" id="markdown-preview">');
+        this.$markdownPreview = $('<div class="col-12">');
         this.$forms = {
-            comment: $('<input type="text" class="form-control" id="article-edit-comment" placeholder="Comment">'),
+            comment: $('<input type="text" class="form-control" placeholder="Comment">'),
             markdown: $('<textarea class="form-control" id="markdown-edit-form">')
         }
         this.$buttons = {
@@ -65,7 +65,7 @@ class MainEditView implements IContentView {
 
     private createPreviewAlert(): JQuery {
         const $alert: JQuery = $(`
-            <div class="alert alert-warning d-none" id="preview-alert" role="alert">
+            <div class="alert alert-warning d-none" role="alert">
                 <strong>Remember that this is only a preview.</strong>
                 Your changes have not yet been saved! <a href="#markdown-edit-form"> → Go to editing area</a>
             </div>`);
