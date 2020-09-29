@@ -38,6 +38,10 @@ table tr:nth-child(2n) {
     background-color: #f6f8fa;
 }
 
+img {
+    max-width: 100%;
+}
+
 .external-link:after {
     /* margin-left: 3px; */
     /* content: url(../image/external-link.svg); */

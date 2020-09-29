@@ -164,12 +164,18 @@ class WikiController {
                 break;
         }
 
-        if (this.wikiType === 'Special') {
-            this.tabs.edit.hide();
-            this.tabs.history.hide();
-        } else {
-            this.tabs.edit.show();
-            this.tabs.history.show();
+        switch (this.wikiType) {
+            case 'File':
+                this.tabs.edit.hide();
+                this.tabs.history.show();
+                break;
+            case 'Special':
+                this.tabs.edit.hide();
+                this.tabs.history.hide();
+                break;
+            default:
+                this.tabs.edit.show();
+                this.tabs.history.show();
         }
 
         if (this.wikiNS === 'Wiki') {

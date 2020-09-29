@@ -59,6 +59,10 @@ class IpcAdapter {
         return IpcAdapter.revert({wikiNS, wikiName, wikiType: 'File'}, version, comment);
     }
 
+    public static async getHistoricalFileData(wikiNS: string, wikiName: string,
+                                              len: number, maxVersion: number=0): Promise<HistoricalFileData[]> {
+        return IpcAdapter.historicalFileData({wikiNS, wikiName, wikiType: 'File'}, len, maxVersion);
+    }
 
     private static async exists(wikiLocation: WikiLocation): Promise<boolean> {
         const {wikiNS, wikiType, wikiName} = wikiLocation;
