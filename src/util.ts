@@ -29,33 +29,4 @@ function str2date(dateStr: string): Date {
                     Number(hms[0]), Number(hms[1]), Number(hms[2]));
 }
 
-function round(number: number, precision: number) {
-    const shift = (number: number, precision: number, reverseShift: boolean): number => {
-        if (reverseShift) {
-            precision = -precision;
-        }  
-        var numArray = ("" + number).split("e");
-        return +(numArray[0] + "e" + (numArray[1] ? (+numArray[1] + precision) : precision));
-    };
-    return shift(Math.round(shift(number, precision, false)), precision, true);
-}
-
-function bytes2str(bytes: number): string {
-    let digitalSize: number = bytes;
-    if (digitalSize < 1024) {
-        return round(digitalSize, 2) + ' B';
-    }
-    digitalSize /= 1024;
-    if (digitalSize < 1024) {
-        return round(digitalSize, 2) + ' KB';
-    }
-    digitalSize /= 1024;
-    if (digitalSize < 1024) {
-        return round(digitalSize, 2) + ' MB';
-    }
-    digitalSize /= 1024
-    return round(digitalSize, 2) + ' GB';
-}
-
-
-export {zeroPadding, createId, date2str, str2date, bytes2str};
+export {createId, date2str, str2date};

@@ -109,27 +109,12 @@ class FileView implements IContentView {
         const thumbnail: string = this.createThumbnail(data);
         $tableRow.append(
             isCurrent ? '<td>current</td>' : '<td>revert</td>',
-            `<td>${this.date2str(data.updated)}</td>`,
+            `<td>${date2str(data.updated)}</td>`,
             `<td>${thumbnail}</td>`,
-            `<td>${data.filesize}</td>`,
+            `<td>${bytes2str(data.filesize)}</td>`,
             `<td>${data.comment}</td>`
         );
         return $tableRow;
-    }
-
-    private zeroPadding(num: number, digits: number): string {
-        return (Array(digits).join('0') + num).slice(-digits);
-    }
-
-    private date2str(date: Date): string {
-        let formattedStr: string = '';
-        formattedStr += this.zeroPadding(date.getFullYear(), 4) + '/';
-        formattedStr += this.zeroPadding(date.getMonth() + 1, 2) + '/';
-        formattedStr += this.zeroPadding(date.getDate(), 2) + ' ';
-        formattedStr += this.zeroPadding(date.getHours(), 2) + ':';
-        formattedStr += this.zeroPadding(date.getMinutes(), 2) + ':';
-        formattedStr += this.zeroPadding(date.getSeconds(), 2);
-        return formattedStr;
     }
 
     private createThumbnail(data: HistoricalFileData): string {
@@ -201,27 +186,12 @@ class FileHistoryView implements IContentView {
 
     private getBody(data: HistoricalData): string {
         const {updated, comment, filepath} = data;
-        let body: string = this.date2str(updated);
+        let body: string = date2str(updated);
         if (data.next === null) {
             body += ' (current)';
         } else {
             /* body += ' (<a href="#" class="revert-button">revert</a>)' */
         }
         return body;
-    }
-
-    private zeroPadding(num: number, digits: number): string {
-        return (Array(digits).join('0') + num).slice(-digits);
-    }
-
-    private date2str(date: Date): string {
-        let formattedStr: string = '';
-        formattedStr += this.zeroPadding(date.getFullYear(), 4) + '/';
-        formattedStr += this.zeroPadding(date.getMonth() + 1, 2) + '/';
-        formattedStr += this.zeroPadding(date.getDate(), 2) + ' ';
-        formattedStr += this.zeroPadding(date.getHours(), 2) + ':';
-        formattedStr += this.zeroPadding(date.getMinutes(), 2) + ':';
-        formattedStr += this.zeroPadding(date.getSeconds(), 2);
-        return formattedStr;
     }
 }

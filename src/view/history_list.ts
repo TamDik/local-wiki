@@ -190,27 +190,12 @@ class HistoryListItem {
     }
 
     private getBody(): string {
-        let body: string = this.date2str(this.historicalData.updated);
+        let body: string = date2str(this.historicalData.updated);
         if (this.historicalData.next === null) {
             body += ' (current)';
         } else {
             /* body += ' (<a href="#" class="revert-button">revert</a>)' */
         }
         return body;
-    }
-
-    private zeroPadding(num: number, digits: number): string {
-        return (Array(digits).join('0') + num).slice(-digits);
-    }
-
-    private date2str(date: Date): string {
-        let formattedStr: string = '';
-        formattedStr += this.zeroPadding(date.getFullYear(), 4) + '/';
-        formattedStr += this.zeroPadding(date.getMonth() + 1, 2) + '/';
-        formattedStr += this.zeroPadding(date.getDate(), 2) + ' ';
-        formattedStr += this.zeroPadding(date.getHours(), 2) + ':';
-        formattedStr += this.zeroPadding(date.getMinutes(), 2) + ':';
-        formattedStr += this.zeroPadding(date.getSeconds(), 2);
-        return formattedStr;
     }
 }
