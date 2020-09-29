@@ -142,7 +142,7 @@ class HistoryListItem {
 
         } else {
             this.$viewRadio.show();
-            this.$oldRadio.show();
+            this.$oldRadio.hide();
             this.$diffRadio.hide();
             if (this.$viewRadio.prop('checked')) {
                 this.$li.addClass('selected');
