@@ -4,7 +4,7 @@ class HistoryList {
     private mode_: DiffMode = 'diff';
     private lastData_: HistoricalData|null = null;
     private readonly listItemMap: Map<string, HistoryListItem> = new Map();
-    private readonly $ol: JQuery = $('<ol class="w-100 history">');
+    private readonly $ol: JQuery = $('<ol class="w-100">');
     private revertFunc: (historicalData: HistoricalData)=>void = () => {};
 
     constructor() {
