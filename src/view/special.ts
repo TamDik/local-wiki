@@ -71,7 +71,6 @@ class AllPagesView extends SpecialView {
     private appendPageList(): void {
         IpcAdapter.getNameList(this.wikiNS, 'Main')
         .then(nameList => {
-            console.log(nameList);
             const lines: string[] = [];
             lines.push('<div class="all-pages-body"><ul>');
             for (const pageName of nameList) {

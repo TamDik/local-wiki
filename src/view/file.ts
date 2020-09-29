@@ -168,7 +168,6 @@ class FileHistoryView implements IContentView {
             this.addHistoryListItem(data);
             this.lastData = data;
         }
-        console.log(this.lastData);
         if (this.lastData === null || this.lastData.prev === null) {
             this.$nextButton.prop('disabled', true)
         }
