@@ -153,11 +153,75 @@ class FileView implements IContentView {
     }
 }
 
+
 class FileHistoryView implements IContentView {
+    private readonly numOfParSession: number = 30;
+    private lastData: HistoricalData | null = null;
+    private readonly $nextButton: JQuery;
+    private readonly $historyList: JQuery;
+
     public constructor(private $parent: JQuery, private wikiNS: string, private wikiName: string) {
+        this.$nextButton = $('<button type="button" class="btn btn-outline-primary btn-block">').html('next historical data');
+        this.$historyList = $('<ol class="w-100">');
     }
 
     public update(): void {
-        this.$parent.append('file history');
+        this.$parent.append($('<div class="history">').append(this.$historyList, this.$nextButton));
+        this.updateHistoryList(0);
+        this.$nextButton.on('click', event => {
+            if (this.lastData === null || this.lastData.prev === null) {
+                return;
+            }
+            this.updateHistoryList(this.lastData.version - 1);
+        });
+    }
+
+    private async updateHistoryList(maxVersion: number): Promise<void> {
+        const params: [string, string, number, number] = [this.wikiNS, this.wikiName, this.numOfParSession, maxVersion];
+        const dataList: HistoricalData[] = await IpcAdapter.getHistoricalFileData(...params);
+        for (const data of dataList) {
+            this.addHistoryListItem(data);
+            this.lastData = data;
+        }
+        console.log(this.lastData);
+        if (this.lastData === null || this.lastData.prev === null) {
+            this.$nextButton.prop('disabled', true)
+        }
+    }
+
+    private addHistoryListItem(data: HistoricalData): void {
+        const {comment} = data;
+        const $li: JQuery = $('<li>').append(this.getBody(data));
+        if (comment !== '') {
+            const $icon: JQuery = $('<span class="comment-icon">').tooltip({placement: 'right', title: comment});
+            $li.append($icon);
+        }
+        this.$historyList.append($li);
+    }
+
+    private getBody(data: HistoricalData): string {
+        const {updated, comment, filepath} = data;
+        let body: string = this.date2str(updated);
+        if (data.next === null) {
+            body += ' (current)';
+        } else {
+            /* body += ' (<a href="#" class="revert-button">revert</a>)' */
+        }
+        return body;
+    }
+
+    private zeroPadding(num: number, digits: number): string {
+        return (Array(digits).join('0') + num).slice(-digits);
+    }
+
+    private date2str(date: Date): string {
+        let formattedStr: string = '';
+        formattedStr += this.zeroPadding(date.getFullYear(), 4) + '/';
+        formattedStr += this.zeroPadding(date.getMonth() + 1, 2) + '/';
+        formattedStr += this.zeroPadding(date.getDate(), 2) + ' ';
+        formattedStr += this.zeroPadding(date.getHours(), 2) + ':';
+        formattedStr += this.zeroPadding(date.getMinutes(), 2) + ':';
+        formattedStr += this.zeroPadding(date.getSeconds(), 2);
+        return formattedStr;
     }
 }
