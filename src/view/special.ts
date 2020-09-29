@@ -104,7 +104,6 @@ class AllFilesView extends SpecialView {
     private appendFileList(): void {
         IpcAdapter.getNameList(this.wikiNS, 'File')
         .then(nameList => {
-            console.log(nameList);
             const lines: string[] = [];
             lines.push('<div class="all-files-body"><ul>');
             for (const fileName of nameList) {
