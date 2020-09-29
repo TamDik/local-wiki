@@ -13,32 +13,27 @@ class FileView implements IContentView {
     public update(): void {
         this.$parent.append(`<h1>${this.wikiNS}:File:${this.wikiName}</h1>`);
 
-        IpcAdapter.getFilepath(this.wikiNS, this.wikiName)
-        .then(filepath => {
-            if (typeof(filepath) === 'string') {
-                this.updateAsReadView(filepath);
+        IpcAdapter.getHistoricalFileData(this.wikiNS, this.wikiName, 1, 0)
+        .then(data => {
+            if (data.length === 1) {
+                this.updateAsReadView(data[0]);
             } else {
                 this.updateAsNotFoundView();
             }
         });
     }
 
-    private updateAsReadView(filepath: string): void {
+    private updateAsReadView(data: HistoricalFileData): void {
+        const {filepath, filetype} = data;
         const uploadHref: string = `${this.wikiNS}:Special:UploadFile?wikiname=${this.wikiName}`;
         const $main: JQuery = $('<div class="row">').append(
             $('<div class="col-12">').append(
-                this.createMainView(filepath)
+                this.createMainView(filepath, filetype)
             ),
             $('<div class="col-12">').append(
                 '<h2>history</h2>',
-                $('<table>').append(
-                    $('<thead>').append($('<tr>').append(
-                        '<th></th>',
-                        '<th>Date/Time</th>',
-                        '<th>Thumbnail</th>',
-                        '<th>Size</th>',
-                        '<th>Comment</th>',
-                    )),
+                $('<table class="w-100">').append(
+                    this.createTableHead(),
                     this.createTableBody(filepath)
                 )
             ),
@@ -49,11 +44,51 @@ class FileView implements IContentView {
         );
 
         this.$parent.append($main);
+        this.setEvent();
     }
 
-    // TODO FileType による切り替え
-    private createMainView(filepath: string): string {
-        return `<img src="${filepath}" alt="${this.wikiName}" decoding="async">`;
+    private setEvent(): void {
+        this.$parent.on('click', '.pdf-preview', event => {
+            const pdfUrl: string = <string>$(event.currentTarget).attr('data-pdf-url');
+        });
+    }
+
+    private createMainView(filepath: string, filetype: FileType): string {
+        switch (filetype) {
+            case 'image':
+                return `<img src="${filepath}" alt="${this.wikiName}" decoding="async">`;
+            case 'pdf':
+                return this.createPDFMainView(filepath);
+            case 'page':
+            case 'other':
+                return filepath;
+        }
+    }
+
+    private createPDFMainView(filepath: string): string {
+        const lines: string[] = [];
+        lines.push('<div class="row"><div class="col-12 px-5">');
+        lines.push(`<object class="w-100" style="height: calc(100vh - 300px);" type="application/pdf" data="${filepath}">`);
+        lines.push('<div class="alert alert-warning">');
+        lines.push('<p>The corresponding file could not be displayed. </p>');
+        lines.push('</div>');
+        lines.push('</object>');
+        lines.push('</div></div>');
+        return lines.join('');
+    }
+
+    private createTableHead(): string {
+        const lines: string[] = [];
+        lines.push('<thead>');
+        lines.push('<tr>');
+        lines.push('<th></th>');
+        lines.push('<th>Date/Time</th>');
+        lines.push('<th>Thumbnail</th>');
+        lines.push('<th>Size</th>');
+        lines.push('<th>Comment</th>');
+        lines.push('</tr>');
+        lines.push('</thead>');
+        return lines.join('');
     }
 
     private createTableBody(latestFilepath: string): JQuery {
@@ -97,13 +132,17 @@ class FileView implements IContentView {
         return formattedStr;
     }
 
-    // TODO image 以外の時のプレビュー
     private createThumbnail(data: HistoricalFileData): string {
-        const filetype: FileType = data.filetype;
-        if (filetype === 'image') {
-            return `<img src="${data.filepath}" alt="${this.wikiName}" decoding="async" style="max-width: 120px;">`;
+        const {filepath, filetype} = data;
+        switch (filetype) {
+            case 'image':
+                return `<img src="${filepath}" alt="${this.wikiName}" decoding="async" style="max-width: 120px;">`;
+            case 'pdf':
+                return `<button class="btn btn-outline-secondary btn-sm pdf-preview" data-pdf-url="${filepath}">preview</button>`
+            case 'page':
+            case 'other':
+                return filetype;
         }
-        return filetype;
     }
 
     private updateAsNotFoundView(): void {
