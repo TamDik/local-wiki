@@ -1,16 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ES5",
+    "target": "es6",
     "module": "commonjs",
-    "declaration": false,
+    // "declaration": true,
     "outDir": "./dist/js",
     "rootDir": "./src",
-    "downlevelIteration": true,
+    // "downlevelIteration": true,
     "strict": true,
-    "moduleResolution": "node",
-    "typeRoots": ["@type", "./node_modules/@types"],
+    // "moduleResolution": "node",
+    "typeRoots": ["@types", "./node_modules/@types"],
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  }
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "./src",
+    "paths": {
+        "#/*": ["*"]
+    }
+  },
+  "exclude": ["./tests"]
 }

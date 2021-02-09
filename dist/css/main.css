@@ -1,0 +1,49 @@
+::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(0,0,0,.2);
+}
+
+.pointable {
+    cursor: pointer;
+}
+
+blockquote, details, dl, ol, p, pre, table, ul {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+blockquote {
+    padding: 10px 20px;
+    border-left: 5px solid #eee;
+}
+
+pre {
+    background-color: #f5f5f5;
+    color: #333;
+    padding: 9.5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+table th, table td {
+    border: 1px solid #dfe2e5;
+    padding: 6px 13px;
+}
+
+table th {
+    background-color: #eaecf0;
+}
+
+table tr:nth-child(2n) {
+    background-color: #f6f8fa;
+}
+
+img {
+    max-width: 100%;
+}

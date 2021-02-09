@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Editor</title>
+    <link rel="stylesheet" href="../node_modules/@highlightjs/cdn-assets/styles/github.min.css" type="text/css" media="all">
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css" type="text/css">
+    <link rel="stylesheet" href="./css/main.css" type="text/css">
+    <link rel="stylesheet" href="./css/editor.css" type="text/css">
+    <link rel="stylesheet" href="../node_modules/simplemde/dist/simplemde.min.css" type="text/css" media="all">
+
+    <script src="../node_modules/marked/marked.min.js" charset="utf-8"></script>
+    <!-- <script type="module" src="./js/markdown.js" charset="utf-8"></script> -->
+    <script src="../node_modules/jquery/dist/jquery.min.js" charset="utf-8"></script>
+    <script src="../node_modules/@highlightjs/cdn-assets/highlight.min.js" charset="utf-8"></script>
+    <script src="../node_modules/simplemde/dist/simplemde.min.js" charset="utf-8"></script>
+    <script src="./js/editor.js"></script>
+
+    <!-- <script src="./js/wikilink.js" charset="utf-8"></script> -->
+  </head>
+  <body>
+    <div class="container">
+      <div class="row mt-2">
+        <div class="col-2">
+          <button id="preview-toggle-button" class="w-100 btn btn-outline-secondary" type="button">Preview</button>
+        </div>
+        <div class="col-2">
+          <button id="cancel-button" class="w-100 btn btn-outline-danger" type="button">Cancel</button>
+        </div>
+        <div class="col-2">
+          <button id="done-button" class="w-100 btn btn-outline-primary" type="button">Done</button>
+        </div>
+      </div>
+      <div class="row mt-2" id="markdown-editor">
+        <div class="col-12">
+          <textarea id="markdown-edit-form"></textarea>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>

@@ -3,79 +3,44 @@
   <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css" type="text/css">
-    <link rel="stylesheet" href="../node_modules/highlight.js/styles/github-gist.css" type="text/css">
-    <link rel="stylesheet" href="./css/index.css" type="text/css">
-
-    <script>const module = {};</script>
-    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
-    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../node_modules/jsdifflib/index.js"></script>
-
-    <script src="./js/view/util.js" charset="utf-8"></script>
-    <script src="./js/ipc_adapter.js" charset="utf-8"></script>
-    <script src="./js/view/location_parser.js" charset="utf-8"></script>
-    <script src="./js/view/toc.js" charset="utf-8"></script>
-    <script src="./js/view/markdown_parser.js" charset="utf-8"></script>
-    <script src="./js/view/history_list.js" charset="utf-8"></script>
-    <script src="./js/view/code_table.js" charset="utf-8"></script>
-    <script src="./js/view/main.js" charset="utf-8"></script>
-    <script src="./js/view/template.js" charset="utf-8"></script>
-    <script src="./js/view/file.js" charset="utf-8"></script>
-    <script src="./js/view/special.js" charset="utf-8"></script>
-    <script src="./js/renderer.js" charset="utf-8" defer="defer"></script>
   </head>
   <body>
-
-    <div class="container-fluid">
-
-      <div class="row">
-        <div class="col-1 p-0">
-          <a href="#" id="p-logo"></a>
-          <ul class="p-1" id="p-navigation">
-            <li><a href="index" class="internal-link">home</a></li>
-            <li><a href="Special:SpecialPages" class="internal-link">special pages</a></li>
-            <li><a href="Special:UploadFile" class="internal-link">upload file</a></li>
-          </ul>
-        </div>
-
-        <div class="col-11">
-          <div id="navigation" class="row">
-            <div class="col-12">
-              <!-- input -->
-              <div class="row">
-                <div class="col-12 p-2">
-                  <div class="input-group">
-                    <input type="text" id="wiki-path-input" class="form-control">
-                  </div>
-                </div>
-              </div>
-              <!-- tags -->
-              <div class="row">
-                <div class="col-12">
-                  <ul class="nav nav-tabs mb-3" role="tablist">
-                    <li class="nav-item">
-                      <a class="nav-link active" id="main-tab" href="#">home</a>
-                    </li>
-                    <li class="nav-item ml-auto">
-                      <a class="nav-link active internal-link" id="read-tab" href="?action=view">Read</a>
-                    </li>
-                    <li class="nav-item">
-                      <a class="nav-link internal-link" id="edit-tab" href="?action=edit">Edit</a>
-                    </li>
-                    <li class="nav-item">
-                      <a class="nav-link internal-link" id="history-tab" href="?action=history">History</a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
+    <div id="wiki-page-base"></div>
+    <div id="wiki-head-base"></div>
+    <div id="content">
+      コンテンツ
+    </div>
+    <div id="wiki-navigation">
+      <div id="wiki-head">
+        <div id="search-area">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <button id="go-back-button" class="btn btn-outline-secondary" type="button">←</button>
+              <button id="go-forward-button" class="btn btn-outline-secondary" type="button">→</button>
             </div>
-          </div>
-
-          <!-- main content -->
-          <div id="main-content" class="row">
-            <div id="main-content-wrapper" class="col-12"></div>
+            <input type="text" id="search-field" class="form-control">
           </div>
         </div>
+        <div id="left-navigation">
+          <nav class="menu-tabs">
+            <ul>
+              <li class="selected"><a href="#">Tab1</a></li>
+              <li><a href="#">Tab2</a></li>
+            </ul>
+          </nav>
+        </div>
+        <div id="right-navigation">
+          <nav class="menu-tabs">
+            <ul>
+              <li class="selected"><a href="#">Read</a></li>
+              <li><a href="#">Edit</a></li>
+              <li><a href="#">History</a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+      <div id="wiki-side">
+        サイド
       </div>
     </div>
   </body>
