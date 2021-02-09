@@ -3,22 +3,20 @@
   <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css" type="text/css">
+    <link rel="stylesheet" href="./css/wiki.css" type="text/css">
   </head>
   <body>
     <div id="wiki-page-base"></div>
     <div id="wiki-head-base"></div>
-    <div id="content">
-      コンテンツ
-    </div>
     <div id="wiki-navigation">
       <div id="wiki-head">
-        <div id="search-area">
+        <div id="access-area">
           <div class="input-group">
             <div class="input-group-prepend">
               <button id="go-back-button" class="btn btn-outline-secondary" type="button">←</button>
               <button id="go-forward-button" class="btn btn-outline-secondary" type="button">→</button>
             </div>
-            <input type="text" id="search-field" class="form-control">
+            <input type="text" id="access-field" class="form-control">
           </div>
         </div>
         <div id="left-navigation">
@@ -35,12 +33,42 @@
               <li class="selected"><a href="#">Read</a></li>
               <li><a href="#">Edit</a></li>
               <li><a href="#">History</a></li>
+              <li><input type="search" placeholder="Search" id="search-field"></li>
             </ul>
           </nav>
         </div>
       </div>
       <div id="wiki-side">
-        サイド
+        <div id="main-logo">LOGO</div>
+        <nav id="wiki-side-main">
+          <ul class="menu-contents">
+            <li><a href="#">Main</a></li>
+            <li><a href="#">Special pages</a></li>
+            <li><a href="#">Upload file</a></li>
+            <li><a href="#">Side Menu</a></li>
+            <li><a href="#">Setting</a></li>
+          </ul>
+        </nav>
+        <nav class="wiki-side-sub">
+          <h3 class="wiki-side-label">Sub1</h3>
+          <ul class="menu-contents">
+            <li><a href="#">Sub1-1</a></li>
+            <li><a href="#">Sub1-2</a></li>
+          </ul>
+        </nav>
+        <nav class="wiki-side-sub">
+          <h3 class="wiki-side-label">Sub2</h3>
+          <ul class="menu-contents">
+            <li><a href="#">Sub2-1</a></li>
+            <li><a href="#">Sub2-2</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+    <div id="content">
+      <h1 id="content-heading">Wiki Location</h1>
+      <div id="content-body" class="flu">
+        BODY
       </div>
     </div>
   </body>
