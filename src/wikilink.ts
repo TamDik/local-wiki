@@ -92,4 +92,4 @@ class WikiLink {
 }
 
 
-export {WikiLink, DEFAULT_NAMESPACE, DEFAULT_TYPE, DEFAULT_NAME};
+export {WikiLink, DEFAULT_NAMESPACE, DEFAULT_TYPE, DEFAULT_NAME, WikiType};

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css" type="text/css">
     <link rel="stylesheet" href="./css/wiki.css" type="text/css">
+
+    <script src="./js/renderer.js" charset="utf-8"></script>
   </head>
   <body>
     <div id="wiki-page-base"></div>
@@ -30,10 +32,10 @@
         <div id="right-navigation">
           <nav class="menu-tabs">
             <ul>
-              <li class="selected"><a href="#">Read</a></li>
-              <li><a href="#">Edit</a></li>
-              <li><a href="#">History</a></li>
-              <li><input type="search" placeholder="Search" id="search-field"></li>
+              <li id="read-tag"><a href="#">Read</a></li>
+              <li id="edit-tag"><a href="#">Edit</a></li>
+              <li id="history-tag"><a href="#">History</a></li>
+              <li id="search-tag"><input type="search" placeholder="Search" id="search-field"></li>
             </ul>
           </nav>
         </div>
@@ -67,9 +69,7 @@
     </div>
     <div id="content">
       <h1 id="content-heading">Wiki Location</h1>
-      <div id="content-body" class="flu">
-        BODY
-      </div>
+      <div id="content-body">BODY</div>
     </div>
   </body>
 </html>
