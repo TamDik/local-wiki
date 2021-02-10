@@ -1,5 +1,3 @@
-type WikiType = 'page'|'file';
-
 function isWikiType(arg: any): arg is WikiType {
     if (typeof(arg) !== 'string') {
         return false;

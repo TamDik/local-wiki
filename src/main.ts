@@ -1,5 +1,6 @@
 import {BrowserWindow, app, screen, ipcMain} from 'electron'
-import {WikiLink, WikiType} from './wikilink';
+import {ContentGenerator} from './content-generator';
+
 
 let mainWindow: BrowserWindow|null = null;
 app.on('ready', () => {
@@ -23,13 +24,8 @@ app.on('ready', () => {
 });
 
 
-ipcMain.handle('get-content-body', async (event, mode: pageMode, path: string): Promise<{title: string, html: string}> => {
-    const wikiLink: WikiLink = new WikiLink(path);
-    const wikiType: WikiType = wikiLink.type;
-    if (wikiType === 'page') {
-    } else if (wikiType === 'file') {
-    }
-    const title: string = wikiLink.toPath();
-    const html: string = 'body';
-    return {title, html};
+ipcMain.handle('get-main-content', async (event, mode: PageMode, path: string): Promise<{title: string, body: string}> => {
+    const title: string = ContentGenerator.createTitle(mode, path);
+    const body: string = ContentGenerator.createBody(mode, path);
+    return {title, body};
 });
