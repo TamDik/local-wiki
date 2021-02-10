@@ -10,17 +10,19 @@
     },
     "author": "",
     "license": "ISC",
-    "devDependencies": {
+    "dependencies": {
         "@highlightjs/cdn-assets": "^10.5.0",
+        "bootstrap": "^4.6.0",
+        "marked": "^1.2.9",
+        "simplemde": "^1.11.2"
+    },
+    "devDependencies": {
         "@types/highlightjs": "^10.1.0",
         "@types/jest": "^26.0.20",
         "@types/jquery": "^3.5.5",
         "@types/marked": "^1.2.2",
-        "bootstrap": "^4.6.0",
         "electron": "^11.2.3",
         "jest": "^26.6.3",
-        "marked": "^1.2.9",
-        "simplemde": "^1.11.2",
         "ts-jest": "^26.5.0",
         "typescript": "^4.1.3"
     },
