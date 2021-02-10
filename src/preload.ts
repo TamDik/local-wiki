@@ -20,7 +20,7 @@ contextBridge.exposeInMainWorld(
 
 contextBridge.exposeInMainWorld(
     'localWiki', {
-        isMode: (arg: any): arg is pageMode => {
+        isMode: (arg: any): arg is PageMode => {
             if (typeof(arg) !== 'string') {
                 return false
             }

@@ -1,5 +1,5 @@
 export declare global {
-    type pageMode = 'read'|'edit'|'history';
+    type PageMode = 'read'|'edit'|'history';
     interface Window {
         ipcRenderer: IIpcRenderer;
         localWiki: ILocalWiki;
@@ -16,5 +16,5 @@ interface IIpcRenderer {
 
 
 interface ILocalWiki {
-    isMode: (arg: any) => arg is pageMode;
+    isMode: (arg: any) => arg is PageMode;
 }

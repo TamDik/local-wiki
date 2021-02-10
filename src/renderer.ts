@@ -5,7 +5,7 @@ class Params {
         this.params = url.searchParams;
     }
 
-    public get mode(): pageMode {
+    public get mode(): PageMode {
         const key: string = 'mode';
         const value: string|null = this.params.get(key);
         if (window.localWiki.isMode(value)) {
@@ -25,7 +25,7 @@ class Params {
 }
 
 
-function setTags(mode: pageMode) {
+function setTags(mode: PageMode) {
     const readTag: HTMLElement = document.getElementById('read-tag') as HTMLElement;
     const editTag: HTMLElement = document.getElementById('edit-tag') as HTMLElement;
     const historyTag: HTMLElement = document.getElementById('history-tag') as HTMLElement;
