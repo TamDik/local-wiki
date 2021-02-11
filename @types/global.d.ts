@@ -1,5 +1,5 @@
 export declare global {
-    type WikiType = 'page'|'file';
+    type WikiType = 'Page'|'File';
 
     type PageMode = 'read'|'edit'|'history';
 

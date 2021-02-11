@@ -38,4 +38,4 @@ function str2date(dateStr: string): Date {
 }
 
 
-export{generateRandomString, zeroPadding, date2str, str2date};
+export {generateRandomString, zeroPadding, date2str, str2date};

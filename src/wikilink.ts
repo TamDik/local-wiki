@@ -3,8 +3,8 @@ function isWikiType(arg: any): arg is WikiType {
         return false;
     }
     switch (arg) {
-        case 'page':
-        case 'file':
+        case 'Page':
+        case 'File':
             return true;
         default:
             return false;
@@ -18,8 +18,8 @@ type WikiLinkPath = {
     name?: string,
 };
 
-const DEFAULT_NAMESPACE: string = 'main';
-const DEFAULT_TYPE: WikiType = 'page';
+const DEFAULT_NAMESPACE: string = 'Main';
+const DEFAULT_TYPE: WikiType = 'Page';
 const DEFAULT_NAME: string = 'Main';
 
 
