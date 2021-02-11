@@ -90,13 +90,27 @@ function initAccessArea(params: Params) {
 }
 
 
+const headTag: HTMLHeadElement = document.getElementsByTagName('head')[0];
+
+function linkCSS(href: string): void {
+    const linkTag: HTMLLinkElement = document.createElement('link');
+    linkTag.rel = 'stylesheet';
+    linkTag.type = 'text/css';
+    linkTag.href = href;
+    headTag.appendChild(linkTag);
+}
+
 function importJS(src: string): void {
-    const headTag: HTMLHeadElement = document.getElementsByTagName('head')[0];
     const scriptTag: HTMLScriptElement = document.createElement('script');
     scriptTag.src = src;
     headTag.appendChild(scriptTag);
 }
 
+function linkRequiredCSS(mode: PageMode, linkElement: WikiLinkElement): void {
+    if (linkElement.type === 'Page' && mode === 'edit') {
+        linkCSS('./css/editor.css');
+    }
+}
 
 function importRequiredJS(mode: PageMode, linkElement: WikiLinkElement): void {
     if (linkElement.type === 'Page' && mode === 'edit') {
@@ -116,6 +130,7 @@ onload = () => {
     .then(({linkElement, title, body}) => {
         contentHead.innerHTML = title;
         contentBody.innerHTML = body;
+        linkRequiredCSS(params.mode, linkElement);
         importRequiredJS(params.mode, linkElement);
     })
     .catch(e => {
