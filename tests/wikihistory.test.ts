@@ -1,4 +1,4 @@
-import {BufferPathGenerator, WikiHistory, CurrentVersionManager, PreviousVersionManager, VersionData} from '../src/wikhistory';
+import {BufferPathGenerator, WikiHistory, CurrentVersionManager, PreviousVersionManager, VersionData} from '../src/wikihistory';
 import * as fs from 'fs';
 import * as path from 'path';
 
