@@ -1,13 +1,11 @@
 import marked from 'marked';
 
 type WikiMDOption = {
-    parent: HTMLElement,
     isWikiLink?: (href: string) => boolean,
 };
 
 type iswikilink = (href: string) => boolean;
 class WikiMD {
-    private parent: HTMLElement;
     private value: string;
     private isWikiLink: iswikilink;
     private readonly magicHandlers: IMagicHandler[] = [];
@@ -16,7 +14,6 @@ class WikiMD {
     public static readonly NEW_CLASS_NAME = 'new';
 
     constructor(options: WikiMDOption) {
-        this.parent = options.parent;
         this.value = '';
         this.isWikiLink = options.isWikiLink || (href => false);
     }
@@ -25,7 +22,7 @@ class WikiMD {
         this.value = value;
     }
 
-    public update(): void {
+    public toHTML(): string {
         marked.setOptions({
             highlight: (code: string, language: string) => {
                 const validLanguage = hljs.getLanguage(language) ? language : 'plaintext';
@@ -40,8 +37,7 @@ class WikiMD {
         renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
         renderer.text = (text: string) => this.text(text, this.magicHandlers);
         marked.use({renderer});
-        const html: string = marked(this.value);
-        this.parent.innerHTML = html;
+        return marked(this.value);
     }
 
     private className(href: string, isWikiLink: iswikilink): string {

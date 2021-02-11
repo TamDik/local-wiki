@@ -1,10 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
-/* import {WikiMD} from './markdown'; */
-import {WikiHistory} from './wikihistory';
-import {WikiHistoryFactory} from './wikihistory-factory';
 import {WikiConfig} from './wikiconfig';
+import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
+import {WikiHistory} from './wikihistory';
 import {WikiLink} from './wikilink';
+import {WikiMD} from './markdown';
 
 
 class ContentGenerator {
@@ -169,7 +169,6 @@ class NotFoundPageBody extends ContentBody {
 
 class PageEditBody extends ContentBody {
     public get html(): string {
-        // TODO: マークダウンの埋め込み
         const lines: string[] = [
             '<div class="row">',
               '<div class="col-12">',
@@ -208,48 +207,28 @@ class PageEditBody extends ContentBody {
     }
 }
 
+
 class PageReadBody extends ContentBody {
+    private toFullPath(path: string): string|null {
+        const wl: WikiLink = new WikiLink(path)
+        const namespace: string = wl.namespace;
+        const wikiType: WikiType = wl.type;
+        const name: string = wl.name;
+        const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
+        if (history.hasName(name)) {
+            const {filename} = history.getByName(name);
+            return BufferPathGeneratorFactory.create(namespace, wikiType).execute(filename);
+        }
+        return null;
+    };
+
     public get html(): string {
-        return '読み込み';
-    }
-}
-
-/* class PageContent implements IWikiContent { */
-/*     private bpg: BufferPathGenerator; */
-/*     public constructor(rootDir: string, private name: string, private history: WikiHistory) { */
-/*         this.bpg = new BufferPathGenerator(rootDir); */
-/*     } */
-
-/*     private retrieveMD(name: string): string { */
-/*         const data: VersionData = this.history.getByName(name); */
-/*         return fs.readFileSync(this.bpg.execute(data.filename), 'utf-8'); */
-/*     } */
-
-/*     public readHtml(): string { */
-/*         // TODO: リンクの展開 */
-/*         const md: string = this.retrieveMD(this.name); */
-/*         const element: HTMLElement = document.createElement('div'); */
-/*         const wmd: WikiMD = new WikiMD({parent: element, isWikiLink: WikiLink.isWikiLink}); */
-/*         wmd.setValue(md); */
-/*         wmd.update(); */
-/*         return element.innerHTML; */
-/*     } */
-
-/*     public editHtml(): string { */
-/*         const md: string = this.retrieveMD(this.name); */
-/*         // NOTE: simplemdeの適用はレンダラプロセスで行う． */
-/*         return ''; */
-/*     } */
-
-/*     public historyHtml(): string { */
-/*         return ''; */
-/*     } */
-/* } */
-
-
-class PageHistoryBody extends ContentBody {
-    public get html(): string {
-        return 'history';
+        // TODO: リンクの展開
+        const filepath: string = this.toFullPath(this.wikiLink.toPath()) as string;
+        const text: string = fs.readFileSync(filepath, 'utf-8');
+        const wmd: WikiMD = new WikiMD({isWikiLink: WikiLink.isWikiLink});
+        wmd.setValue(text);
+        return wmd.toHTML();
     }
 }
 

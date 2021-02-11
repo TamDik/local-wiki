@@ -1,15 +1,13 @@
 import {WikiMD, ImageFileHandler, PDFFileHandler} from '../src/markdown';
 
 describe('test normal markdown syntax', function() {
-    function createWMDElement(value: string, isWikiLink: boolean=true): {element: HTMLElement, wmd: WikiMD} {
+    function createWMD(value: string, isWikiLink: boolean=true): WikiMD {
         const element: HTMLElement = document.createElement('div');
         const wmd: WikiMD = new WikiMD({
-            parent: element,
             isWikiLink: (href: string) => isWikiLink
         });
         wmd.setValue(value);
-        wmd.update();
-        return {element, wmd};
+        return wmd;
     }
 
     test('class name of link', () => {
@@ -18,8 +16,10 @@ describe('test normal markdown syntax', function() {
             expect(a.className).toBe(className);
         }
         const value: string = '[label](href "title")';
-        const e1: HTMLElement = createWMDElement(value, true).element;
-        const e2: HTMLElement = createWMDElement(value, false).element;
+        const e1: HTMLElement = document.createElement('div');
+        e1.innerHTML = createWMD(value, true).toHTML();
+        const e2: HTMLElement = document.createElement('div');
+        e2.innerHTML = createWMD(value, false).toHTML();
         checkAnchor(e1, 'internal');
         checkAnchor(e2, 'external');
     });
@@ -30,8 +30,10 @@ describe('test normal markdown syntax', function() {
             expect(img.className).toBe(className);
         }
         const value: string = '![label](href "title")';
-        const e1: HTMLElement = createWMDElement(value, true).element;
-        const e2: HTMLElement = createWMDElement(value, false).element;
+        const e1: HTMLElement = document.createElement('div')
+        e1.innerHTML = createWMD(value, true).toHTML();
+        const e2: HTMLElement = document.createElement('div');
+        e2.innerHTML = createWMD(value, false).toHTML();
         checkImage(e1, 'internal');
         checkImage(e2, 'external');
     });
@@ -41,10 +43,10 @@ describe('test normal markdown syntax', function() {
 describe('test ImageFileHandler', function() {
     function testImage(value: string, expected: string): void {
         const element: HTMLElement = document.createElement('div');
-        const wmd: WikiMD = new WikiMD({parent: element, isWikiLink: (href: string) => true});
+        const wmd: WikiMD = new WikiMD({isWikiLink: (href: string) => true});
         wmd.setValue(value);
         wmd.addMagicHandler(new ImageFileHandler());
-        wmd.update();
+        element.innerHTML = wmd.toHTML();
         test(`'${value}'`, () => expect(element.innerHTML.replace(/(\n|<\/?p>)/g, '')).toBe(expected));
     }
 
@@ -203,10 +205,10 @@ describe('test ImageFileHandler', function() {
 describe('test PDFFileHandler', function() {
     function testPDF(value: string, expected: string): void {
         const element: HTMLElement = document.createElement('div');
-        const wmd: WikiMD = new WikiMD({parent: element, isWikiLink: (href: string) => true});
+        const wmd: WikiMD = new WikiMD({isWikiLink: (href: string) => true});
         wmd.setValue(value);
         wmd.addMagicHandler(new PDFFileHandler());
-        wmd.update();
+        element.innerHTML = wmd.toHTML();
         test(`'${value}'`, () => expect(element.innerHTML.replace(/(\n|<\/?p>)/g, '')).toBe(expected));
     }
 
