@@ -13,10 +13,11 @@ interface NameSpaceConfig {
 
 class WikiConfig {
     private data: Map<string, NameSpaceConfig>;
-    public static readonly CONFIG_PATH: string = path.join(__dirname, '../data/config.json');
-    public constructor() {
-        if (fs.existsSync(WikiConfig.CONFIG_PATH)) {
-            const dataList: NameSpaceConfig[] = JSON.parse(fs.readFileSync(WikiConfig.CONFIG_PATH, 'utf-8'));
+    private configPath: string;
+    public constructor(configPath?: string) {
+        this.configPath = configPath || path.join(__dirname, '../data/config.json');
+        if (fs.existsSync(this.configPath)) {
+            const dataList: NameSpaceConfig[] = JSON.parse(fs.readFileSync(this.configPath, 'utf-8'));
             this.data = new Map(dataList.map(data => [data.namespace, data]));
         } else {
             this.data = new Map();
@@ -28,7 +29,7 @@ class WikiConfig {
     private saveConfigFile(): void {
         const data: NameSpaceConfig[] = Array.from(this.data.values());
         const text: string = JSON.stringify(data, null, '  ');
-        fs.writeFileSync(WikiConfig.CONFIG_PATH, text);
+        fs.writeFileSync(this.configPath, text);
     }
 
     public addNameSpace(data: NameSpaceConfig): void {

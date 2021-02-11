@@ -4,16 +4,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 
-function unlinkConfigFile(): void {
-    const configFile: string = WikiConfig.CONFIG_PATH;
+function unlinkConfigFile(): string {
+    const configFile: string = path.join(__dirname, '../data/config-test.json');
     if (fs.existsSync(configFile)) {
         fs.unlinkSync(configFile);
     }
+    return configFile;
 }
 
 describe('test WikiConfig', () => {
-    unlinkConfigFile();
-    const config: WikiConfig = new WikiConfig();
+    const configFile: string = unlinkConfigFile();
+    const config: WikiConfig = new WikiConfig(configFile);
     config.addNameSpace({namespace: 'ns1', type: 'internal'});
     config.addNameSpace({namespace: 'ns2', type: 'external', rootDir: 'rd2'});
     // changing config
@@ -35,4 +36,5 @@ describe('test WikiConfig', () => {
         expect(config.rootDirOf('ns1')).toBe(path.join(__dirname, '../data/ns1'));
         expect(config.rootDirOf('ns2')).toBe('rd2-changed');
     });
+    unlinkConfigFile();
 });
