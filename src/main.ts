@@ -1,5 +1,5 @@
-import {BrowserWindow, app, screen, ipcMain} from 'electron'
-import {ContentGenerator} from './content-generator';
+import {BrowserWindow, app, screen} from 'electron'
+require('./ipc-handler');
 
 
 let mainWindow: BrowserWindow|null = null;
@@ -14,18 +14,9 @@ app.on('ready', () => {
         },
     });
 
-    mainWindow.webContents.openDevTools();
-
     const indexPath: string = 'file://' + __dirname + '/../index.html';
     mainWindow.loadURL(indexPath);
     mainWindow.on('closed', function() {
         mainWindow = null;
     });
-});
-
-
-ipcMain.handle('get-main-content', async (event, mode: PageMode, path: string): Promise<{title: string, body: string}> => {
-    const title: string = ContentGenerator.createTitle(mode, path);
-    const body: string = ContentGenerator.createBody(mode, path);
-    return {title, body};
 });

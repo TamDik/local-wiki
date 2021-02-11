@@ -90,21 +90,35 @@ function initAccessArea(params: Params) {
 }
 
 
+function importJS(src: string): void {
+    const headTag: HTMLHeadElement = document.getElementsByTagName('head')[0];
+    const scriptTag: HTMLScriptElement = document.createElement('script');
+    scriptTag.src = src;
+    headTag.appendChild(scriptTag);
+}
+
+
+function importRequiredJS(mode: PageMode, linkElement: WikiLinkElement): void {
+    if (linkElement.type === 'Page' && mode === 'edit') {
+        importJS('./js/editor.js');
+    }
+}
+
 onload = () => {
     const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
     const contentHead: HTMLElement = document.getElementById('content-head') as HTMLElement;
     const params: Params = new Params();
     contentHead.innerText = params.path;
+    initTags(params);
+    initAccessArea(params);
 
-    window.ipcRenderer.invoke<{title: string, body: string}>('get-main-content', params.mode, params.path)
-    .then(({title, body}) => {
+    window.ipcRenderer.invoke<{linkElement: WikiLinkElement, title: string, body: string}>('get-main-content', params.mode, params.path)
+    .then(({linkElement, title, body}) => {
         contentHead.innerHTML = title;
         contentBody.innerHTML = body;
+        importRequiredJS(params.mode, linkElement);
     })
     .catch(e => {
         console.log(e);
     });
-
-    initTags(params);
-    initAccessArea(params);
 }

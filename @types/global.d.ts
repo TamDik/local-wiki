@@ -3,6 +3,8 @@ export declare global {
 
     type PageMode = 'read'|'edit'|'history';
 
+    type WikiLinkElement = {namespace: string, name: string, type: WikiType};
+
     interface Window {
         ipcRenderer: IIpcRenderer;
         localWiki: ILocalWiki;

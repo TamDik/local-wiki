@@ -14,7 +14,7 @@ function unlinkConfigFile(): string {
 
 describe('test WikiConfig', () => {
     const configFile: string = unlinkConfigFile();
-    const config: WikiConfig = new WikiConfig(configFile);
+    const config: WikiConfig = new WikiConfig(configFile, false);
     config.addNameSpace({namespace: 'ns1', type: 'internal'});
     config.addNameSpace({namespace: 'ns2', type: 'external', rootDir: 'rd2'});
     // changing config

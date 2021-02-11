@@ -12,20 +12,22 @@ interface NameSpaceConfig {
 
 
 const DATA_DIR: string = path.join(__dirname, '../../data');
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR);
+}
 
 
 class WikiConfig {
     private data: Map<string, NameSpaceConfig>;
     private configPath: string;
-    public constructor(configPath?: string) {
+    public constructor(configPath?: string, private mkdir: boolean=true) {
         this.configPath = configPath || path.join(DATA_DIR, 'config.json');
         if (fs.existsSync(this.configPath)) {
             const dataList: NameSpaceConfig[] = JSON.parse(fs.readFileSync(this.configPath, 'utf-8'));
             this.data = new Map(dataList.map(data => [data.namespace, data]));
         } else {
             this.data = new Map();
-            this.data.set(DEFAULT_NAMESPACE, {namespace: DEFAULT_NAMESPACE, type: 'internal'});
-            this.saveConfigFile();
+            this.addNameSpace({namespace: DEFAULT_NAMESPACE, type: 'internal'});
         }
     }
 
@@ -44,6 +46,12 @@ class WikiConfig {
         }
         this.data.set(data.namespace, data);
         this.saveConfigFile();
+        if (data.type === 'internal') {
+            const rootDir: string = this.rootDirOf(data.namespace);
+            if (this.mkdir && !fs.existsSync(rootDir)) {
+                fs.mkdirSync(rootDir);
+            }
+        }
     }
 
     public hasNameSpace(ns: string): boolean {
