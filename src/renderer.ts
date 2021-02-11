@@ -87,6 +87,22 @@ function initAccessArea(params: Params) {
             location.href = href;
         }
     });
+
+    const goBackButton: HTMLButtonElement = document.getElementById('go-back-button') as HTMLButtonElement;
+    const goForwardButton: HTMLButtonElement = document.getElementById('go-forward-button') as HTMLButtonElement;
+    window.ipcRenderer.invoke<{back: boolean, forward: boolean}>('can-go-back-or-forward')
+    .then(({back, forward}) => {
+        goBackButton.disabled = !back;
+        goForwardButton.disabled = !forward;
+    });
+
+    goBackButton.onclick = () => {
+        window.ipcRenderer.send('go-back');
+    };
+
+    goForwardButton.onclick = () => {
+        window.ipcRenderer.send('go-forward');
+    };
 }
 
 

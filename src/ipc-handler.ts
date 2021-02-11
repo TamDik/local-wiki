@@ -12,6 +12,22 @@ function toFullPath(filename: string, namespace: string, wikiType: WikiType): st
 }
 
 
+ipcMain.handle('can-go-back-or-forward', async (event): Promise<{back: boolean, forward: boolean}> => {
+    const back: boolean = event.sender.canGoBack();
+    const forward: boolean = event.sender.canGoForward();
+    return {back, forward};
+});
+
+ipcMain.on('go-back', event => {
+    event.sender.goBack();
+});
+
+ipcMain.on('go-forward', event => {
+    if (event.sender.canGoForward()) {
+        event.sender.goForward();
+    }
+});
+
 // htmlに展開するコンテンツを返す
 ipcMain.handle('get-main-content', async (event, mode: PageMode, path: string): Promise<{linkElement: WikiLinkElement, title: string, body: string}> => {
     const wikiLink: WikiLink = new WikiLink(path);
@@ -20,7 +36,6 @@ ipcMain.handle('get-main-content', async (event, mode: PageMode, path: string): 
     const body: string = ContentGenerator.createBody(mode, wikiLink);
     return {linkElement, title, body};
 });
-
 
 // 生のPageデータを返す
 ipcMain.handle('get-raw-page-text', async (event, path: string): Promise<string> => {
@@ -34,7 +49,6 @@ ipcMain.handle('get-raw-page-text', async (event, path: string): Promise<string>
         return '';
     }
 });
-
 
 // Pageをアップデートする
 ipcMain.handle('update-page', async (event, path: string, text: string, comment: string): Promise<boolean> => {
