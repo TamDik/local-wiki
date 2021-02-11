@@ -11,11 +11,14 @@ interface NameSpaceConfig {
 }
 
 
+const DATA_DIR: string = path.join(__dirname, '../../data');
+
+
 class WikiConfig {
     private data: Map<string, NameSpaceConfig>;
     private configPath: string;
     public constructor(configPath?: string) {
-        this.configPath = configPath || path.join(__dirname, '../data/config.json');
+        this.configPath = configPath || path.join(DATA_DIR, 'config.json');
         if (fs.existsSync(this.configPath)) {
             const dataList: NameSpaceConfig[] = JSON.parse(fs.readFileSync(this.configPath, 'utf-8'));
             this.data = new Map(dataList.map(data => [data.namespace, data]));
@@ -53,7 +56,7 @@ class WikiConfig {
 
     public rootDirOf(ns: string): string {
         if (this.typeOf(ns) === 'internal') {
-            return path.join(__dirname, '../data', ns);
+            return path.join(DATA_DIR, ns);
         }
         return this.configOf(ns).rootDir as string;
     }

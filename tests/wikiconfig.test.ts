@@ -32,8 +32,9 @@ describe('test WikiConfig', () => {
     });
 
     test('rootDirOf', () => {
-        expect(config.rootDirOf(DEFAULT_NAMESPACE)).toBe(path.join(__dirname, '../data/', DEFAULT_NAMESPACE));
-        expect(config.rootDirOf('ns1')).toBe(path.join(__dirname, '../data/ns1'));
+        const dataDir: string = path.join(__dirname, '../../data');
+        expect(config.rootDirOf(DEFAULT_NAMESPACE)).toBe(path.join(dataDir, DEFAULT_NAMESPACE));
+        expect(config.rootDirOf('ns1')).toBe(path.join(dataDir, '/ns1'));
         expect(config.rootDirOf('ns2')).toBe('rd2-changed');
     });
     unlinkConfigFile();
