@@ -51,6 +51,9 @@ class WikiMD {
     private link(href: string, title: string|null, text: string, isWikiLink: iswikilink): string {
         title = title === null ? '' : title;
         const className: string = this.className(href, isWikiLink);
+        if (isWikiLink(href)) {
+            href = `?path=${href}`
+        }
         return `<a class="${className}" href="${href}" title="${title}">${text}</a>`;
     }
 
