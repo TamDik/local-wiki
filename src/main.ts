@@ -10,6 +10,8 @@ app.on('ready', () => {
         height,
         webPreferences: {
             contextIsolation: true,
+            enableRemoteModule: true,
+            nodeIntegration: false,
             preload: __dirname + '/preload.js',
         },
     });

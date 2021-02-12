@@ -28,3 +28,12 @@ contextBridge.exposeInMainWorld(
         }
     }
 );
+
+type DialogResult = {canceled: boolean, filePaths: string[]};
+contextBridge.exposeInMainWorld(
+    'dialog', {
+        showOpenDialog: async (options: Object): Promise<DialogResult> => {
+            return remote.dialog.showOpenDialog(options);
+        }
+    }
+);

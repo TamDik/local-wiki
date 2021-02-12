@@ -11,6 +11,10 @@ function toFullPath(filename: string, namespace: string, wikiType: WikiType): st
     return BufferPathGeneratorFactory.create(namespace, wikiType).execute(filename);
 }
 
+function extensionOf(filename: string): string {
+    return filename.replace(/^.*\./, '');
+}
+
 
 ipcMain.handle('can-go-back-or-forward', async (event): Promise<{back: boolean, forward: boolean}> => {
     const back: boolean = event.sender.canGoBack();
@@ -23,9 +27,7 @@ ipcMain.on('go-back', event => {
 });
 
 ipcMain.on('go-forward', event => {
-    if (event.sender.canGoForward()) {
-        event.sender.goForward();
-    }
+    event.sender.goForward();
 });
 
 // htmlに展開するコンテンツを返す
@@ -61,4 +63,17 @@ ipcMain.handle('update-page', async (event, path: string, text: string, comment:
     fs.writeFileSync(filepath, text);
     history.add({name: wikiLink.name, comment, filename});
     return true;
+});
+
+// ファイルをアップロードする
+ipcMain.handle('upload-file', async (event, path: string, destName: string, sourcePath: string, comment: string): Promise<string> => {
+    const namespace: string = new WikiLink(path).namespace;
+    const wikiType: WikiType = 'File';
+    const fileLink: WikiLink = new WikiLink({namespace, name: destName, type: wikiType});
+    const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
+    const filename: string = generateRandomString(16) + '.' + extensionOf(sourcePath);
+    const filepath: string = toFullPath(filename, namespace, wikiType);
+    fs.copyFileSync(sourcePath, filepath);
+    history.add({name: fileLink.name, comment, filename});
+    return fileLink.toPath();
 });

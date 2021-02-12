@@ -1,5 +1,5 @@
 function generateRandomString(len: number): string {
-    const CHARS: string = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const CHARS: string = '0123456789abcdefghijklmnopqrstuvwxyz';
     const charsLen: number = CHARS.length;
     const chosen: string[] = [];
     for (let i = 0; i < len; i++) {
@@ -38,4 +38,35 @@ function str2date(dateStr: string): Date {
 }
 
 
-export {generateRandomString, zeroPadding, date2str, str2date};
+function round(num: number, precision: number): number {
+    function shift(num: number, precision: number, reverseShift: boolean): number {
+        if (reverseShift) {
+            precision = -precision;
+        }  
+        const numArray: string[] = ("" + num).split("e");
+        return Number(numArray[0] + "e" + (numArray[1] ? (+numArray[1] + precision) : precision));
+    };
+    return shift(Math.round(shift(num, precision, false)), precision, true);
+}
+
+
+function bytes2str(bytes: number): string {
+    let digitalSize: number = bytes;
+    if (digitalSize < 1024) {
+        return round(digitalSize, 2) + ' B';
+    }
+    digitalSize /= 1024;
+    if (digitalSize < 1024) {
+        return round(digitalSize, 2) + ' KB';
+    }
+    digitalSize /= 1024;
+    if (digitalSize < 1024) {
+        return round(digitalSize, 2) + ' MB';
+    }
+    digitalSize /= 1024
+    return round(digitalSize, 2) + ' GB';
+}
+
+
+
+export {generateRandomString, zeroPadding, date2str, str2date, bytes2str};

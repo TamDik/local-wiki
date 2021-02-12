@@ -141,6 +141,14 @@ class WikiHistory {
         }
         return data;
     }
+
+    public getPrevOf(id: string, maxSize: number=-1): VersionData[] {
+        return this.version.prevOf(id, maxSize);
+    }
+
+    public getNextOf(id: string, maxSize: number=-1): VersionData[] {
+        return this.version.nextOf(id, maxSize);
+    }
 }
 
 
@@ -268,22 +276,28 @@ class PreviousVersionManager {
         return this.dataMap.has(id);
     }
 
-    public prevOf(firstId: string, maxSize: number): VersionData[] {
+    public prevOf(firstId: string, maxSize: number=-1): VersionData[] {
         const dataList: VersionData[] = [];
         let data: VersionData = this.getData(firstId);
         dataList.push(data);
-        while (data.prev !== null && dataList.length < maxSize) {
+        while (data.prev !== null) {
+            if (maxSize > 0 && dataList.length >= maxSize) {
+                break;
+            }
             data = this.dataMap.get(data.prev) as VersionData;
             dataList.push(data);
         }
         return dataList;
     }
 
-    public nextOf(firstId: string, maxSize: number): VersionData[] {
+    public nextOf(firstId: string, maxSize: number=-1): VersionData[] {
         const dataList: VersionData[] = [];
         let data: VersionData = this.getData(firstId);
         dataList.push(data);
-        while (data.next !== null && dataList.length < maxSize) {
+        while (data.next !== null) {
+            if (maxSize > 0 && dataList.length >= maxSize) {
+                break;
+            }
             data = this.dataMap.get(data.next) as VersionData;
             dataList.push(data);
         }

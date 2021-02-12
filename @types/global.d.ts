@@ -1,5 +1,5 @@
 export declare global {
-    type WikiType = 'Page'|'File';
+    type WikiType = 'Page'|'File'|'Special';
 
     type PageMode = 'read'|'edit'|'history';
 
@@ -7,6 +7,7 @@ export declare global {
 
     interface Window {
         ipcRenderer: IIpcRenderer;
+        dialog: Dialog;
         localWiki: ILocalWiki;
     }
 }

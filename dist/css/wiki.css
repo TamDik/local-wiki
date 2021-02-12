@@ -6,7 +6,7 @@
     height: var(--page-base-height);
 }
 
-#access-area, #wiki-head-base, #left-navigation, #content {
+#wiki-head-base, #left-navigation, #content {
     margin-left: 11em;
 }
 
@@ -36,7 +36,7 @@
     width: 100%;
     top: 6px;
     height: 2.5em;
-    padding-right: 12em;
+    padding: 0 1em 0 11em;
 }
 
 #go-back-button, #go-forward-button, #access-field {

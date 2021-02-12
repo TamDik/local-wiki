@@ -99,20 +99,20 @@ interface IMagicHandler {
 
 
 abstract class FileHandler implements IMagicHandler {
-    private readonly extentions: string[];
+    private readonly extensions: string[];
 
-    public constructor(extentions: string[]) {
-        this.extentions = extentions;
+    public constructor(extensions: string[]) {
+        this.extensions = extensions;
     }
 
-    public addExtention(extentions: string[]) {
-        this.extentions.push(...extentions);
+    public addExtention(extensions: string[]) {
+        this.extensions.push(...extensions);
     }
 
     public isTarget(content: string): boolean {
         const [path, ...options]: string[] = content.split('|');
-        for (const extention of this.extentions) {
-            if (path.endsWith('.' + extention)) {
+        for (const extension of this.extensions) {
+            if (path.endsWith('.' + extension)) {
                 return true;
             }
         }

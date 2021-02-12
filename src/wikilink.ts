@@ -5,6 +5,7 @@ function isWikiType(arg: any): arg is WikiType {
     switch (arg) {
         case 'Page':
         case 'File':
+        case 'Special':
             return true;
         default:
             return false;

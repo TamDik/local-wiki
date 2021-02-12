@@ -132,6 +132,10 @@ function importRequiredJS(mode: PageMode, linkElement: WikiLinkElement): void {
     if (linkElement.type === 'Page' && mode === 'edit') {
         importJS('./js/editor.js');
     }
+
+    if (linkElement.type === 'Special' && linkElement.name === 'UploadFile') {
+        importJS('./js/upload-file.js');
+    }
 }
 
 onload = () => {
