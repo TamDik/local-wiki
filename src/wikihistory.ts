@@ -79,6 +79,11 @@ class WikiHistory {
         return this.current.hasName(name);
     }
 
+    public getCurrentList(): VersionData[] {
+        const names: string[] = this.current.getNameList();
+        return names.map(name => this.getByName(name));
+    }
+
     public getById(id: string): VersionData {
         return this.version.getData(id);
     }

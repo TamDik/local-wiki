@@ -151,6 +151,8 @@ class SpecialContentBodyDispatcher extends ContentBodyDispatcher {
 
     private createContentBody(wikiLink: WikiLink): ContentBody {
         const specials: SpecialContentBody[] = [
+            new AllPagesBody(wikiLink),
+            new AllFilesBody(wikiLink),
             new UploadFileBody(wikiLink),
         ];
         for (const special of specials) {
@@ -424,6 +426,62 @@ class SpecialPagesBody extends SpecialContentBody {
                 const wikiLink: WikiLink = new WikiLink({namespace: this.wikiLink.namespace, type: 'Special', name: contentBody.name});
                 const path: string = wikiLink.toPath();
                 lines.push(`<li><a href="?path=${path}">${title}</a></li>`);
+            }
+            lines.push('</ul>');
+        }
+        return lines.join('');
+    }
+}
+
+
+class AllPagesBody extends SpecialContentBody {
+    public name: string = 'AllPages';
+    public title: string = 'All pages';
+    public type: SpecialContentType = 'Lists of pages';
+
+    public get html(): string {
+        const wl: WikiLink = new WikiLink(this.wikiLink)
+        const history: WikiHistory = WikiHistoryFactory.create(wl.namespace, 'Page');
+        const currentData: VersionData[] = history.getCurrentList();
+
+        const lines: string[] = [
+            '<p>This special page shows all created pages.</p>'
+        ];
+        if (currentData.length !== 0) {
+            lines.push('<ul>');
+            const namespace: string = this.wikiLink.namespace;
+            const wikiType: WikiType = 'Page';
+            for (const data of currentData) {
+                const dataLink: WikiLink = new WikiLink({namespace, name: data.name, type: wikiType});
+                lines.push(`<li><a href="?path=${dataLink.toPath()}">${data.name}</a></li>`);
+            }
+            lines.push('</ul>');
+        }
+        return lines.join('');
+    }
+}
+
+
+class AllFilesBody extends SpecialContentBody {
+    public name: string = 'AllFiles';
+    public title: string = 'All files';
+    public type: SpecialContentType = 'Media reports and uploads';
+
+    public get html(): string {
+        const wl: WikiLink = new WikiLink(this.wikiLink)
+        const history: WikiHistory = WikiHistoryFactory.create(wl.namespace, 'File');
+        const currentData: VersionData[] = history.getCurrentList();
+
+        const lines: string[] = [
+            '<p>This special page shows all uploaded files.</p>'
+        ];
+        if (currentData.length !== 0) {
+            lines.push('<ul>');
+            const namespace: string = this.wikiLink.namespace;
+            const wikiType: WikiType = 'File';
+            for (const data of currentData) {
+                const dataLink: WikiLink = new WikiLink({namespace, name: data.name, type: wikiType});
+                lines.push(`<li><a href="?path=${dataLink.toPath()}">${data.name}</a></li>`);
             }
             lines.push('</ul>');
         }
