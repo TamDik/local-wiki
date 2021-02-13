@@ -3,9 +3,11 @@ const commentArea: HTMLInputElement = document.getElementById('comment-edit-area
 
 
 const params: Params = new Params();
+let beforeChangedMD: string = '';
 window.ipcRenderer.invoke<string>('get-raw-page-text', params.path)
 .then(text => {
     mdTextArea.value = text;
+    beforeChangedMD = text;
 });
 
 
@@ -23,10 +25,10 @@ saveButton.onclick = () => {
 
 
 const previewButton: HTMLButtonElement = document.getElementById('page-edit-preview-button') as HTMLButtonElement;
+const previewAlert: HTMLDivElement = document.getElementById('preview-alert') as HTMLDivElement;
+const previewWrapper: HTMLElement = document.getElementById('preview-wrapper') as HTMLElement;
 previewButton.onclick = () => {
     const markdown: string = mdTextArea.value;
-    const previewAlert: HTMLDivElement = document.getElementById('preview-alert') as HTMLDivElement;
-    const previewWrapper: HTMLElement = document.getElementById('preview-wrapper') as HTMLElement;
     previewAlert.classList.remove('d-none');
     window.ipcRenderer.invoke<string>('markdown-to-html', markdown)
     .then(html => {
@@ -37,7 +39,9 @@ previewButton.onclick = () => {
 
 const resetButton: HTMLButtonElement = document.getElementById('page-edit-reset-button') as HTMLButtonElement;
 resetButton.onclick = () => {
-    alert('reset');
+    previewAlert.classList.add('d-none');
+    previewWrapper.innerHTML = '';
+    mdTextArea.value = beforeChangedMD;
 };
 
 
