@@ -296,13 +296,13 @@ class PageReadBody extends ContentBody {
             if (srcMatch === null) {
                 continue;
             }
-            const src: string = srcMatch[1];
+            const src: string = srcMatch[0];
             const path: string = srcMatch[2];
             const fullPath: string|null = this.toFullPath(path);
             if (fullPath === null) {
                 continue;
             }
-            html = html.replace(src, fullPath);
+            html = html.replace(src, `src="${fullPath}"`);
         }
         return html;
     }

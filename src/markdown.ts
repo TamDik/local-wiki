@@ -57,14 +57,18 @@ class WikiMD {
         return `<a class="${className}" href="${href}" title="${title}">${text}</a>`;
     }
 
-    private image(src: string, title: string|null, text: string, isWikiLink: iswikilink): string {
+    private image(href: string, title: string|null, text: string, isWikiLink: iswikilink): string {
         title = title === null ? '' : title;
         const alt: string = text;
-        if (isWikiLink(src)) {
-            src = `?path=${src}`;
+        const isInternal: boolean = isWikiLink(href);
+        const className: string = this.className(href, isWikiLink);
+        const src: string = isInternal ? `?path=${href}` : href;
+        const img: string = `<img class="${className}" src="${src}" alt="${alt}" title="${title}" decoding="async">`;
+        if (isInternal) {
+            return `<a href="?path=${href}" class="image">` + img + '</a>';
+        } else {
+            return img;
         }
-        const className: string = this.className(src, isWikiLink);
-        return `<img class="${className}" src="${src}" alt="${alt}" title="${title}" decoding="async">`;
     }
 
     private text(text: string, magicHandlers: IMagicHandler[]): string {
