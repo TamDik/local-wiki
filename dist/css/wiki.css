@@ -6,7 +6,7 @@
     height: var(--page-base-height);
 }
 
-#wiki-head-base, #left-navigation, #content {
+#wiki-head-base, #left-navigation, #content, #wiki-footer {
     margin-left: 11em;
 }
 
@@ -162,4 +162,8 @@
     margin: 0 0 0.7em 0;
     padding: 0;
     border-bottom: 1px solid #a2a9b1;
+}
+
+#wiki-footer {
+    padding: 1.25em;
 }
