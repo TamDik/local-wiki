@@ -15,7 +15,7 @@ saveButton.onclick = () => {
     const comment: string = commentArea.value;
     window.ipcRenderer.invoke<boolean>('update-page', params.path, text, comment)
     .then(result => {
-        location.href = `?path=${params.path}`;
+        location.href = `?${Params.PATH_KEY}=${params.path}`;
     })
     .catch(e => {
     });

@@ -8,13 +8,15 @@ function trim(v: string): string {
 
 class Params {
     private params: URLSearchParams;
+    public static readonly MODE_KEY: string = 'mode';
+    public static readonly PATH_KEY: string = 'path';
     public constructor() {
         const url: URL = new URL(location.href);
         this.params = url.searchParams;
     }
 
     public get mode(): PageMode {
-        const key: string = 'mode';
+        const key: string = Params.MODE_KEY;
         let value: string|null = this.params.get(key);
         if (value === null) {
             return DEFAULT_MODE;
@@ -27,7 +29,7 @@ class Params {
     }
 
     public get path(): string {
-        const key: string = 'path';
+        const key: string = Params.PATH_KEY;
         let value: string|null = this.params.get(key);
         if (value === null) {
             return DEFAULT_PATH;
@@ -37,6 +39,31 @@ class Params {
             return DEFAULT_PATH;
         }
         return value;
+    }
+
+    public getValueOf(key: string): string {
+        if (key === Params.MODE_KEY) {
+            return this.mode;
+        }
+        if (key === Params.PATH_KEY) {
+            return this.path;
+        }
+        let value: string|null = this.params.get(key);
+        if (value === null) {
+            return '';
+        }
+        return trim(value);
+    }
+
+    public get keys(): string[] {
+        const keys: string[] = [Params.MODE_KEY, Params.PATH_KEY];
+        for (const key of this.params.keys()) {
+            if (keys.includes(key)) {
+                continue;
+            }
+            keys.push(key);
+        }
+        return keys;
     }
 }
 
@@ -50,9 +77,9 @@ function initTags(params: Params) {
     const readAnchor: HTMLAnchorElement = readTag.children[0] as HTMLAnchorElement;
     const editAnchor: HTMLAnchorElement = editTag.children[0] as HTMLAnchorElement;
     const histAnchor: HTMLAnchorElement = histTag.children[0] as HTMLAnchorElement;
-    readAnchor.href = `?path=${path}&mode=read`;
-    editAnchor.href = `?path=${path}&mode=edit`;
-    histAnchor.href = `?path=${path}&mode=history`;
+    readAnchor.href = `?${Params.PATH_KEY}=${path}&${Params.MODE_KEY}=read`;
+    editAnchor.href = `?${Params.PATH_KEY}=${path}&${Params.MODE_KEY}=edit`;
+    histAnchor.href = `?${Params.PATH_KEY}=${path}&${Params.MODE_KEY}=history`;
 
     readTag.className = '';
     editTag.className = '';
@@ -70,10 +97,14 @@ function initTags(params: Params) {
 function initAccessArea(params: Params) {
     const {path, mode} = params;
     const accessField: HTMLInputElement = document.getElementById('access-field') as HTMLInputElement;
-    if (mode === DEFAULT_MODE) {
-        accessField.value = path;
+    const accessParams: string = params.keys.filter(key => key !== Params.PATH_KEY)
+                                            .filter(key => !(key === Params.MODE_KEY && mode === DEFAULT_MODE))
+                                            .map(key => `${key}=${params.getValueOf(key)}`)
+                                            .join('&');
+    if (accessParams !== '') {
+        accessField.value = `${path}?${accessParams}`
     } else {
-        accessField.value = path + '?mode=' + mode;
+        accessField.value = path;
     }
 
     accessField.addEventListener('keyup', (event: KeyboardEvent) => {

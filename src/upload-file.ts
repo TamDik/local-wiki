@@ -10,6 +10,7 @@ const commentInput: HTMLInputElement = document.getElementById('upload-comment')
 const uploadButton: HTMLButtonElement = document.getElementById('upload-button') as HTMLButtonElement;
 const filepathLabel: HTMLLabelElement = document.getElementById('chosen-filepath') as HTMLLabelElement;
 setNoFileChosen();
+destInput.value = new Params().getValueOf('dest');
 
 function extensionOf(filename: string): string {
     return filename.replace(/^.*\./, '');
@@ -94,7 +95,7 @@ uploadButton.onclick = () => {
     const comment: string = trim(commentInput.value);
     window.ipcRenderer.invoke<string>('upload-file', params.path, name, filepath, comment)
     .then(path => {
-        location.href = `?path=${path}`;
+        location.href = `?${Params.PATH_KEY}=${path}`;
     })
     .catch(e => {
     });

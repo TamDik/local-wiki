@@ -320,6 +320,7 @@ class FileReadBody extends ContentBody {
     public get html(): string {
         const filepath: string = this.toFullPath(this.wikiLink.toPath()) as string;
         const uplaodLink: WikiLink = new WikiLink({namespace: this.wikiLink.namespace, type: 'Special', name: 'UploadFile'});
+        const uplaodHref: string = `?path=${uplaodLink.toPath()}&dest=${this.wikiLink.name}`;
         const lines: string[] = [
             '<div class="row">',
               '<div class="col-12">',
@@ -329,7 +330,7 @@ class FileReadBody extends ContentBody {
             this.historyHtml(),
             '<div class="row">',
               '<div class="col-12 pb-4">',
-                `<a href="?path=${uplaodLink.toPath()}">Upload a new version of this file</a>`,
+                `<a href="${uplaodHref}">Upload a new version of this file</a>`,
               '</div>',
             '</div>'
 
