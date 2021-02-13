@@ -81,15 +81,15 @@ function initTags(params: Params) {
     editAnchor.href = `?${Params.PATH_KEY}=${path}&${Params.MODE_KEY}=edit`;
     histAnchor.href = `?${Params.PATH_KEY}=${path}&${Params.MODE_KEY}=history`;
 
-    readTag.className = '';
-    editTag.className = '';
-    histTag.className = '';
+    readTag.classList.remove('selected');
+    editTag.classList.remove('selected');
+    histTag.classList.remove('selected');
     if (mode === 'read') {
-        readTag.className = 'selected';
+        readTag.classList.add('selected');
     } else if (mode === 'edit') {
-        editTag.className = 'selected';
+        editTag.classList.add('selected');
     } else if (mode === 'history') {
-        histTag.className = 'selected';
+        histTag.classList.add('selected');
     }
 }
 
