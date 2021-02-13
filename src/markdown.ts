@@ -40,8 +40,8 @@ class WikiMD {
         return marked(this.value);
     }
 
-    private className(href: string, isWikiLink: iswikilink): string {
-        if (isWikiLink(href)) {
+    private className(link: string, isWikiLink: iswikilink): string {
+        if (isWikiLink(link)) {
             return WikiMD.INTERNAL_CLASS_NAME;
         } else {
             return WikiMD.EXTERNAL_CLASS_NAME;
@@ -57,17 +57,19 @@ class WikiMD {
         return `<a class="${className}" href="${href}" title="${title}">${text}</a>`;
     }
 
-    private image(href: string, title: string|null, text: string, isWikiLink: iswikilink): string {
+    private image(src: string, title: string|null, text: string, isWikiLink: iswikilink): string {
         title = title === null ? '' : title;
-        const src: string = href;
         const alt: string = text;
-        const className: string = this.className(href, isWikiLink);
+        if (isWikiLink(src)) {
+            src = `?path=${src}`;
+        }
+        const className: string = this.className(src, isWikiLink);
         return `<img class="${className}" src="${src}" alt="${alt}" title="${title}" decoding="async">`;
     }
 
     private text(text: string, magicHandlers: IMagicHandler[]): string {
         const MAGIC_PATTERN: RegExp = /{{[^{}]+}}/g;
-        const magicMatches = text.match(MAGIC_PATTERN);
+        const magicMatches: RegExpMatchArray|null = text.match(MAGIC_PATTERN);
         if (!magicMatches) {
             return text;
         }

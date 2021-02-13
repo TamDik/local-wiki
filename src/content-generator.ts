@@ -274,12 +274,37 @@ class PageReadBody extends ContentBody {
         // TODO: ファイルの展開
         // TODO: ImageFileHandler, PDFFileHandler
         const filepath: string = this.toFullPath(this.wikiLink.toPath()) as string;
-        const text: string = fs.readFileSync(filepath, 'utf-8');
+        const mdText: string = fs.readFileSync(filepath, 'utf-8');
         const wmd: WikiMD = new WikiMD({isWikiLink: WikiLink.isWikiLink});
         /* wmd.addMagicHandler(new ImageFileHandler()); */
         /* wmd.addMagicHandler(new PDFFileHandler()); */
-        wmd.setValue(text);
-        return wmd.toHTML();
+        wmd.setValue(mdText);
+        let htmlText: string = wmd.toHTML();
+        htmlText = this.replaceInternalSrc(htmlText);
+        return htmlText;
+    }
+
+    public replaceInternalSrc(html: string): string {
+        const PATTERN_WITH_GLOBAL: RegExp = /src="\?path=[^"]+"/g;
+        const match: RegExpMatchArray|null = html.match(PATTERN_WITH_GLOBAL);
+        if (match === null) {
+            return html;
+        }
+        const PATTERN: RegExp = /src="(\?path=([^"]+))"/;
+        for (const m of match) {
+            const srcMatch: RegExpMatchArray|null = m.match(PATTERN);
+            if (srcMatch === null) {
+                continue;
+            }
+            const src: string = srcMatch[1];
+            const path: string = srcMatch[2];
+            const fullPath: string|null = this.toFullPath(path);
+            if (fullPath === null) {
+                continue;
+            }
+            html = html.replace(src, fullPath);
+        }
+        return html;
     }
 }
 
