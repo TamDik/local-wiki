@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import {ipcMain} from 'electron'
-import {ContentGenerator} from './content-generator';
+import {ContentGenerator, PageReadBody} from './content-generator';
 import {WikiHistory} from './wikihistory';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {WikiLink} from './wikilink';
@@ -76,4 +76,9 @@ ipcMain.handle('upload-file', async (event, path: string, destName: string, sour
     fs.copyFileSync(sourcePath, filepath);
     history.add({name: fileLink.name, comment, filename});
     return fileLink.toPath();
+});
+
+// マークダウンをHTMLに変換
+ipcMain.handle('markdown-to-html', async (event, markdown: string): Promise<string> => {
+    return PageReadBody.markdownToHtml(markdown);
 });

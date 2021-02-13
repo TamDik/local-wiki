@@ -8,6 +8,20 @@ import {WikiLink} from './wikilink';
 import {WikiMD, ImageFileHandler, PDFFileHandler} from './markdown';
 
 
+function toFullPath(path: string): string|null {
+    const wl: WikiLink = new WikiLink(path)
+    const namespace: string = wl.namespace;
+    const wikiType: WikiType = wl.type;
+    const name: string = wl.name;
+    const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
+    if (history.hasName(name)) {
+        const {filename} = history.getByName(name);
+        return BufferPathGeneratorFactory.create(namespace, wikiType).execute(filename);
+    }
+    return null;
+};
+
+
 class ContentGenerator {
     public static createTitle(mode: PageMode, wikiLink: WikiLink): string {
         const normalizedPath: string = wikiLink.toPath();
@@ -181,19 +195,6 @@ abstract class ContentBody {
 
     public constructor(protected readonly wikiLink: WikiLink) {
     }
-
-    protected toFullPath(path: string): string|null {
-        const wl: WikiLink = new WikiLink(path)
-        const namespace: string = wl.namespace;
-        const wikiType: WikiType = wl.type;
-        const name: string = wl.name;
-        const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
-        if (history.hasName(name)) {
-            const {filename} = history.getByName(name);
-            return BufferPathGeneratorFactory.create(namespace, wikiType).execute(filename);
-        }
-        return null;
-    };
 }
 
 class NotFoundBody extends ContentBody {
@@ -230,19 +231,20 @@ class NotFoundPageBody extends ContentBody {
 
 class PageEditBody extends ContentBody {
     public get html(): string {
+        const mainEditAreaId: string = 'markdown-edit-area';
         const lines: string[] = [
             '<div class="row">',
               '<div class="col-12">',
-                '<div class="alert alert-warning d-none" role="alert">',
+                '<div id="preview-alert" class="alert alert-warning d-none" role="alert">',
                   '<strong>Remember that this is only a preview.</strong>',
-                  'Your changes have not yet been saved! <a href="#markdown-edit-form"> → Go to editing area</a>',
+                  `Your changes have not yet been saved! <a href="#${mainEditAreaId}"> → Go to editing area</a>`,
                 '</div>',
                 '<div class="row">',
                   '<div id="preview-wrapper" class="col-12"></div>',
                 '</div>',
                 '<div class="row mb-2">',
                   '<div class="col-12">',
-                    '<textarea id="markdown-edit-area" class="form-control"></textarea>',
+                    `<textarea id="${mainEditAreaId}" class="form-control"></textarea>`,
                   '</div>',
                 '</div>',
                 '<div class="row mb-2">',
@@ -271,20 +273,22 @@ class PageEditBody extends ContentBody {
 
 class PageReadBody extends ContentBody {
     public get html(): string {
-        // TODO: ファイルの展開
         // TODO: ImageFileHandler, PDFFileHandler
-        const filepath: string = this.toFullPath(this.wikiLink.toPath()) as string;
-        const mdText: string = fs.readFileSync(filepath, 'utf-8');
+        const filepath: string = toFullPath(this.wikiLink.toPath()) as string;
+        const markdown: string = fs.readFileSync(filepath, 'utf-8');
+        return PageReadBody.markdownToHtml(markdown);
+    }
+
+    public static markdownToHtml(markdown: string): string {
         const wmd: WikiMD = new WikiMD({isWikiLink: WikiLink.isWikiLink});
         /* wmd.addMagicHandler(new ImageFileHandler()); */
         /* wmd.addMagicHandler(new PDFFileHandler()); */
-        wmd.setValue(mdText);
+        wmd.setValue(markdown);
         let htmlText: string = wmd.toHTML();
-        htmlText = this.replaceInternalSrc(htmlText);
-        return htmlText;
+        return PageReadBody.replaceInternalSrc(htmlText);
     }
 
-    public replaceInternalSrc(html: string): string {
+    public static replaceInternalSrc(html: string): string {
         const PATTERN_WITH_GLOBAL: RegExp = /src="\?path=[^"]+"/g;
         const match: RegExpMatchArray|null = html.match(PATTERN_WITH_GLOBAL);
         if (match === null) {
@@ -298,7 +302,7 @@ class PageReadBody extends ContentBody {
             }
             const src: string = srcMatch[0];
             const path: string = srcMatch[2];
-            const fullPath: string|null = this.toFullPath(path);
+            const fullPath: string|null = toFullPath(path);
             if (fullPath === null) {
                 continue;
             }
@@ -318,7 +322,7 @@ class FileReadBody extends ContentBody {
     }
 
     public get html(): string {
-        const filepath: string = this.toFullPath(this.wikiLink.toPath()) as string;
+        const filepath: string = toFullPath(this.wikiLink.toPath()) as string;
         const uplaodLink: WikiLink = new WikiLink({namespace: this.wikiLink.namespace, type: 'Special', name: 'UploadFile'});
         const uplaodHref: string = `?path=${uplaodLink.toPath()}&dest=${this.wikiLink.name}`;
         const lines: string[] = [
@@ -552,4 +556,4 @@ class UploadFileBody extends SpecialContentBody {
 }
 
 
-export {ContentGenerator}
+export {ContentGenerator, PageReadBody};
