@@ -382,7 +382,7 @@ class FileReadBody extends ContentBody {
 
     private tr(data: VersionData): string {
         const status: string = data.next === null ? 'current' : 'revert';
-        const created: string = data.created;
+        const created: string = date2str(data.created);
         const src: string = this.bufferPathGenerator.execute(data.filename);
         const comment: string = data.comment;
         const size: string = bytes2str(fs.statSync(src).size);

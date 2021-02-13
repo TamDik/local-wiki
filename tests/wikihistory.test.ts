@@ -76,7 +76,7 @@ describe('test PreviousVersionManager', () => {
 
     function createData(id: string, prev: string|null): [VersionData, VersionData] {
         const version: number = 1;
-        const created: string = 'created';
+        const created: Date = new Date();
         const comment: string = 'comment';
         const filename: string = 'filename';
         const next: null = null;

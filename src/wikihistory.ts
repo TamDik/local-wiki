@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {generateRandomString, date2str} from './util';
+import {generateRandomString, date2str, str2date} from './util';
 
 // TODO: 名前空間からパスを解決するクラス
 
@@ -11,7 +11,7 @@ interface VersionData {
     version: number;
     next: string|null;
     prev: string|null;
-    created: string;
+    created: Date;
     comment: string;
     filename: string;
 }
@@ -120,7 +120,7 @@ class WikiHistory {
             name, comment, filename, version, prev,
             id: generateRandomString(16),
             next: null,
-            created: date2str(created || new Date())
+            created: created || new Date()
         };
         this.current.add(newData);
         this.version.add(newData);
@@ -232,6 +232,16 @@ class CurrentVersionManager {
 }
 
 
+interface PreviousVersionData {
+    id: string;
+    name: string;
+    version: number;
+    next: string|null;
+    prev: string|null;
+    created: string;
+    comment: string;
+    filename: string;
+}
 class PreviousVersionManager {
     static FILENAME: string = 'history.json';
 
@@ -254,8 +264,8 @@ class PreviousVersionManager {
             return data;
         }
         const text: string = fs.readFileSync(filepath, 'utf-8');
-        const dataList: VersionData[] = JSON.parse(text);
-        const dataMap: Map<string, VersionData> = new Map(dataList.map(data => [data.id, data]));
+        const dataList: PreviousVersionData[] = JSON.parse(text);
+        const dataMap: Map<string, VersionData> = new Map(dataList.map(data => [data.id, {...data, created: str2date(data.created)}]));
         this.__dataMap = dataMap;
         return dataMap;
     }
@@ -271,8 +281,22 @@ class PreviousVersionManager {
         this.save();
     }
 
+    private previousVersionDataOf(versionData: VersionData): PreviousVersionData {
+        const data: PreviousVersionData = {
+            id: versionData.id,
+            name: versionData.name,
+            version: versionData.version,
+            next: versionData.next,
+            prev: versionData.prev,
+            created: date2str(versionData.created),
+            comment: versionData.comment,
+            filename: versionData.filename,
+        };
+        return data;
+    }
+
     private save(): void {
-        const data: VersionData[] = Array.from(this.dataMap.values()).map(data => data);
+        const data: PreviousVersionData[] = Array.from(this.dataMap.values()).map(this.previousVersionDataOf);
         const text: string = JSON.stringify(data, null, '  ');
         fs.writeFileSync(this.filepath, text);
     }
