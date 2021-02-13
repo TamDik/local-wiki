@@ -185,6 +185,13 @@ onload = () => {
         importRequiredJS(params.mode, linkElement);
     })
     .catch(e => {
+        contentHead.innerHTML = 'This page is not working...';
+        const lines: string[] = [
+            '<div class="alert alert-danger" role="alert">',
+              'We\'re sorry, but something went wrong.',
+            '</div>',
+        ];
+        contentBody.innerHTML = lines.join('');
         console.log(e);
     });
 }
