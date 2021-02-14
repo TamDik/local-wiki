@@ -156,16 +156,29 @@ function importJS(src: string): void {
 function linkRequiredCSS(mode: PageMode, linkElement: WikiLinkElement): void {
     if (linkElement.type === 'Page' && mode === 'edit') {
         linkCSS('./css/editor.css');
+        return;
+    }
+
+    if (linkElement.type === 'Page' && mode === 'history') {
+        linkCSS('./css/page-history.css');
+        return;
     }
 }
 
 function importRequiredJS(mode: PageMode, linkElement: WikiLinkElement): void {
     if (linkElement.type === 'Page' && mode === 'edit') {
         importJS('./js/editor.js');
+        return;
     }
 
     if (linkElement.type === 'Special' && linkElement.name === 'UploadFile') {
         importJS('./js/upload-file.js');
+        return;
+    }
+
+    if (linkElement.type === 'Page' && mode === 'history') {
+        importJS('./js/page-history.js');
+        return;
     }
 }
 

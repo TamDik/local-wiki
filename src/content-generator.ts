@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {date2str, bytes2str} from './util';
+import {date2str, bytes2str, zeroPadding} from './util';
 import {WikiConfig} from './wikiconfig';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
@@ -125,6 +125,10 @@ class PageContentBodyDispatcher extends ContentBodyDispatcher {
     protected createEditContentBody(wikiLink: WikiLink): ContentBody {
         return new PageEditBody(wikiLink);
     }
+
+    protected createHistoryContentBody(wikiLink: WikiLink): ContentBody {
+        return new PageHistoryBody(wikiLink);
+    }
 }
 
 
@@ -154,16 +158,6 @@ class NotFoundFileContentBodyDispatcher extends ContentBodyDispatcher {
 
 class SpecialContentBodyDispatcher extends ContentBodyDispatcher {
     protected createReadContentBody(wikiLink: WikiLink): ContentBody {
-        return this.createContentBody(wikiLink);
-    }
-    protected createEditContentBody(wikiLink: WikiLink): ContentBody {
-        return this.createContentBody(wikiLink);
-    }
-    protected createHistoryContentBody(wikiLink: WikiLink): ContentBody {
-        return this.createContentBody(wikiLink);
-    }
-
-    private createContentBody(wikiLink: WikiLink): ContentBody {
         const specials: SpecialContentBody[] = [
             new AllPagesBody(wikiLink),
             new AllFilesBody(wikiLink),
@@ -313,6 +307,126 @@ class PageReadBody extends ContentBody {
 }
 
 
+class PageHistoryBody extends ContentBody {
+    public get html(): string {
+        const lines: string[] = [];
+        lines.push('Diff selection: Mark the radio boxes of the revisions to compare and click the button at the bottom.');
+        lines.push('Legend: (cur) = difference with latest revision, (prev) = difference with preceding revision.');
+        lines.push('<div class="row pb-2 pt-2">');
+        lines.push(  '<div class="col-3">');
+        lines.push(    '<button type="button" id="compare-versions-button" class="btn btn-outline-secondary btn-block">Compare selected versions</button>');
+        lines.push(  '</div>');
+        lines.push('</div>');
+        /* lines.push('<div class="row">'); */
+        lines.push(this.historyList());
+        /* lines.push('</div>'); */
+        return lines.join('');
+    }
+
+    private historyList(): string {
+        const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, this.wikiLink.type);
+        const currentData: VersionData = history.getByName(this.wikiLink.name);
+        const historyData: VersionData[] = history.getPrevOf(currentData.id);
+        const lines: string[] = [];
+        lines.push('<div class="page-history">');
+        lines.push('<ol>');
+        for (let i = 0, len = historyData.length; i < len; i++) {
+            const data: VersionData = historyData[i];
+            lines.push(this.li(data, i));
+        }
+        lines.push('</ol>');
+        lines.push('</div>');
+        return lines.join('');
+    }
+
+    private li(data: VersionData, index: number): string {
+        const separator: string = '<span class="separator"></span>';
+        const className: string = this.liClassNames(index).join(' ');
+        const lines: string[] = [];
+        lines.push(`<li class="${className}">`);
+        lines.push(this.curAndPrev(data));
+        lines.push(this.radios(data, index));
+        lines.push('<span class="changed-date">');
+        const href: string = `?path=${this.wikiLink.toPath()}&version=${data.version}`;
+        lines.push(`<a href="${href}">${this.dateToStr(data.created)}</a>`);
+        lines.push('</span>');
+        if (data.comment !== '') {
+            lines.push(separator);
+            lines.push(`<span class="comment">${data.comment}</span>`);
+        }
+        lines.push('</li>');
+        return lines.join('');
+    }
+
+    private liClassNames(index: number): string[] {
+        if (index === 0) {
+            return ['before', 'selected'];
+        }
+        if (index === 1) {
+            return ['after', 'selected'];
+        }
+        return ['after'];
+    }
+
+    private curAndPrev(data: VersionData): string {
+        const path: string = this.wikiLink.toPath();
+        const lines: string[] = [];
+        const v: number = data.version;
+        lines.push('<span class="cur-and-prev">');
+        lines.push('<span>');
+        lines.push(data.next === null ? 'cur' : `<a href="?path=Special:PageDiff&page=${path}&old=${v}">cur</a>`);
+        lines.push('</span>');
+
+        lines.push('<span>');
+        lines.push(data.prev === null ? 'prev' : `<a href="?path=Special:PageDiff&page=${path}&old=${v-1}&diff=${v}">prev</a>`);
+        lines.push('</span>');
+        lines.push('</span>');
+        return lines.join('');
+    }
+
+    private radios(data: VersionData, index: number): string {
+        const checked: {old: boolean, diff: boolean} = this.radioChecked(index);
+        const lines: string[] = [];
+        if (checked.old) {
+            lines.push(`<input type="radio" name="old" value="${data.version}" checked>`);
+        } else {
+            lines.push(`<input type="radio" name="old" value="${data.version}">`);
+        }
+        if (checked.diff) {
+            lines.push(`<input type="radio" name="diff" value="${data.version}" checked>`);
+        } else {
+            lines.push(`<input type="radio" name="diff" value="${data.version}">`);
+        }
+        return lines.join('');
+    }
+
+    private radioChecked(index: number): {old: boolean, diff: boolean} {
+        const checked: {old: boolean, diff: boolean} = {old: false, diff: false};
+        if (index === 0) {
+            checked.diff = true;
+        }
+        if (index === 1) {
+            checked.old = true;
+        }
+        return checked;
+    }
+
+
+    private dateToStr(date: Date): string {
+        const h: string = zeroPadding(date.getHours(), 2);
+        const i: string = zeroPadding(date.getMinutes(), 2);
+        const d: string = zeroPadding(date.getDate(), 2);
+        const m: string = [
+            'January'  , 'February', 'March'   , 'April',
+            'May'      , 'June'    , 'July'    , 'August',
+            'September', 'October' , 'November', 'December'
+        ][date.getMonth()];
+        const y: string = zeroPadding(date.getFullYear(), 4);
+        return `${h}:${i}, ${d} ${m} ${y}`;
+    }
+}
+
+
 // File
 class FileReadBody extends ContentBody {
     private readonly bufferPathGenerator: BufferPathGenerator;
@@ -373,9 +487,8 @@ class FileReadBody extends ContentBody {
     }
 
     private tbody(): string {
-        const wl: WikiLink = new WikiLink(this.wikiLink)
-        const history: WikiHistory = WikiHistoryFactory.create(wl.namespace, wl.type);
-        const currentData: VersionData = history.getByName(wl.name);
+        const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, this.wikiLink.type);
+        const currentData: VersionData = history.getByName(this.wikiLink.name);
         const historyData: VersionData[] = history.getPrevOf(currentData.id);
         return '<tbody>' + historyData.reduce((value, data) => value + this.tr(data), '') + '</tbody>';
     }
@@ -470,8 +583,7 @@ class AllPagesBody extends SpecialContentBody {
     public type: SpecialContentType = 'Lists of pages';
 
     public get html(): string {
-        const wl: WikiLink = new WikiLink(this.wikiLink)
-        const history: WikiHistory = WikiHistoryFactory.create(wl.namespace, 'Page');
+        const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, 'Page');
         const currentData: VersionData[] = history.getCurrentList();
 
         const lines: string[] = [

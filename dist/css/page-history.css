@@ -1,0 +1,41 @@
+.page-history ol {
+    list-style-type: disc;
+    margin: 0.3em 0 0 1.6em;
+    padding: 0;
+}
+
+.page-history li {
+    padding: 1px;
+}
+
+.page-history input[type="radio"] {
+    margin: 4px 4px 0px 4px;
+}
+
+.page-history .before input[name="old"],
+.page-history .after input[name="diff"] {
+    visibility: hidden;
+}
+
+.page-history .selected {
+    background-color: #f8f9fa;
+    outline: 1px dashed #a2a9b1;
+}
+
+.page-history .cur-and-prev:before,
+.page-history .comment:before {
+    content: '(';
+}
+
+.page-history .cur-and-prev:after,
+.page-history .comment:after {
+    content: ')';
+}
+
+.page-history .cur-and-prev > span:not(:first-child):before {
+    content: ' | ';
+}
+
+.page-history .separator:before {
+    content: '. .';
+}
