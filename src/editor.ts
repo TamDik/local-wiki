@@ -3,11 +3,9 @@ const commentArea: HTMLInputElement = document.getElementById('comment-edit-area
 
 
 const params: Params = new Params();
-let beforeChangedMD: string = '';
 window.ipcRenderer.invoke<string>('get-raw-page-text', params.path)
 .then(text => {
     mdTextArea.value = text;
-    beforeChangedMD = text;
 });
 
 
@@ -34,14 +32,6 @@ previewButton.onclick = () => {
     .then(html => {
         previewWrapper.innerHTML = html;
     });
-};
-
-
-const resetButton: HTMLButtonElement = document.getElementById('page-edit-reset-button') as HTMLButtonElement;
-resetButton.onclick = () => {
-    previewAlert.classList.add('d-none');
-    previewWrapper.innerHTML = '';
-    mdTextArea.value = beforeChangedMD;
 };
 
 
