@@ -84,12 +84,28 @@ function setVersionValue(pageType: PageType, value?: number): void {
         input.value = String(value);
         return;
     }
+
+    const newPathInput: HTMLInputElement = getPathInput('new');
+    const oldPathInput: HTMLInputElement = getPathInput('old');
+    if (newPathInput.value !== oldPathInput.value) {
+        input.value = input.max;
+        return;
+    }
+
+    let theOtherInput: HTMLInputElement;
     switch (pageType) {
         case 'new':
-            input.value = input.max;
+            theOtherInput = getVersionInput('old');
+            break;
         case 'old':
-            input.value = String(Number(input.max) - 1);
+            theOtherInput = getVersionInput('new');
+            break;
     }
+    if (theOtherInput.value !== theOtherInput.max) {
+        input.value = input.max;
+        return;
+    }
+    input.value = input.max === input.min ? input.max : String(Number(input.max) - 1);
 }
 
 function setPathValue(pageType: PageType, value: string): void {
