@@ -162,6 +162,7 @@ class SpecialContentBodyDispatcher extends ContentBodyDispatcher {
             new AllPagesBody(wikiLink),
             new AllFilesBody(wikiLink),
             new UploadFileBody(wikiLink),
+            new PageDiffBody(wikiLink),
         ];
         for (const special of specials) {
             if (special.name === wikiLink.name) {
@@ -329,19 +330,19 @@ class PageHistoryBody extends ContentBody {
         lines.push('<ol>');
         for (let i = 0, len = historyData.length; i < len; i++) {
             const data: VersionData = historyData[i];
-            lines.push(this.li(data, i));
+            lines.push(this.li(data, i, currentData.version));
         }
         lines.push('</ol>');
         lines.push('</div>');
         return lines.join('');
     }
 
-    private li(data: VersionData, index: number): string {
+    private li(data: VersionData, index: number, currentVersion: number): string {
         const separator: string = '<span class="separator"></span>';
         const className: string = this.liClassNames(index).join(' ');
         const lines: string[] = [];
         lines.push(`<li class="${className}">`);
-        lines.push(this.curAndPrev(data));
+        lines.push(this.curAndPrev(data, currentVersion));
         lines.push(this.radios(data, index));
         lines.push('<span class="changed-date">');
         const href: string = `?path=${this.wikiLink.toPath()}&version=${data.version}`;
@@ -365,13 +366,13 @@ class PageHistoryBody extends ContentBody {
         return ['after'];
     }
 
-    private curAndPrev(data: VersionData): string {
+    private curAndPrev(data: VersionData, currentVersion: number): string {
         const path: string = this.wikiLink.toPath();
         const lines: string[] = [];
         const v: number = data.version;
         lines.push('<span class="cur-and-prev">');
         lines.push('<span>');
-        lines.push(data.next === null ? 'cur' : `<a href="?path=Special:PageDiff&page=${path}&old=${v}">cur</a>`);
+        lines.push(data.next === null ? 'cur' : `<a href="?path=Special:PageDiff&page=${path}&old=${v}&diff=${currentVersion}">cur</a>`);
         lines.push('</span>');
 
         lines.push('<span>');
@@ -525,7 +526,15 @@ class NotFoundSpecialBody extends ContentBody {
 }
 
 
-type SpecialContentType = 'Lists of pages'|'Media reports and uploads'|'Others';
+const specialContentLabels = {
+    pages: 'Lists of pages',
+    media: 'Media reports and uploads',
+    redirect: 'Redirecting special pages',
+    others: 'Others'
+};
+
+type SpecialContentType = keyof typeof specialContentLabels;
+
 
 abstract class SpecialContentBody extends ContentBody {
     public abstract name: string;
@@ -548,18 +557,17 @@ class SpecialPagesBody extends SpecialContentBody {
     }
 
     public name: string = 'SpecialPages';
-    public type: SpecialContentType = 'Others';
+    public type: SpecialContentType = 'others';
     public title: string = 'Special pages';
 
     public get html(): string {
         const lines: string[] = [];
-        const contentTypes: SpecialContentType[] = ['Lists of pages', 'Media reports and uploads', 'Others'];
-        for (const contentType of contentTypes) {
+        for (const [contentType, label] of Object.entries(specialContentLabels)) {
             const contentBodies: SpecialContentBody[] = this.specialContentBodies.filter(contentBody => contentBody.type === contentType);
             if (contentBodies.length === 0) {
                 continue;
             }
-            lines.push(`<h2>${contentType}</h2>`);
+            lines.push(`<h2>${label}</h2>`);
             lines.push('<ul>');
             for (const contentBody of contentBodies) {
                 const title: string = contentBody.title;
@@ -577,7 +585,7 @@ class SpecialPagesBody extends SpecialContentBody {
 class AllPagesBody extends SpecialContentBody {
     public name: string = 'AllPages';
     public title: string = 'All pages';
-    public type: SpecialContentType = 'Lists of pages';
+    public type: SpecialContentType = 'pages';
 
     public get html(): string {
         const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, 'Page');
@@ -604,7 +612,7 @@ class AllPagesBody extends SpecialContentBody {
 class AllFilesBody extends SpecialContentBody {
     public name: string = 'AllFiles';
     public title: string = 'All files';
-    public type: SpecialContentType = 'Media reports and uploads';
+    public type: SpecialContentType = 'media';
 
     public get html(): string {
         const wl: WikiLink = new WikiLink(this.wikiLink)
@@ -632,7 +640,7 @@ class AllFilesBody extends SpecialContentBody {
 class UploadFileBody extends SpecialContentBody {
     public name: string = 'UploadFile';
     public title: string = 'Upload file';
-    public type: SpecialContentType = 'Media reports and uploads';
+    public type: SpecialContentType = 'media';
 
     public get html(): string {
         const lines: string[] = [
@@ -661,6 +669,76 @@ class UploadFileBody extends SpecialContentBody {
             '</div>',
         ];
         return lines.join('');
+    }
+}
+
+
+class PageDiffBody extends SpecialContentBody {
+    public name: string = 'PageDiff'
+    public title: string = 'differences';
+    public type: SpecialContentType = 'others';
+
+    public get html(): string {
+        const oldPrefix: string = 'old-page';
+        const newPrefix: string = 'new-page';
+        const lines: string[] = [
+            '<div class="border rounded p-3">',
+              `<label for="${this.pathId(newPrefix)}">New version page:</label>`,
+              this.pathAndVersion(newPrefix),
+              `<label for="${this.pathId(oldPrefix)}">Old revision page:</label>`,
+              this.pathAndVersion(oldPrefix),
+              this.showButton(),
+            '</div>',
+            '<div id="differences-wrapper"></div>',
+        ];
+        return lines.join('');
+    }
+
+    private pathId(prefix: string): string {
+        return `${prefix}-path`;
+    }
+
+    private versionId(prefix: string): string {
+        return `${prefix}-version`;
+    }
+
+    private pathAndVersion(prefix: string): string {
+        const pathId: string = this.pathId(prefix);
+        const versionId: string = this.versionId(prefix);
+        const lines: string[] = [
+            '<div class="form-row">',
+              '<div class="col-3">',
+                '<div class="input-group mb-3">',
+                  '<div class="input-group-prepend">',
+                    `<label class="input-group-text" for="${pathId}">Path</label>`,
+                  '</div>',
+                  `<input type="text" id="${pathId}" class="form-control" placeholder="[Namespace:]Name">`,
+                '</div>',
+              '</div>',
+
+              '<div class="col-3">',
+                '<div class="input-group mb-3">',
+                  '<div class="input-group-prepend">',
+                    `<label class="input-group-text" for="${versionId}">Version</label>`,
+                  '</div>',
+                  `<input type="text" id="${versionId}" class="form-control" value="the path is invalid" disabled>`,
+                '</div>',
+              '</div>',
+            '</div>',
+        ];
+        return lines.join('');
+    }
+
+    private showButton(): string {
+        const lines: string[] = [
+            '<div class="row pt-1">',
+              '<div class="col-2 offset">',
+                '<button type="button" id="show-differences-button" class="btn btn-outline-primary btn-block" disabled>Show differences</button>',
+              '</div>',
+            '</div>',
+        ];
+        return lines.join('');
+
     }
 }
 

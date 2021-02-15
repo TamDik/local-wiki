@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import {ipcMain} from 'electron'
 import {ContentGenerator, PageReadBody} from './content-generator';
-import {WikiHistory} from './wikihistory';
+import {WikiConfig} from './wikiconfig';
+import {WikiHistory, VersionData} from './wikihistory';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {WikiLink} from './wikilink';
 import {generateRandomString} from './util';
@@ -40,16 +41,45 @@ ipcMain.handle('get-main-content', async (event, mode: PageMode, path: string): 
 });
 
 // 生のPageデータを返す
-ipcMain.handle('get-raw-page-text', async (event, path: string): Promise<string> => {
+ipcMain.handle('get-raw-page-text', async (event, path: string, version?: number): Promise<string> => {
     const wikiLink: WikiLink = new WikiLink(path);
     const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
-    if (history.hasName(wikiLink.name)) {
-        const {filename} = history.getByName(wikiLink.name);
-        const filepath: string = toFullPath(filename, wikiLink.namespace, wikiLink.type);
-        return fs.readFileSync(filepath, 'utf-8'); 
-    } else {
+    if (!history.hasName(wikiLink.name)) {
         return '';
     }
+    let data: VersionData;
+    if (typeof(version) === 'number') {
+        data = history.getByVersion(wikiLink.name, version);
+    } else {
+        data = history.getByName(wikiLink.name);
+    }
+    const filepath: string = toFullPath(data.filename, wikiLink.namespace, wikiLink.type);
+    return fs.readFileSync(filepath, 'utf-8'); 
+});
+
+// 最新バージョンの取得
+ipcMain.handle('current-version', async (event, path: string): Promise<number> => {
+    const wikiLink: WikiLink = new WikiLink(path);
+    const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
+    return history.getByName(wikiLink.name).version;
+});
+
+// 存在確認
+ipcMain.handle('exists-path', async (event, path: string, version?: number): Promise<boolean> => {
+    const wikiLink: WikiLink = new WikiLink(path);
+    const config: WikiConfig = new WikiConfig();
+    if (!config.hasNameSpace(wikiLink.namespace)) {
+        return false;
+    }
+    const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
+    if (!history.hasName(wikiLink.name)) {
+        return false;
+    }
+    if (!version) {
+        return true;
+    }
+    const current: VersionData = history.getByName(wikiLink.name);
+    return version > 0 && version <= current.version;
 });
 
 // Pageをアップデートする

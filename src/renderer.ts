@@ -163,6 +163,11 @@ function linkRequiredCSS(mode: PageMode, linkElement: WikiLinkElement): void {
         linkCSS('./css/page-history.css');
         return;
     }
+
+    if (linkElement.type === 'Special' && linkElement.name === 'PageDiff') {
+        linkCSS('./css/page-diff.css');
+        return;
+    }
 }
 
 function importRequiredJS(mode: PageMode, linkElement: WikiLinkElement): void {
@@ -171,13 +176,20 @@ function importRequiredJS(mode: PageMode, linkElement: WikiLinkElement): void {
         return;
     }
 
+    if (linkElement.type === 'Page' && mode === 'history') {
+        importJS('./js/page-history.js');
+        return;
+    }
+
     if (linkElement.type === 'Special' && linkElement.name === 'UploadFile') {
         importJS('./js/upload-file.js');
         return;
     }
 
-    if (linkElement.type === 'Page' && mode === 'history') {
-        importJS('./js/page-history.js');
+    if (linkElement.type === 'Special' && linkElement.name === 'PageDiff') {
+        importJS('../node_modules/jsdifflib/index.js');
+        importJS('./js/code-table.js');
+        importJS('./js/page-diff.js');
         return;
     }
 }
