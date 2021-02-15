@@ -1,4 +1,5 @@
 import marked from 'marked';
+import hljs from 'highlight.js';
 
 type WikiMDOption = {
     isWikiLink?: (href: string) => boolean,

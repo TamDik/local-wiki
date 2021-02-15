@@ -11,8 +11,8 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@highlightjs/cdn-assets": "^10.5.0",
         "bootstrap": "^4.6.0",
+        "highlightjs": "^9.16.2",
         "jsdifflib": "^1.1.0",
         "marked": "^1.2.9",
         "simplemde": "^1.11.2"
