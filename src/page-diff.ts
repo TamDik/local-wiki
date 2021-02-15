@@ -151,11 +151,11 @@ function pathInputEvent(pageType: PageType): () => void {
 function versionInputEvent(pageType: PageType): void {
     const input: HTMLInputElement = getVersionInput(pageType);
     const numValue: number = Number(input.value);
-    const maxValue: number = Number(input.max);
-    const minValue: number = Number(input.min);
-    if (numValue > maxValue) {
+    const numMax: number = Number(input.max);
+    const numMin: number = Number(input.min);
+    if (numValue > numMax) {
         input.value = input.max;
-    } else if (numValue < minValue) {
+    } else if (numValue < numMin) {
         input.value = input.min;
     }
 }
