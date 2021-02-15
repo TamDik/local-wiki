@@ -194,6 +194,16 @@ function importRequiredJS(mode: PageMode, linkElement: WikiLinkElement): void {
     }
 }
 
+
+async function getMainContent(params: Params): Promise<{linkElement: WikiLinkElement, title: string, body: string}> {
+    const version: string = params.getValueOf('version');
+    const ipcParams: (string|Number)[] = [params.mode, params.path];
+    if (version.match(/^\d+$/)) {
+        ipcParams.push(Number(version));
+    }
+    return window.ipcRenderer.invoke<{linkElement: WikiLinkElement, title: string, body: string}>('get-main-content', ...ipcParams);
+}
+
 onload = () => {
     const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
     const contentHead: HTMLElement = document.getElementById('content-head') as HTMLElement;
@@ -202,7 +212,7 @@ onload = () => {
     initTags(params);
     initAccessArea(params);
 
-    window.ipcRenderer.invoke<{linkElement: WikiLinkElement, title: string, body: string}>('get-main-content', params.mode, params.path)
+    getMainContent(params)
     .then(({linkElement, title, body}) => {
         contentHead.innerHTML = title;
         contentBody.innerHTML = body;

@@ -8,18 +8,49 @@ import {WikiLink} from './wikilink';
 import {WikiMD, ImageFileHandler, PDFFileHandler} from './markdown';
 
 
-function toFullPath(path: string): string|null {
+function toFullPath(path: string, version?: number): string|null {
     const wl: WikiLink = new WikiLink(path)
     const namespace: string = wl.namespace;
     const wikiType: WikiType = wl.type;
     const name: string = wl.name;
     const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
-    if (history.hasName(name)) {
-        const {filename} = history.getByName(name);
-        return BufferPathGeneratorFactory.create(namespace, wikiType).execute(filename);
+    if (!history.hasName(name)) {
+        return null;
     }
-    return null;
+    let data: VersionData = history.getByName(name);
+    if (typeof(version) === 'number') {
+        if (version > data.version || version < 1) {
+            return null;
+        }
+        data = history.getByVersion(name, version);
+    }
+    return BufferPathGeneratorFactory.create(namespace, wikiType).execute(data.filename);
 };
+
+
+function existsVersion(path: string, version: number): boolean {
+    const wl: WikiLink = new WikiLink(path)
+    const history: WikiHistory = WikiHistoryFactory.create(wl.namespace, wl.type);
+    const name: string = wl.name;
+    if (!history.hasName(name)) {
+        return false;
+    }
+    return version > 0 && version <= history.getByName(name).version;
+}
+
+
+function dateToStr(date: Date): string {
+    const h: string = zeroPadding(date.getHours(), 2);
+    const i: string = zeroPadding(date.getMinutes(), 2);
+    const d: string = zeroPadding(date.getDate(), 2);
+    const m: string = [
+        'January'  , 'February', 'March'   , 'April',
+        'May'      , 'June'    , 'July'    , 'August',
+        'September', 'October' , 'November', 'December'
+    ][date.getMonth()];
+    const y: string = zeroPadding(date.getFullYear(), 4);
+    return `${h}:${i}, ${d} ${m} ${y}`;
+}
 
 
 class ContentGenerator {
@@ -35,12 +66,12 @@ class ContentGenerator {
         }
     }
 
-    public static createBody(mode: PageMode, wikiLink: WikiLink): string {
-        const contentBody: ContentBody = ContentGenerator.dispatchContentBody(mode, wikiLink);
+    public static createBody(mode: PageMode, wikiLink: WikiLink, version?: number): string {
+        const contentBody: ContentBody = ContentGenerator.dispatchContentBody(mode, wikiLink, version);
         return contentBody.html;
     }
 
-    private static dispatchContentBody(mode: PageMode, wikiLink: WikiLink): ContentBody {
+    private static dispatchContentBody(mode: PageMode, wikiLink: WikiLink, version: number|undefined): ContentBody {
         let dispatcher: ContentBodyDispatcher;
         const config: WikiConfig = new WikiConfig();
 
@@ -52,7 +83,13 @@ class ContentGenerator {
         // typeごと
         switch (wikiLink.type) {
             case 'Page':
-                dispatcher = ContentGenerator.createPageDispatcher(wikiLink);
+                if (typeof(version) === 'undefined') {
+                    dispatcher = ContentGenerator.createPageDispatcher(wikiLink);
+                } else if (existsVersion(wikiLink.toPath(), version)) {
+                    return new PageWithVersionReadBody(wikiLink, version);
+                } else {
+                    return new NotFoundPageWithVersionReadBody(wikiLink, version);
+                }
                 break;
             case 'File':
                 dispatcher = ContentGenerator.createFileDispatcher(wikiLink);
@@ -304,6 +341,116 @@ class PageReadBody extends ContentBody {
     }
 }
 
+class NotFoundPageWithVersionReadBody extends ContentBody {
+    public constructor(wikiLink: WikiLink, private readonly version: number) {
+        super(wikiLink);
+    }
+
+    public get html(): string {
+        const lines: string[] = [
+            '<div class="alert alert-danger" role="alert">',
+              `The revision #${this.version} of the page named "${this.wikiLink.toPath()}" does not exist.`,
+            '</div>'
+        ];
+        return lines.join('');
+    }
+}
+
+class PageWithVersionReadBody extends PageReadBody {
+    public constructor(wikiLink: WikiLink, private readonly version: number) {
+        super(wikiLink);
+    }
+
+    public get html(): string {
+        const filepath: string = toFullPath(this.wikiLink.toPath(), this.version) as string;
+        const markdown: string = fs.readFileSync(filepath, 'utf-8');
+        return this.versionAlert() + PageReadBody.markdownToHtml(markdown);
+    }
+
+    private versionAlert(): string {
+        const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, this.wikiLink.type);
+        const data: VersionData = history.getByVersion(this.wikiLink.name, this.version);
+        const latestVersion: number = history.getByName(this.wikiLink.name).version;
+        const lines: string[] = [
+            '<div class="alert alert-warning" role="alert">',
+              'Revision as of ' + dateToStr(data.created),
+              '<br>',
+              this.revisionLine(data, latestVersion),
+            '</div>',
+        ];
+        return lines.join('');
+    }
+
+    private revisionLine(data: VersionData, latestVersion: number): string {
+        const DIFF: string = 'diff';
+        const SEPARATOR: string = ' | ';
+        const lines: string[] = []
+        lines.push(this.oldRevisionLine(data, DIFF));
+        lines.push(SEPARATOR);
+        lines.push(this.latestRevisionLine(data, latestVersion, DIFF));
+        lines.push(SEPARATOR);
+        lines.push(this.newRevisionLine(data, DIFF));
+        return lines.join('');
+    }
+
+    private oldRevisionLine(data: VersionData, DIFF: string): string {
+        const OLD_VERSION: string = '← Older revision';
+        const lines: string[] = [];
+        if (data.prev !== null) {
+            lines.push(this.surround(this.diffLink(this.version - 1, this.version, DIFF)));
+            lines.push(' ');
+            lines.push(this.versionLink(data.version - 1, OLD_VERSION));
+        } else {
+            lines.push(this.surround(DIFF));
+            lines.push(' ');
+            lines.push(OLD_VERSION);
+        }
+        return lines.join('');
+    }
+
+    private latestRevisionLine(data: VersionData, latestVersion: number, DIFF: string): string {
+        const LATEST_VERSION: string = 'Latest revision';
+        const lines: string[] = [];
+        if (data.next !== null) {
+            lines.push(this.versionLink(latestVersion, LATEST_VERSION));
+            lines.push(' ');
+            lines.push(this.surround(this.diffLink(this.version, latestVersion, DIFF)));
+        } else {
+            lines.push(LATEST_VERSION);
+            lines.push(' ');
+            lines.push(this.surround(DIFF));
+        }
+        return lines.join('');
+    }
+
+    private newRevisionLine(data: VersionData, DIFF: string): string {
+        const lines: string[] = [];
+        const NEW_VERSION: string = 'Newer revision →';
+        if (data.next !== null) {
+            lines.push(this.versionLink(data.version + 1, NEW_VERSION));
+            lines.push(' ');
+            lines.push(this.surround(this.diffLink(this.version, this.version + 1, DIFF)));
+        } else {
+            lines.push(NEW_VERSION);
+            lines.push(' ');
+            lines.push(this.surround(DIFF));
+        }
+        return lines.join('');
+    }
+
+    private versionLink(version: number, text: string): string {
+        return `<a href="?path=${this.wikiLink.toPath()}&version=${version}">${text}</a>`;
+    }
+
+    private surround(text: string): string {
+        return '(' + text + ')';
+    }
+
+    private diffLink(old: number, diff: number, text: string): string {
+        const href: string = PageDiffBody.toDiffLink(this.wikiLink, old, diff);
+        return `<a href="${href}">${text}</a>`;
+    }
+}
 
 class PageHistoryBody extends ContentBody {
     public get html(): string {
@@ -346,7 +493,7 @@ class PageHistoryBody extends ContentBody {
         lines.push(this.radios(data, index));
         lines.push('<span class="changed-date">');
         const href: string = `?path=${this.wikiLink.toPath()}&version=${data.version}`;
-        lines.push(`<a href="${href}">${this.dateToStr(data.created)}</a>`);
+        lines.push(`<a href="${href}">${dateToStr(data.created)}</a>`);
         lines.push('</span>');
         if (data.comment !== '') {
             lines.push(separator);
@@ -372,11 +519,13 @@ class PageHistoryBody extends ContentBody {
         const v: number = data.version;
         lines.push('<span class="cur-and-prev">');
         lines.push('<span>');
-        lines.push(data.next === null ? 'cur' : `<a href="?path=Special:PageDiff&page=${path}&old=${v}&diff=${currentVersion}">cur</a>`);
+        const curHref: string = PageDiffBody.toDiffLink(this.wikiLink, v, currentVersion);
+        lines.push(data.next === null ? 'cur' : `<a href="${curHref}">cur</a>`);
         lines.push('</span>');
 
         lines.push('<span>');
-        lines.push(data.prev === null ? 'prev' : `<a href="?path=Special:PageDiff&page=${path}&old=${v-1}&diff=${v}">prev</a>`);
+        const prevHref: string = PageDiffBody.toDiffLink(this.wikiLink, v - 1, v);
+        lines.push(data.prev === null ? 'prev' : `<a href="${prevHref}">prev</a>`);
         lines.push('</span>');
         lines.push('</span>');
         return lines.join('');
@@ -407,20 +556,6 @@ class PageHistoryBody extends ContentBody {
             checked.old = true;
         }
         return checked;
-    }
-
-
-    private dateToStr(date: Date): string {
-        const h: string = zeroPadding(date.getHours(), 2);
-        const i: string = zeroPadding(date.getMinutes(), 2);
-        const d: string = zeroPadding(date.getDate(), 2);
-        const m: string = [
-            'January'  , 'February', 'March'   , 'April',
-            'May'      , 'June'    , 'July'    , 'August',
-            'September', 'October' , 'November', 'December'
-        ][date.getMonth()];
-        const y: string = zeroPadding(date.getFullYear(), 4);
-        return `${h}:${i}, ${d} ${m} ${y}`;
     }
 }
 
@@ -674,9 +809,16 @@ class UploadFileBody extends SpecialContentBody {
 
 
 class PageDiffBody extends SpecialContentBody {
-    public name: string = 'PageDiff'
+    private static wikiName: string = 'PageDiff';
+    public name: string = PageDiffBody.wikiName;
     public title: string = 'differences';
     public type: SpecialContentType = 'others';
+
+    public static toDiffLink(wikiLink: WikiLink, old: number, diff: number): string {
+        const path: string = `Special:${PageDiffBody.wikiName}`;
+        const page: string = wikiLink.toPath();
+        return `?path=${path}&page=${page}&old=${old}&diff=${diff}`;
+    }
 
     public get html(): string {
         const oldPrefix: string = 'old-page';
