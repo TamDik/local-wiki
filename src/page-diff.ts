@@ -188,8 +188,8 @@ function diffShow(): void {
     .then(([text1, text2]) => {
         const wrapper: HTMLDivElement = document.getElementById('differences-wrapper') as HTMLDivElement;
         const table: DiffCodeTable = new DiffCodeTable(wrapper);
-        table.setBeforeCode(text1);
-        table.setAfterCode(text2);
+        table.setAfterCode(text1);
+        table.setBeforeCode(text2);
         table.update();
     });
 }
