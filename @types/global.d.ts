@@ -6,18 +6,29 @@ export declare global {
     type WikiLinkElement = {namespace: string, name: string, type: WikiType};
 
     interface Window {
-        ipcRenderer: IIpcRenderer;
-        dialog: Dialog;
+        ipcApi: IIpcApi;
+        dialog: IDialog;
         localWiki: ILocalWiki;
     }
 }
 
 
-interface IIpcRenderer {
-    send: (change: string, ...arg: any[]) => void;
-    sendSync: <T>(change: string, ...arg: any[]) => T;
-    on: (change: string, listener: Listener) => void;
-    async invoke: <T>(change: string, ...arg: any[]) => Promise<T>;
+interface IIpcApi {
+    existsPath(path: string): Promise<boolean>;
+    currentVersion(path: string): Promise<number>;
+    getMainContent(mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement, title: string, body: string}>;
+    goBack(): void;
+    goForward(): void;
+    canGoBackOrForward(): Promise<{back: boolean, forward: boolean}>;
+    uploadFile(path: string, name: string, filepath: string, comment: string): Promise<string>;
+    updatePage(path: string, text: string, comment: string): Promise<boolean>;
+    getRawPageText(path: string, version?: number): Promise<string>;
+    markdownToHtml(markdown: string): Promise<string>;
+}
+
+
+interface IDialog {
+    openFileDialog(): Promise<{canceled: boolean, filePaths: string[]}>;
 }
 
 

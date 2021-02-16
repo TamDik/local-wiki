@@ -57,7 +57,7 @@ function setChosenFilepath(filepath: string): void {
 }
 
 chooseFileButton.onclick = () => {
-    window.dialog.showOpenDialog({properties: ['openFile']})
+    window.dialog.openFileDialog()
     .then((result: {canceled: boolean, filePaths: string[]}) => {
         if (result.canceled || result.filePaths.length !== 1) {
             setNoFileChosen();
@@ -93,7 +93,7 @@ uploadButton.onclick = () => {
     const params: Params = new Params();
     const name: string = trim(destInput.value);
     const comment: string = trim(commentInput.value);
-    window.ipcRenderer.invoke<string>('upload-file', params.path, name, filepath, comment)
+    window.ipcApi.uploadFile(params.path, name, filepath, comment)
     .then(path => {
         location.href = `?${Params.PATH_KEY}=${path}`;
     })

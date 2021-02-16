@@ -121,18 +121,18 @@ function initAccessArea(params: Params) {
 
     const goBackButton: HTMLButtonElement = document.getElementById('go-back-button') as HTMLButtonElement;
     const goForwardButton: HTMLButtonElement = document.getElementById('go-forward-button') as HTMLButtonElement;
-    window.ipcRenderer.invoke<{back: boolean, forward: boolean}>('can-go-back-or-forward')
+    window.ipcApi.canGoBackOrForward()
     .then(({back, forward}) => {
         goBackButton.disabled = !back;
         goForwardButton.disabled = !forward;
     });
 
     goBackButton.onclick = () => {
-        window.ipcRenderer.send('go-back');
+        window.ipcApi.goBack();
     };
 
     goForwardButton.onclick = () => {
-        window.ipcRenderer.send('go-forward');
+        window.ipcApi.goForward();
     };
 }
 
@@ -197,11 +197,11 @@ function importRequiredJS(mode: PageMode, linkElement: WikiLinkElement): void {
 
 async function getMainContent(params: Params): Promise<{linkElement: WikiLinkElement, title: string, body: string}> {
     const version: string = params.getValueOf('version');
-    const ipcParams: (string|Number)[] = [params.mode, params.path];
     if (version.match(/^\d+$/)) {
-        ipcParams.push(Number(version));
+        return window.ipcApi.getMainContent(params.mode, params.path, Number(version));
+    } else {
+        return window.ipcApi.getMainContent(params.mode, params.path);
     }
-    return window.ipcRenderer.invoke<{linkElement: WikiLinkElement, title: string, body: string}>('get-main-content', ...ipcParams);
 }
 
 onload = () => {

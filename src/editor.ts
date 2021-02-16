@@ -3,7 +3,7 @@ const commentArea: HTMLInputElement = document.getElementById('comment-edit-area
 
 
 const params: Params = new Params();
-window.ipcRenderer.invoke<string>('get-raw-page-text', params.path)
+window.ipcApi.getRawPageText(params.path)
 .then(text => {
     mdTextArea.value = text;
 });
@@ -13,7 +13,7 @@ const saveButton: HTMLButtonElement = document.getElementById('page-edit-save-bu
 saveButton.onclick = () => {
     const text: string = mdTextArea.value;
     const comment: string = commentArea.value;
-    window.ipcRenderer.invoke<boolean>('update-page', params.path, text, comment)
+    window.ipcApi.updatePage(params.path, text, comment)
     .then(result => {
         location.href = `?${Params.PATH_KEY}=${params.path}`;
     })
@@ -28,7 +28,7 @@ const previewWrapper: HTMLElement = document.getElementById('preview-wrapper') a
 previewButton.onclick = () => {
     const markdown: string = mdTextArea.value;
     previewAlert.classList.remove('d-none');
-    window.ipcRenderer.invoke<string>('markdown-to-html', markdown)
+    window.ipcApi.markdownToHtml(markdown)
     .then(html => {
         previewWrapper.innerHTML = html;
     });

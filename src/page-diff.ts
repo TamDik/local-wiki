@@ -28,8 +28,7 @@ async function existsPath(path: string): Promise<boolean> {
     if (path === '') {
         return false;
     }
-    const exists: boolean = await window.ipcRenderer.invoke<boolean>('exists-path', path);
-    return exists;
+    return window.ipcApi.existsPath(path);
 }
 
 function areInputsFilled(): boolean {
@@ -70,7 +69,8 @@ async function enableVersion(pageType: PageType, path: string): Promise<void> {
     input.min = '1';
     input.value = '1';
     input.type = 'number';
-    const version: number = await window.ipcRenderer.invoke<number>('current-version', path);
+    const version: number = await window.ipcApi.currentVersion(path);
+
     input.max = String(version);
     input.value = input.max;
 }
@@ -182,8 +182,8 @@ function diffShow(): void {
     const newVersion: number = Number(getVersionInput('new').value);
     const oldPath: string = getPathInput('old').value;
     const oldVersion: number = Number(getVersionInput('old').value);
-    const p1: Promise<string> = window.ipcRenderer.invoke<string>('get-raw-page-text', newPath, newVersion);
-    const p2: Promise<string> = window.ipcRenderer.invoke<string>('get-raw-page-text', oldPath, oldVersion);
+    const p1: Promise<string> = window.ipcApi.getRawPageText(newPath, newVersion);
+    const p2: Promise<string> = window.ipcApi.getRawPageText(oldPath, oldVersion);
     Promise.all([p1, p2])
     .then(([text1, text2]) => {
         const wrapper: HTMLDivElement = document.getElementById('differences-wrapper') as HTMLDivElement;
