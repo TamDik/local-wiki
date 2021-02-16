@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import {ipcMain} from 'electron'
+import {ipcMain, shell} from 'electron'
 import {ContentGenerator, PageReadBody} from './content-generator';
 import {WikiConfig} from './wikiconfig';
 import {WikiHistory, VersionData} from './wikihistory';
@@ -16,6 +16,9 @@ function extensionOf(filename: string): string {
     return filename.replace(/^.*\./, '');
 }
 
+ipcMain.handle('open-external-link', async (event, path: string): Promise<void> => {
+    shell.openExternal(path);
+});
 
 ipcMain.handle('can-go-back-or-forward', async (event): Promise<{back: boolean, forward: boolean}> => {
     const back: boolean = event.sender.canGoBack();

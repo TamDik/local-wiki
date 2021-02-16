@@ -25,6 +25,9 @@ contextBridge.exposeInMainWorld(
 
 contextBridge.exposeInMainWorld(
     'ipcApi', {
+        async openExternalLink(path: string): Promise<void> {
+            ipcRenderer.invoke('open-external-link', path);
+        },
         async existsPath(path: string): Promise<boolean> {
             return ipcRenderer.invoke('exists-path', path);
         },

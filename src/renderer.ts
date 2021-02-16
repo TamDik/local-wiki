@@ -197,6 +197,22 @@ async function getMainContent(params: Params): Promise<{linkElement: WikiLinkEle
 
 onload = () => {
     const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
+    contentBody.addEventListener("click", function(event) {
+        let element: HTMLElement|null = event.target as HTMLElement;
+        while (element && element !== contentBody) {
+            if (element.nodeName === "A") {
+                const anchor: HTMLAnchorElement = element as HTMLAnchorElement;
+                if (anchor.classList.contains('external')) {
+                    window.ipcApi.openExternalLink(anchor.href);
+                    event.preventDefault();
+                }
+                return;
+            }
+            element = element.parentNode as HTMLElement;
+        }
+    }, false);
+
+
     const contentHead: HTMLElement = document.getElementById('content-head') as HTMLElement;
     const params: Params = new Params();
     contentHead.innerText = params.path;
