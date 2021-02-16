@@ -1,7 +1,7 @@
 abstract class AbstractCodeTable {
     private table: HTMLTableElement = document.createElement('table');
 
-    public constructor(private readonly element: HTMLElement, private readonly numOfLineNum: number) {
+    public constructor(protected readonly element: HTMLElement, private readonly numOfLineNum: number) {
     }
 
     public update(): void {
@@ -16,12 +16,40 @@ abstract class AbstractCodeTable {
 
     protected abstract create(): void;
 
-    protected appendCodeRow(line: string, numbers: (number|null)[], className: {tr?: string[], codeTd?: string[], numTds?: string[][]}) {
-        if (numbers.length !== this.numOfLineNum) {
-            throw new Error(`the size of 'numbers' is invalid. expected: ${this.numOfLineNum}, actual: ${numbers.length}`);
-        }
+    protected appendCodeRow(line: string, numbers: (number|null)[]|number|string|null, className: {tr?: string[], codeTd?: string[], numTds?: string[][]}) {
         const tr: HTMLTableRowElement = document.createElement('tr');
         this.table.appendChild(tr);
+        const numTds: HTMLTableDataCellElement[] = this.addNumTds(tr, numbers);
+        const codeTd: HTMLTableDataCellElement = document.createElement('td');
+        tr.appendChild(codeTd);
+        codeTd.innerText = line;
+        if (numbers === null) {
+            codeTd.colSpan = this.numOfLineNum + 1;
+        }
+        numTds.push(codeTd);
+        this.addClassName(tr, codeTd, numTds, className);
+    }
+
+    private addNumTds(tr: HTMLTableRowElement, numbers: (number|null)[]|number|string|null): HTMLTableDataCellElement[] {
+        if (numbers === null) {
+            return [];
+        }
+
+        if (typeof(numbers) === 'number') {
+            const td: HTMLTableDataCellElement = document.createElement('td');
+            tr.appendChild(td);
+            td.colSpan = this.numOfLineNum;
+            td.dataset.lineNumber = String(numbers);
+            return [td];
+        }
+
+        if (typeof(numbers) === 'string') {
+            const td: HTMLTableDataCellElement = document.createElement('td');
+            tr.appendChild(td);
+            td.colSpan = this.numOfLineNum;
+            td.innerText = String(numbers);
+            return [td];
+        }
 
         const numTds: HTMLTableDataCellElement[] = [];
         for (const num of numbers) {
@@ -32,14 +60,7 @@ abstract class AbstractCodeTable {
             }
             numTds.push(td);
         }
-
-        const codeTd: HTMLTableDataCellElement = document.createElement('td');
-        codeTd.innerText = line;
-        numTds.push(codeTd);
-
-        tr.appendChild(codeTd);
-
-        this.addClassName(tr, codeTd, numTds, className);
+        return numTds;
     }
 
     private addClassName(tr: HTMLElement, codeTd: HTMLElement, numTds: HTMLElement[], className: {tr?: string[], codeTd?: string[], numTds?: string[][]}): void {
@@ -57,9 +78,6 @@ abstract class AbstractCodeTable {
 
         if (className.numTds) {
             const len: number = className.numTds.length;
-            if (len > numTds.length - 1) {
-                throw new Error(`the size of 'className.numTds' is invalid. expected: ${this.numOfLineNum}, actual: ${len}`);
-            }
             for (let i = 0; i < len; i++) {
                 if (className.numTds[i].length !== 0) {
                     const numTd: HTMLElement = numTds[i];
@@ -160,17 +178,91 @@ class DiffCodeTable extends AbstractCodeTable {
     }
 
     protected create(): void {
+        this.createTable();
+        this.addEvents();
+    }
+
+    private createTable(): void {
         let diffs: LineDiff[] = this.diffParser.getDiff();
         diffs = this.withoutReplacement(diffs);
 
         let num1: number = 1;
         let num2: number = 1;
         let tableRows: HTMLTableRowElement[];
+        const skips: boolean[] = this.needLinesSkip(diffs, 3);
+        let skipping: LineDiff[] = [];
         for (let i = 0, len = diffs.length; i < len; i++) {
             const diff: LineDiff = diffs[i];
-            [num1, num2] = this.appendCodeRows(diff, num1, num2);
-
+            const skip: boolean = skips[i];
+            if (skip) {
+                skipping.push(diff);
+            } else {
+                [num1, num2] = this.appendExpandableTableRows(skipping, num1, num2);
+                skipping = [];
+                [num1, num2] = this.appendCodeRows(diff, num1, num2);
+            }
         }
+        [num1, num2] = this.appendExpandableTableRows(skipping, num1, num2);
+    }
+
+    private needLinesSkip(diffs: LineDiff[], margin: number): boolean[] {
+        let skips: boolean[] = diffs.map(diff => diff[0] === '=');
+        const diffLen: number = diffs.length;
+        for (let marginI = 0; marginI < margin; marginI++) {
+            const skipsTemp: boolean[] = [...skips];
+            for (let skipI = 0; skipI < diffLen; skipI++) {
+                skipsTemp[skipI] = skips[skipI];
+                if (skipI !== 0) {
+                    skipsTemp[skipI] = skipsTemp[skipI] && skips[skipI - 1];
+                }
+                if (skipI !== skips.length - 1) {
+                    skipsTemp[skipI] = skipsTemp[skipI] && skips[skipI + 1];
+                }
+            }
+            skips = [...skipsTemp];
+        }
+        return skips;
+    }
+
+    private appendExpandableTableRows(skippingDiffs: LineDiff[], num1: number, num2: number): [number, number] {
+        if (skippingDiffs.length === 0) {
+            return [num1, num2];
+        }
+        const midPoint: number = skippingDiffs.length / 2;
+        for (let i = 0, len = skippingDiffs.length; i < len; i++) {
+            if (i >= midPoint && i < midPoint + 1) {
+                this.appendExpandableTableRow(skippingDiffs.length);
+            }
+            const boundary = {first: i === 0, last: i === len - 1};
+            this.appendSkipedCodeRow(skippingDiffs[i], num1++, num2++, boundary);
+        }
+        return [num1, num2];
+    }
+
+    private appendExpandableTableRow(numOfSkip: number): void {
+        const className = {
+            tr: ['expandable'],
+            numTds: [['expand-button']],
+            codeTd: ['expandable-code']
+        };
+        this.appendCodeRow(`${numOfSkip} lines`, '', className);
+    }
+
+    private appendSkipedCodeRow(diff: LineDiff, num1: number, num2: number, boundary: {first: boolean, last: boolean}): void {
+        const className = {
+            tr: ['d-none'],
+            numTds: [['code-line-number'], ['code-line-number']],
+            codeTd: ['code-code-body']
+        };
+        if (boundary) {
+            if (boundary.first) {
+                className.tr.push('first');
+            }
+            if (boundary.last) {
+                className.tr.push('last');
+            }
+        }
+        this.appendCodeRow(diff[1], [num1++, num2++], className);
     }
 
     private appendCodeRows(diff: LineDiff, num1: number, num2: number): [number, number] {
@@ -215,5 +307,73 @@ class DiffCodeTable extends AbstractCodeTable {
         }
         result.push(...skiped);
         return result;
+    }
+
+    private addEvents(): void {
+        const expandButtons: NodeListOf<HTMLTableDataCellElement> = this.element.querySelectorAll('.expand-button') as NodeListOf<HTMLTableDataCellElement>;
+        const expandStep: number = 10;
+        function hasExpanded(tr: HTMLTableRowElement): boolean {
+            return !tr.classList.contains('d-none');
+        }
+
+        for (const button of expandButtons) {
+            button.addEventListener('click', () => {
+                const tr: HTMLTableRowElement = button.parentElement as HTMLTableRowElement;
+
+                // firstTr
+                let firstTr: HTMLTableRowElement = tr;
+                while (true) {
+                    const tempTr: HTMLTableRowElement|null = firstTr.previousElementSibling as HTMLTableRowElement;
+                    if (!tempTr || hasExpanded(tempTr)) {
+                        break;
+                    }
+                    firstTr = tempTr;
+                }
+
+                // lastTr
+                let lastTr: HTMLTableRowElement = tr;
+                while (true) {
+                    const tempTr: HTMLTableRowElement|null = lastTr.nextElementSibling as HTMLTableRowElement;
+                    if (!tempTr || hasExpanded(tempTr)) {
+                        break;
+                    }
+                    lastTr = tempTr;
+                }
+
+                // expand
+                for (let i = 0; i < expandStep; i++) {
+                    firstTr.classList.remove('d-none');
+                    firstTr.classList.add('expanded-line');
+                    if (!firstTr.nextElementSibling) {
+                        break;
+                    }
+                    firstTr = firstTr.nextElementSibling as HTMLTableRowElement;
+                    if (hasExpanded(firstTr)) {
+                        break;
+                    }
+                }
+                for (let i = 0; i < expandStep; i++) {
+                    lastTr.classList.remove('d-none');
+                    lastTr.classList.add('expanded-line');
+                    if (!lastTr.previousElementSibling) {
+                        break;
+                    }
+                    lastTr = lastTr.previousElementSibling as HTMLTableRowElement;
+                    if (hasExpanded(lastTr)) {
+                        break;
+                    }
+                }
+
+                // update expand button
+                if (hasExpanded(firstTr) && hasExpanded(lastTr)) {
+                    tr.remove();
+                    return;
+                }
+                const firstTrNum: string = (firstTr.firstElementChild as HTMLElement).dataset.lineNumber as string;
+                const lastTrNum: string = (lastTr.firstElementChild as HTMLElement).dataset.lineNumber as string;
+                (tr.lastElementChild as HTMLElement).innerText = String(Number(lastTrNum) - Number(firstTrNum) + 1) + ' lines';
+
+            }, false);
+        }
     }
 }

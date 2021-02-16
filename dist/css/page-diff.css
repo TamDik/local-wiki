@@ -17,7 +17,7 @@
     width: 100%;
 }
 
-.code-line-number, .expandable-line-num, .code-code-body, .expandable-code {
+.code-line-number, .code-code-body {
     border:  none;
     padding: 0 10px;
     line-height: 2em;
@@ -66,4 +66,36 @@
 
 .addition .code-code-body:before {
     content: '+';
+}
+
+
+.expand-button {
+    border:  none;
+    padding: 0 10px;
+    cursor: pointer;
+    background: #dbedff;
+}
+
+.expand-button:hover {
+    background: #0366d6;
+}
+
+.expandable-code {
+    border:  none;
+    padding: 0 10px;
+    color: rgba(27,31,35,.7);
+    background: #f1f8ff;
+    line-height: 2.5em;
+}
+
+.expanded-line .code-code-body {
+    background: #fafbfc;
+}
+
+.expanded-line.first {
+    border-top: 1px solid #eaecef;
+}
+
+.expanded-line.last {
+    border-bottom: 1px solid #eaecef;
 }
