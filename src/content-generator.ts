@@ -66,6 +66,21 @@ class ContentGenerator {
         }
     }
 
+    public static createMenuTabs(mode: PageMode, wikiLink: WikiLink): TabParams[] {
+        const path: string = wikiLink.toPath();
+        switch (wikiLink.type) {
+            case 'Page':
+                return [
+                    {title: 'Read'   , href: `?path=${path}&mode=read`   , selected: mode === 'read'},
+                    {title: 'Edit'   , href: `?path=${path}&mode=edit`   , selected: mode === 'edit'},
+                    {title: 'History', href: `?path=${path}&mode=history`, selected: mode === 'history'},
+                ];
+            case 'File':
+            case 'Special':
+                return [];
+        }
+    }
+
     public static createBody(mode: PageMode, wikiLink: WikiLink, version?: number): string {
         const contentBody: ContentBody = ContentGenerator.dispatchContentBody(mode, wikiLink, version);
         return contentBody.html;

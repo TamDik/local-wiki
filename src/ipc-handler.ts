@@ -32,7 +32,7 @@ ipcMain.on('go-forward', event => {
 });
 
 // htmlに展開するコンテンツを返す
-ipcMain.handle('get-main-content', async (event, mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement, title: string, body: string}> => {
+ipcMain.handle('get-main-content', async (event, mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement, title: string, body: string, tabs: TabParams[]}> => {
     const wikiLink: WikiLink = new WikiLink(path);
     const linkElement: WikiLinkElement = {namespace: wikiLink.namespace, name: wikiLink.name, type: wikiLink.type};
     const title: string = ContentGenerator.createTitle(mode, wikiLink);
@@ -42,7 +42,8 @@ ipcMain.handle('get-main-content', async (event, mode: PageMode, path: string, v
     } else {
         body = ContentGenerator.createBody(mode, wikiLink);
     }
-    return {linkElement, title, body};
+    const tabs: TabParams[] = ContentGenerator.createMenuTabs(mode, wikiLink);
+    return {linkElement, title, body, tabs};
 });
 
 // 生のPageデータを返す

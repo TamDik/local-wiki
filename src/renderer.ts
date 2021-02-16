@@ -68,28 +68,19 @@ class Params {
 }
 
 
-function initTags(params: Params) {
-    const {path, mode} = params;
-    const readTag: HTMLElement = document.getElementById('read-tag') as HTMLElement;
-    const editTag: HTMLElement = document.getElementById('edit-tag') as HTMLElement;
-    const histTag: HTMLElement = document.getElementById('history-tag') as HTMLElement;
-
-    const readAnchor: HTMLAnchorElement = readTag.children[0] as HTMLAnchorElement;
-    const editAnchor: HTMLAnchorElement = editTag.children[0] as HTMLAnchorElement;
-    const histAnchor: HTMLAnchorElement = histTag.children[0] as HTMLAnchorElement;
-    readAnchor.href = `?${Params.PATH_KEY}=${path}&${Params.MODE_KEY}=read`;
-    editAnchor.href = `?${Params.PATH_KEY}=${path}&${Params.MODE_KEY}=edit`;
-    histAnchor.href = `?${Params.PATH_KEY}=${path}&${Params.MODE_KEY}=history`;
-
-    readTag.classList.remove('selected');
-    editTag.classList.remove('selected');
-    histTag.classList.remove('selected');
-    if (mode === 'read') {
-        readTag.classList.add('selected');
-    } else if (mode === 'edit') {
-        editTag.classList.add('selected');
-    } else if (mode === 'history') {
-        histTag.classList.add('selected');
+function initTabs(tabs: TabParams[]) {
+    const search: HTMLLIElement = document.getElementById('search-tag') as HTMLLIElement;
+    for (const tab of tabs) {
+        const {title, href, selected} = tab;
+        const li: HTMLLIElement = document.createElement('li');
+        search.before(li);
+        const a: HTMLAnchorElement = document.createElement('a');
+        li.appendChild(a);
+        a.href = href;
+        a.innerText = title;
+        if (selected) {
+            li.classList.add('selected');
+        }
     }
 }
 
@@ -195,7 +186,7 @@ function importRequiredJS(mode: PageMode, linkElement: WikiLinkElement): void {
 }
 
 
-async function getMainContent(params: Params): Promise<{linkElement: WikiLinkElement, title: string, body: string}> {
+async function getMainContent(params: Params): Promise<{linkElement: WikiLinkElement, title: string, body: string, tabs: TabParams[]}> {
     const version: string = params.getValueOf('version');
     if (version.match(/^\d+$/)) {
         return window.ipcApi.getMainContent(params.mode, params.path, Number(version));
@@ -209,11 +200,11 @@ onload = () => {
     const contentHead: HTMLElement = document.getElementById('content-head') as HTMLElement;
     const params: Params = new Params();
     contentHead.innerText = params.path;
-    initTags(params);
     initAccessArea(params);
 
     getMainContent(params)
-    .then(({linkElement, title, body}) => {
+    .then(({linkElement, title, body, tabs}) => {
+        initTabs(tabs);
         contentHead.innerHTML = title;
         contentBody.innerHTML = body;
         linkRequiredCSS(params.mode, linkElement);

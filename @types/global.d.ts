@@ -5,6 +5,8 @@ export declare global {
 
     type WikiLinkElement = {namespace: string, name: string, type: WikiType};
 
+    type TabParams = {title: string, href: string, selected: boolean};
+
     interface Window {
         ipcApi: IIpcApi;
         dialog: IDialog;
@@ -16,7 +18,7 @@ export declare global {
 interface IIpcApi {
     existsPath(path: string): Promise<boolean>;
     currentVersion(path: string): Promise<number>;
-    getMainContent(mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement, title: string, body: string}>;
+    getMainContent(mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement, title: string, body: string, tabs: TabParams[]}>;
     goBack(): void;
     goForward(): void;
     canGoBackOrForward(): Promise<{back: boolean, forward: boolean}>;
