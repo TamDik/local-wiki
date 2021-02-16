@@ -2,11 +2,11 @@ const olds: NodeListOf<HTMLInputElement>  = document.querySelectorAll('input[typ
 const diffs: NodeListOf<HTMLInputElement> = document.querySelectorAll('input[type="radio"][name="diff"]') as NodeListOf<HTMLInputElement>;
 
 for (const old of olds) {
-    old.onclick = oldRadioClickedEvent;
+    old.addEventListener('click', oldRadioClickedEvent, false);
 }
 
 for (const diff of diffs) {
-    diff.onclick = diffRadioClickedEvent;
+    diff.addEventListener('click', diffRadioClickedEvent, false);
 }
 
 function oldRadioClickedEvent(event: MouseEvent): void {
@@ -72,7 +72,7 @@ function nextAll(element: Element): Element[] {
 }
 
 const compareButton: HTMLButtonElement = document.getElementById('compare-versions-button') as HTMLButtonElement;
-compareButton.onclick = () => {
+compareButton.addEventListener('click', () => {
     let oldVersion: string = '';
     let diffVersion: string = '';
     for (const old of olds) {
@@ -89,4 +89,4 @@ compareButton.onclick = () => {
     }
     const params: Params = new Params();
     location.href = `?${Params.PATH_KEY}=Special:PageDiff&page=${params.path}&old=${oldVersion}&diff=${diffVersion}`;
-};
+}, false);

@@ -10,7 +10,7 @@ window.ipcApi.getRawPageText(params.path)
 
 
 const saveButton: HTMLButtonElement = document.getElementById('page-edit-save-button') as HTMLButtonElement;
-saveButton.onclick = () => {
+saveButton.addEventListener('click', () => {
     const text: string = mdTextArea.value;
     const comment: string = commentArea.value;
     window.ipcApi.updatePage(params.path, text, comment)
@@ -19,20 +19,20 @@ saveButton.onclick = () => {
     })
     .catch(e => {
     });
-};
+}, false);
 
 
 const previewButton: HTMLButtonElement = document.getElementById('page-edit-preview-button') as HTMLButtonElement;
 const previewAlert: HTMLDivElement = document.getElementById('preview-alert') as HTMLDivElement;
 const previewWrapper: HTMLElement = document.getElementById('preview-wrapper') as HTMLElement;
-previewButton.onclick = () => {
+previewButton.addEventListener('click', () => {
     const markdown: string = mdTextArea.value;
     previewAlert.classList.remove('d-none');
     window.ipcApi.markdownToHtml(markdown)
     .then(html => {
         previewWrapper.innerHTML = html;
     });
-};
+}, false);
 
 
 // SimpleMDE の適用（切り替えも）

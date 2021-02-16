@@ -164,16 +164,18 @@ function pathInputEvent(pageType: PageType): () => void {
     };
 }
 
-function versionInputEvent(pageType: PageType): void {
-    const input: HTMLInputElement = getVersionInput(pageType);
-    const numValue: number = Number(input.value);
-    const numMax: number = Number(input.max);
-    const numMin: number = Number(input.min);
-    if (numValue > numMax) {
-        input.value = input.max;
-    } else if (numValue < numMin) {
-        input.value = input.min;
-    }
+function versionInputEvent(pageType: PageType): () => void {
+    return () => {
+        const input: HTMLInputElement = getVersionInput(pageType);
+        const numValue: number = Number(input.value);
+        const numMax: number = Number(input.max);
+        const numMin: number = Number(input.min);
+        if (numValue > numMax) {
+            input.value = input.max;
+        } else if (numValue < numMin) {
+            input.value = input.min;
+        }
+    };
 }
 
 
@@ -194,11 +196,11 @@ function diffShow(): void {
     });
 }
 
-newPath.oninput = pathInputEvent('new');
-oldPath.oninput = pathInputEvent('old');
-newVersion.onchange = () => versionInputEvent('new');
-oldVersion.onchange = () => versionInputEvent('old');
-showButton.onclick = diffShow;
+newPath.addEventListener('input', pathInputEvent('new'), false);
+oldPath.addEventListener('input', pathInputEvent('old'), false);
+newVersion.addEventListener('change', versionInputEvent('new'), false);
+oldVersion.addEventListener('change', versionInputEvent('old'), false);
+showButton.addEventListener('click', diffShow, false);
 
 (() => {
     disableVersion('new');

@@ -118,13 +118,13 @@ function initAccessArea(params: Params) {
         goForwardButton.disabled = !forward;
     });
 
-    goBackButton.onclick = () => {
+    goBackButton.addEventListener('click', () => {
         window.ipcApi.goBack();
-    };
+    }, false);
 
-    goForwardButton.onclick = () => {
+    goForwardButton.addEventListener('click', () => {
         window.ipcApi.goForward();
-    };
+    }, false);
 }
 
 
@@ -195,7 +195,7 @@ async function getMainContent(params: Params): Promise<{linkElement: WikiLinkEle
     }
 }
 
-onload = () => {
+window.addEventListener('load', () => {
     const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
     contentBody.addEventListener("click", function(event) {
         let element: HTMLElement|null = event.target as HTMLElement;
@@ -206,7 +206,7 @@ onload = () => {
                     window.ipcApi.openExternalLink(anchor.href);
                     event.preventDefault();
                 }
-                return;
+                break;
             }
             element = element.parentNode as HTMLElement;
         }
@@ -236,4 +236,4 @@ onload = () => {
         contentBody.innerHTML = lines.join('');
         console.log(e);
     });
-}
+});

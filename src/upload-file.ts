@@ -56,7 +56,7 @@ function setChosenFilepath(filepath: string): void {
     uploadButton.disabled = !canUpload();
 }
 
-chooseFileButton.onclick = () => {
+chooseFileButton.addEventListener('click', () => {
     window.dialog.openFileDialog()
     .then((result: {canceled: boolean, filePaths: string[]}) => {
         if (result.canceled || result.filePaths.length !== 1) {
@@ -72,9 +72,9 @@ chooseFileButton.onclick = () => {
         }
         setChosenFilepath(filepath);
     });
-};
+}, false);
 
-destInput.onchange = () => {
+destInput.addEventListener('change', () => {
     uploadButton.disabled = !canUpload();
     const destName: string|null = getDestName();
     if (typeof(destName) === 'string') {
@@ -83,9 +83,9 @@ destInput.onchange = () => {
             destInput.focus();
         }
     }
-}
+}, false);
 
-uploadButton.onclick = () => {
+uploadButton.addEventListener('click', () => {
     const filepath: string|null = getChosenFilepath();
     if (filepath == null) {
         return;
@@ -99,4 +99,4 @@ uploadButton.onclick = () => {
     })
     .catch(e => {
     });
-};
+}, false);
