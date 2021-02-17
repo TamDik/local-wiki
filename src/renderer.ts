@@ -94,8 +94,8 @@ function initAccessArea(params: Params) {
         accessField.value = path;
     }
 
-    accessField.addEventListener('keyup', (event: KeyboardEvent) => {
-        if (event.which == 13) {
+    accessField.addEventListener('keypress', (event: KeyboardEvent) => {
+        if (event.which === 13) {
             event.preventDefault();
             const fieldValues: string[] = accessField.value.split('?');
             let href: string = '?path=' + window.utils.trim(fieldValues[0]);
@@ -153,10 +153,10 @@ async function getMainContent(params: Params): Promise<{linkElement: WikiLinkEle
 
 window.addEventListener('load', () => {
     const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
-    contentBody.addEventListener("click", function(event) {
+    contentBody.addEventListener('click', function(event) {
         let element: HTMLElement|null = event.target as HTMLElement;
         while (element && element !== contentBody) {
-            if (element.nodeName === "A") {
+            if (element.nodeName === 'A') {
                 const anchor: HTMLAnchorElement = element as HTMLAnchorElement;
                 if (anchor.classList.contains('external')) {
                     window.ipcApi.openExternalLink(anchor.href);
