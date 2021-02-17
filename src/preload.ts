@@ -43,7 +43,9 @@ contextBridge.exposeInMainWorld(
         async currentVersion(path: string): Promise<number> {
             return ipcRenderer.invoke('current-version', path);
         },
-        async getMainContent(mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement, title: string, body: string}> {
+        async getMainContent(mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement,
+                                                                                       title: string, body: string,
+                                                                                       dependences: {css: string[], js: string[]}}> {
             return ipcRenderer.invoke('get-main-content', mode, path, version);
         },
         goBack(): void {

@@ -40,7 +40,7 @@ function existsVersion(path: string, version: number): boolean {
 
 
 class ContentGenerator {
-    public static createTitle(mode: PageMode, wikiLink: WikiLink): string {
+    public static title(mode: PageMode, wikiLink: WikiLink): string {
         const normalizedPath: string = wikiLink.toPath();
         switch (mode) {
             case 'read':
@@ -52,7 +52,7 @@ class ContentGenerator {
         }
     }
 
-    public static createMenuTabs(mode: PageMode, wikiLink: WikiLink): TabParams[] {
+    public static menuTabs(mode: PageMode, wikiLink: WikiLink): TabParams[] {
         const path: string = wikiLink.toPath();
         switch (wikiLink.type) {
             case 'Page':
@@ -67,9 +67,9 @@ class ContentGenerator {
         }
     }
 
-    public static createBody(mode: PageMode, wikiLink: WikiLink, version?: number): string {
+    public static mainContent(mode: PageMode, wikiLink: WikiLink, version?: number): {body: string, dependences: {js: string[], css: string[]}} {
         const contentBody: ContentBody = ContentGenerator.dispatchContentBody(mode, wikiLink, version);
-        return contentBody.html;
+        return {body: contentBody.html, dependences: {js: contentBody.js, css: contentBody.css}};
     }
 
     private static dispatchContentBody(mode: PageMode, wikiLink: WikiLink, version: number|undefined): ContentBody {
@@ -225,6 +225,8 @@ class SpecialContentBodyDispatcher extends ContentBodyDispatcher {
 // -----------------------------------------------------------------------------
 abstract class ContentBody {
     public abstract html: string;
+    public css: string[] = [];
+    public js: string[] = [];
 
     public constructor(protected readonly wikiLink: WikiLink) {
     }
@@ -263,6 +265,9 @@ class NotFoundPageBody extends ContentBody {
 }
 
 class PageEditBody extends ContentBody {
+    public css: string[] = ['./css/editor.css'];
+    public js: string[] = ['./js/editor.js'];
+
     public get html(): string {
         const mainEditAreaId: string = 'markdown-edit-area';
         const lines: string[] = [
@@ -454,6 +459,9 @@ class PageWithVersionReadBody extends PageReadBody {
 }
 
 class PageHistoryBody extends ContentBody {
+    public css: string[] = ['./css/page-history.css'];
+    public js: string[] = ['./js/page-history.js'];
+
     public get html(): string {
         const lines: string[] = [];
         lines.push('Diff selection: Mark the radio boxes of the revisions to compare and click the button at the bottom.');
@@ -774,6 +782,7 @@ class AllFilesBody extends SpecialContentBody {
 
 
 class UploadFileBody extends SpecialContentBody {
+    public js: string[] = ['./js/upload-file.js'];
     public name: string = 'UploadFile';
     public title: string = 'Upload file';
     public type: SpecialContentType = 'media';
@@ -814,6 +823,13 @@ class PageDiffBody extends SpecialContentBody {
     public name: string = PageDiffBody.wikiName;
     public title: string = 'differences';
     public type: SpecialContentType = 'others';
+
+    public css: string[] = ['./css/page-diff.css'];
+    public js: string[] = [
+        '../node_modules/jsdifflib/index.js',
+        './js/code-table.js',
+        './js/page-diff.js'
+    ];
 
     public static toDiffLink(wikiLink: WikiLink, old: number, diff: number): string {
         const path: string = `Special:${PageDiffBody.wikiName}`;

@@ -35,18 +35,20 @@ ipcMain.on('go-forward', event => {
 });
 
 // htmlに展開するコンテンツを返す
-ipcMain.handle('get-main-content', async (event, mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement, title: string, body: string, tabs: TabParams[]}> => {
+ipcMain.handle('get-main-content', async (event, mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement,
+                                                                                                           title: string, body: string, tabs: TabParams[],
+                                                                                                           dependences: {css: string[], js: string[]}}> => {
     const wikiLink: WikiLink = new WikiLink(path);
     const linkElement: WikiLinkElement = {namespace: wikiLink.namespace, name: wikiLink.name, type: wikiLink.type};
-    const title: string = ContentGenerator.createTitle(mode, wikiLink);
-    let body: string;
+    const title: string = ContentGenerator.title(mode, wikiLink);
+    let mainContent: {body: string, dependences: {css: string[], js: string[]}};
     if (typeof(version) === 'number') {
-        body = ContentGenerator.createBody(mode, wikiLink, version);
+        mainContent = ContentGenerator.mainContent(mode, wikiLink, version);
     } else {
-        body = ContentGenerator.createBody(mode, wikiLink);
+        mainContent = ContentGenerator.mainContent(mode, wikiLink);
     }
-    const tabs: TabParams[] = ContentGenerator.createMenuTabs(mode, wikiLink);
-    return {linkElement, title, body, tabs};
+    const tabs: TabParams[] = ContentGenerator.menuTabs(mode, wikiLink);
+    return {linkElement, title, tabs, ...mainContent};
 });
 
 // 生のPageデータを返す

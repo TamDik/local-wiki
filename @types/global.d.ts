@@ -25,7 +25,9 @@ interface IIpcApi {
     openExternalLink(path: string): Promise<void>;
     existsPath(path: string): Promise<boolean>;
     currentVersion(path: string): Promise<number>;
-    getMainContent(mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement, title: string, body: string, tabs: TabParams[]}>;
+    getMainContent(mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement,
+                                                                             title: string, body: string, tabs: TabParams[],
+                                                                             dependences: {css: string[], js: string[]}}>;
     goBack(): void;
     goForward(): void;
     canGoBackOrForward(): Promise<{back: boolean, forward: boolean}>;

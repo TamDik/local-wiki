@@ -140,49 +140,9 @@ function importJS(src: string): void {
     headTag.appendChild(scriptTag);
 }
 
-function linkRequiredCSS(mode: PageMode, linkElement: WikiLinkElement): void {
-    if (linkElement.type === 'Page' && mode === 'edit') {
-        linkCSS('./css/editor.css');
-        return;
-    }
-
-    if (linkElement.type === 'Page' && mode === 'history') {
-        linkCSS('./css/page-history.css');
-        return;
-    }
-
-    if (linkElement.type === 'Special' && linkElement.name === 'PageDiff') {
-        linkCSS('./css/page-diff.css');
-        return;
-    }
-}
-
-function importRequiredJS(mode: PageMode, linkElement: WikiLinkElement): void {
-    if (linkElement.type === 'Page' && mode === 'edit') {
-        importJS('./js/editor.js');
-        return;
-    }
-
-    if (linkElement.type === 'Page' && mode === 'history') {
-        importJS('./js/page-history.js');
-        return;
-    }
-
-    if (linkElement.type === 'Special' && linkElement.name === 'UploadFile') {
-        importJS('./js/upload-file.js');
-        return;
-    }
-
-    if (linkElement.type === 'Special' && linkElement.name === 'PageDiff') {
-        importJS('../node_modules/jsdifflib/index.js');
-        importJS('./js/code-table.js');
-        importJS('./js/page-diff.js');
-        return;
-    }
-}
-
-
-async function getMainContent(params: Params): Promise<{linkElement: WikiLinkElement, title: string, body: string, tabs: TabParams[]}> {
+async function getMainContent(params: Params): Promise<{linkElement: WikiLinkElement,
+                                                        title: string, body: string, tabs: TabParams[],
+                                                        dependences: {css: string[], js: string[]}}> {
     const version: string = params.getValueOf('version');
     if (version.match(/^\d+$/)) {
         return window.ipcApi.getMainContent(params.mode, params.path, Number(version));
@@ -215,12 +175,16 @@ window.addEventListener('load', () => {
     initAccessArea(params);
 
     getMainContent(params)
-    .then(({linkElement, title, body, tabs}) => {
+    .then(({linkElement, title, body, tabs, dependences}) => {
         initTabs(tabs);
         contentHead.innerHTML = title;
         contentBody.innerHTML = body;
-        linkRequiredCSS(params.mode, linkElement);
-        importRequiredJS(params.mode, linkElement);
+        for (const css of dependences.css) {
+            linkCSS(css);
+        }
+        for (const js of dependences.js) {
+            importJS(js);
+        }
     })
     .catch(e => {
         contentHead.innerHTML = 'This page is not working...';
