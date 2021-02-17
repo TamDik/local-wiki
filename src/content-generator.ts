@@ -466,7 +466,9 @@ class PageHistoryBody extends ContentBody {
     public get html(): string {
         const lines: string[] = [];
         lines.push('Diff selection: Mark the radio boxes of the revisions to compare and click the button at the bottom.');
-        lines.push('Legend: (cur) = difference with latest revision, (prev) = difference with preceding revision.');
+        lines.push('<div>');
+        lines.push(  'Legend: (cur) = difference with latest revision, (prev) = difference with preceding revision.');
+        lines.push('</div>');
         lines.push('<div class="row pb-2 pt-2">');
         lines.push(  '<div class="col-3">');
         lines.push(    '<button type="button" id="compare-versions-button" class="btn btn-outline-secondary btn-block">Compare selected versions</button>');
