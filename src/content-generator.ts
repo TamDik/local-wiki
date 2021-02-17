@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {date2str, bytes2str, zeroPadding} from './util';
+import {dateToStr, bytesToStr, zeroPadding} from './utils';
 import {WikiConfig} from './wikiconfig';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
@@ -36,20 +36,6 @@ function existsVersion(path: string, version: number): boolean {
         return false;
     }
     return version > 0 && version <= history.getByName(name).version;
-}
-
-
-function dateToStr(date: Date): string {
-    const h: string = zeroPadding(date.getHours(), 2);
-    const i: string = zeroPadding(date.getMinutes(), 2);
-    const d: string = zeroPadding(date.getDate(), 2);
-    const m: string = [
-        'January'  , 'February', 'March'   , 'April',
-        'May'      , 'June'    , 'July'    , 'August',
-        'September', 'October' , 'November', 'December'
-    ][date.getMonth()];
-    const y: string = zeroPadding(date.getFullYear(), 4);
-    return `${h}:${i}, ${d} ${m} ${y}`;
 }
 
 
@@ -643,10 +629,10 @@ class FileReadBody extends ContentBody {
 
     private tr(data: VersionData): string {
         const status: string = data.next === null ? 'current' : 'revert';
-        const created: string = date2str(data.created);
+        const created: string = dateToStr(data.created);
         const src: string = this.bufferPathGenerator.execute(data.filename);
         const comment: string = data.comment;
-        const size: string = bytes2str(fs.statSync(src).size);
+        const size: string = bytesToStr(fs.statSync(src).size);
         const lines: string[] = [
             '<tr>',
               `<td>${status}</td>`,

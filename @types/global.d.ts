@@ -8,10 +8,16 @@ export declare global {
     type TabParams = {title: string, href: string, selected: boolean};
 
     interface Window {
-        ipcApi: IIpcApi;
-        dialog: IDialog;
+        utils: IUtils;
         localWiki: ILocalWiki;
+        dialog: IDialog;
+        ipcApi: IIpcApi;
     }
+}
+
+
+interface IUtils {
+    trim(s: string): string;
 }
 
 

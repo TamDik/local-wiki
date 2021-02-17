@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {generateRandomString, date2str, str2date} from './util';
+import {generateRandomString, zeroPadding} from './utils';
 
 // TODO: 名前空間からパスを解決するクラス
 
@@ -265,7 +265,7 @@ class PreviousVersionManager {
         }
         const text: string = fs.readFileSync(filepath, 'utf-8');
         const dataList: PreviousVersionData[] = JSON.parse(text);
-        const dataMap: Map<string, VersionData> = new Map(dataList.map(data => [data.id, {...data, created: str2date(data.created)}]));
+        const dataMap: Map<string, VersionData> = new Map(dataList.map(data => [data.id, {...data, created: this.strToDate(data.created)}]));
         this.__dataMap = dataMap;
         return dataMap;
     }
@@ -288,15 +288,35 @@ class PreviousVersionManager {
             version: versionData.version,
             next: versionData.next,
             prev: versionData.prev,
-            created: date2str(versionData.created),
+            created: this.dateToStr(versionData.created),
             comment: versionData.comment,
             filename: versionData.filename,
         };
         return data;
     }
 
+    private dateToStr(date: Date): string {
+        let formattedStr: string = '';
+        formattedStr += zeroPadding(date.getFullYear(), 4) + '/';
+        formattedStr += zeroPadding(date.getMonth() + 1, 2) + '/';
+        formattedStr += zeroPadding(date.getDate(), 2) + ' ';
+        formattedStr += zeroPadding(date.getHours(), 2) + ':';
+        formattedStr += zeroPadding(date.getMinutes(), 2) + ':';
+        formattedStr += zeroPadding(date.getSeconds(), 2);
+        return formattedStr;
+    }
+
+    private strToDate(dateStr: string): Date {
+        const temp: string[] = dateStr.split(' ');
+        const ymd: string[] = temp[0].split('/');
+        const hms: string[] = temp[1].split(':');
+        return new Date(Number(ymd[0]), Number(ymd[1]) - 1, Number(ymd[2]),
+                        Number(hms[0]), Number(hms[1]), Number(hms[2]));
+    }
+
     private save(): void {
-        const data: PreviousVersionData[] = Array.from(this.dataMap.values()).map(this.previousVersionDataOf);
+        const data: PreviousVersionData[] = Array.from(this.dataMap.values())
+                                                 .map((data) => this.previousVersionDataOf(data));
         const text: string = JSON.stringify(data, null, '  ');
         fs.writeFileSync(this.filepath, text);
     }

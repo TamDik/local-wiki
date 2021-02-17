@@ -1,4 +1,12 @@
 import {contextBridge, ipcRenderer, remote} from "electron";
+import * as utils from './utils';
+
+
+contextBridge.exposeInMainWorld(
+    'utils', {
+        trim: (s: string): string => utils.trim(s),
+    }
+);
 
 
 contextBridge.exposeInMainWorld(
@@ -11,6 +19,7 @@ contextBridge.exposeInMainWorld(
         }
     }
 );
+
 
 type DialogResult = {canceled: boolean, filePaths: string[]};
 contextBridge.exposeInMainWorld(

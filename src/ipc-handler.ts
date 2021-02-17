@@ -5,7 +5,7 @@ import {WikiConfig} from './wikiconfig';
 import {WikiHistory, VersionData} from './wikihistory';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {WikiLink} from './wikilink';
-import {generateRandomString} from './util';
+import {generateRandomString} from './utils';
 
 
 function toFullPath(filename: string, namespace: string, wikiType: WikiType): string {

@@ -2,10 +2,6 @@ const DEFAULT_MODE: PageMode = 'read';
 const DEFAULT_PATH: string = 'Main';
 
 
-function trim(v: string): string {
-    return v.replace(/^\s+|\s+$/g, '');
-}
-
 class Params {
     private params: URLSearchParams;
     public static readonly MODE_KEY: string = 'mode';
@@ -21,7 +17,7 @@ class Params {
         if (value === null) {
             return DEFAULT_MODE;
         }
-        value = trim(value);
+        value = window.utils.trim(value);
         if (window.localWiki.isMode(value)) {
             return value;
         }
@@ -34,7 +30,7 @@ class Params {
         if (value === null) {
             return DEFAULT_PATH;
         }
-        value = trim(value);
+        value = window.utils.trim(value);
         if (value === '') {
             return DEFAULT_PATH;
         }
@@ -52,7 +48,7 @@ class Params {
         if (value === null) {
             return '';
         }
-        return trim(value);
+        return window.utils.trim(value);
     }
 
     public get keys(): string[] {
@@ -102,9 +98,9 @@ function initAccessArea(params: Params) {
         if (event.which == 13) {
             event.preventDefault();
             const fieldValues: string[] = accessField.value.split('?');
-            let href: string = '?path=' + trim(fieldValues[0]);
+            let href: string = '?path=' + window.utils.trim(fieldValues[0]);
             if (fieldValues.length > 1) {
-                href += '&' + trim(fieldValues[1]);
+                href += '&' + window.utils.trim(fieldValues[1]);
             }
             location.href = href;
         }

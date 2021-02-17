@@ -25,7 +25,7 @@ function getChosenFilepath(): string|null {
 }
 
 function getDestName(): string|null {
-    const name: string = trim(destInput.value);
+    const name: string = window.utils.trim(destInput.value);
     if (name === '') {
         return null;
     }
@@ -91,8 +91,8 @@ uploadButton.addEventListener('click', () => {
         return;
     }
     const params: Params = new Params();
-    const name: string = trim(destInput.value);
-    const comment: string = trim(commentInput.value);
+    const name: string = window.utils.trim(destInput.value);
+    const comment: string = window.utils.trim(commentInput.value);
     window.ipcApi.uploadFile(params.path, name, filepath, comment)
     .then(path => {
         location.href = `?${Params.PATH_KEY}=${path}`;
