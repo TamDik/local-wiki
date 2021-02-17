@@ -261,7 +261,7 @@ class NotFoundNameSpaceBody extends ContentBody {
 class NotFoundPageBody extends ContentBody {
     public get html(): string {
         const path: string = this.wikiLink.toPath();
-        return `<p>There is currently no text in this page. You can <a class="internal" href="?path=${path}&mode=edit">create this page</a>.</p>`;
+        return `<p>There is currently no text in this page. You can <a href="?path=${path}&mode=edit">create this page</a>.</p>`;
     }
 }
 

@@ -11,7 +11,6 @@ class WikiMD {
     private isWikiLink: iswikilink;
     private readonly magicHandlers: IMagicHandler[] = [];
     public static readonly EXTERNAL_CLASS_NAME = 'external';
-    public static readonly INTERNAL_CLASS_NAME = 'internal';
     public static readonly NEW_CLASS_NAME = 'new';
 
     constructor(options: WikiMDOption) {
@@ -41,34 +40,31 @@ class WikiMD {
         return marked(this.value);
     }
 
-    private className(link: string, isWikiLink: iswikilink): string {
-        if (isWikiLink(link)) {
-            return WikiMD.INTERNAL_CLASS_NAME;
-        } else {
-            return WikiMD.EXTERNAL_CLASS_NAME;
-        }
-    }
-
     private link(href: string, title: string|null, text: string, isWikiLink: iswikilink): string {
         title = title === null ? '' : title;
-        const className: string = this.className(href, isWikiLink);
         if (isWikiLink(href)) {
             href = `?path=${href}`
+            return `<a href="${href}" title="${title}">${text}</a>`;
+        } else {
+            const className: string = WikiMD.EXTERNAL_CLASS_NAME;
+            return `<a class="${className}" href="${href}" title="${title}">${text}</a>`;
         }
-        return `<a class="${className}" href="${href}" title="${title}">${text}</a>`;
     }
 
     private image(href: string, title: string|null, text: string, isWikiLink: iswikilink): string {
         title = title === null ? '' : title;
         const alt: string = text;
         const isInternal: boolean = isWikiLink(href);
-        const className: string = this.className(href, isWikiLink);
         const src: string = isInternal ? `?path=${href}` : href;
-        const img: string = `<img class="${className}" src="${src}" alt="${alt}" title="${title}" decoding="async">`;
         if (isInternal) {
-            return `<a href="?path=${href}" class="image">` + img + '</a>';
+            return [
+                `<a href="?path=${href}" class="image">`,
+                    `<img src="${src}" alt="${alt}" title="${title}" decoding="async">`,
+                '</a>'
+            ].join('');
         } else {
-            return img;
+            const className: string = WikiMD.EXTERNAL_CLASS_NAME;
+            return `<img class="${className}" src="${src}" alt="${alt}" title="${title}" decoding="async">`;
         }
     }
 
@@ -352,7 +348,7 @@ class ImageFileHandler extends FileHandler {
             openTag  = '<div class="thumbinner">';
             closeTag =   '<div class="thumbcaption">' +
                            '<div class="magnify">' +
-                             '<a href="[:link:]" class="internal" title="Enlarge"></a>' +
+                             '<a href="[:link:]" title="Enlarge"></a>' +
                            '</div>' +
                            '[:caption:]' +
                          '</div>' +

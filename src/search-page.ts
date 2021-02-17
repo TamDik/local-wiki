@@ -65,9 +65,9 @@ function searchPage(): void {
     window.ipcApi.searchPageByName(params.path, searchValue)
     .then(({exists, path}) => {
         if (exists) {
-            p.innerHTML = `There is a page named "<a href="?path=${path}" class="internal">${searchValue}</a>" on this wiki.`;
+            p.innerHTML = `There is a page named "<a href="?path=${path}">${searchValue}</a>" on this wiki.`;
         } else {
-            p.innerHTML = `Create the page "<a href="?path=${path}&mode=edit" class="internal new">${searchValue}</a>" on this wiki!`;
+            p.innerHTML = `Create the page "<a href="?path=${path}&mode=edit">${searchValue}</a>" on this wiki!`;
         }
     });
     window.ipcApi.searchPageByKeywords(params.path, keywords);

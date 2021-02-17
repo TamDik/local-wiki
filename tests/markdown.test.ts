@@ -20,7 +20,7 @@ describe('test normal markdown syntax', function() {
         e1.innerHTML = createWMD(value, true).toHTML();
         const e2: HTMLElement = document.createElement('div');
         e2.innerHTML = createWMD(value, false).toHTML();
-        checkAnchor(e1, 'internal');
+        checkAnchor(e1, '');
         checkAnchor(e2, 'external');
     });
 
@@ -34,7 +34,7 @@ describe('test normal markdown syntax', function() {
         e1.innerHTML = createWMD(value, true).toHTML();
         const e2: HTMLElement = document.createElement('div');
         e2.innerHTML = createWMD(value, false).toHTML();
-        checkImage(e1, 'internal');
+        checkImage(e1, '');
         checkImage(e2, 'external');
     });
 });
@@ -85,7 +85,7 @@ describe('test ImageFileHandler', function() {
             '</a>' +
           '<div class="thumbcaption">' +
           '<div class="magnify">' +
-            '<a href="File:example.jpg" class="internal" title="Enlarge">' +
+            '<a href="File:example.jpg" title="Enlarge">' +
             '</a>' +
           '</div>' +
           'caption</div>' +
@@ -129,7 +129,7 @@ describe('test ImageFileHandler', function() {
             '</a>' +
             '<div class="thumbcaption">' +
               '<div class="magnify">' +
-                '<a href="File:example.jpg" class="internal" title="Enlarge"></a>' +
+                '<a href="File:example.jpg" title="Enlarge"></a>' +
               '</div>' +
             '</div>' +
           '</div>' +
