@@ -3,9 +3,7 @@ import * as utils from './utils';
 
 
 contextBridge.exposeInMainWorld(
-    'utils', {
-        trim: (s: string): string => utils.trim(s),
-    }
+    'utils', utils
 );
 
 
@@ -68,6 +66,15 @@ contextBridge.exposeInMainWorld(
         },
         async markdownToHtml(markdown: string): Promise<string> {
             return ipcRenderer.invoke('markdown-to-html', markdown);
+        },
+        searchPageByKeywords(path: string, keywords: string[]): void {
+            ipcRenderer.send('search-page-by-keyword', path, keywords);
+        },
+        async searchPageByName(path: string, name: string): Promise<{exists: boolean, path: string}> {
+            return ipcRenderer.invoke('search-page-by-name', path, name);
+        },
+        searchPageResult(lister: (path: string, body: string, created: Date, keywords: string[]) => void): void {
+            ipcRenderer.on('search-page-result', (event, p: string, b: string, c: Date, k: string[]) => lister(p, b, c, k));
         }
     }
 );

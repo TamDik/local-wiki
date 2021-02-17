@@ -198,6 +198,7 @@ class SpecialContentBodyDispatcher extends ContentBodyDispatcher {
     protected createReadContentBody(wikiLink: WikiLink): ContentBody {
         const specials: SpecialContentBody[] = [
             new AllPagesBody(wikiLink),
+            new SearchBody(wikiLink),
             new AllFilesBody(wikiLink),
             new UploadFileBody(wikiLink),
             new PageDiffBody(wikiLink),
@@ -898,6 +899,35 @@ class PageDiffBody extends SpecialContentBody {
         ];
         return lines.join('');
 
+    }
+}
+
+
+class SearchBody extends SpecialContentBody {
+    public js: string[] = ['./js/search-page.js'];
+    public css: string[] = ['./css/search-page.css'];
+    public name: string = 'Search';
+    public title: string = 'Search';
+    public type: SpecialContentType = 'pages';
+
+    public get html(): string {
+        const lines: string[] = [
+            '<div class="row pb-3">',
+              '<div class="col-6">',
+                '<div class="input-group">',
+                  '<input id="search-keyword-field" class="form-control" type="search" placeholder="Search">',
+                  '<div class="input-group-append">',
+                    '<button id="search-page-button" class="btn btn-outline-primary">Search</button>',
+                  '</div>',
+                '</div>',
+              '</div>',
+            '</div>',
+            '<div class="row">',
+              '<div class="col-12" id="search-result-wrapper">',
+              '</div>',
+            '</div>'
+        ]
+        return lines.join('');
     }
 }
 

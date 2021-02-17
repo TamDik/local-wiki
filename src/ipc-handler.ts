@@ -5,7 +5,7 @@ import {WikiConfig} from './wikiconfig';
 import {WikiHistory, VersionData} from './wikihistory';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {WikiLink} from './wikilink';
-import {generateRandomString} from './utils';
+import {escapeRegex, generateRandomString} from './utils';
 
 
 function toFullPath(filename: string, namespace: string, wikiType: WikiType): string {
@@ -122,4 +122,42 @@ ipcMain.handle('upload-file', async (event, path: string, destName: string, sour
 // マークダウンをHTMLに変換
 ipcMain.handle('markdown-to-html', async (event, markdown: string): Promise<string> => {
     return PageReadBody.markdownToHtml(markdown);
+});
+
+// キーワードでページを検索
+ipcMain.on('search-page-by-keyword', (event, path: string, keywords: string[]) => {
+    const namespace: string = new WikiLink(path).namespace;
+    const wikiType: WikiType = 'Page';
+    const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
+    const currentData: VersionData[] = history.getCurrentList();
+    if (keywords.length === 0) {
+        return;
+    }
+
+    for (const data of currentData) {
+        const filepath: string = toFullPath(data.filename, namespace, wikiType);
+        const text: string = fs.readFileSync(filepath, 'utf-8');
+        const lowerText: string = text.toLowerCase();
+        let matched: boolean = true;
+        for (const keyword of keywords) {
+            if (!lowerText.includes(keyword.toLowerCase())) {
+                matched = false;
+                continue;
+            }
+        }
+        if (matched) {
+            const pageLink: WikiLink = new WikiLink({namespace, name: data.name, type: wikiType});
+            event.sender.send('search-page-result', pageLink.toPath(), text, data.created, keywords);
+        }
+    }
+});
+
+// 名前でページを検索
+ipcMain.handle('search-page-by-name', async (event, path: string, name: string): Promise<{exists: boolean, path: string}> => {
+    const namespace: string = new WikiLink(path).namespace;
+    const wikiType: WikiType = 'Page';
+    const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
+    const pagePath: string = new WikiLink({namespace, name, type: wikiType}).toPath();
+    const exists: boolean = history.hasName(name);
+    return {exists, path: pagePath};
 });

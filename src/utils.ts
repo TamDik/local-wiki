@@ -1,3 +1,7 @@
+function escapeRegex(str: string) {
+    return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
 function generateRandomString(len: number): string {
     const CHARS: string = '0123456789abcdefghijklmnopqrstuvwxyz';
     const charsLen: number = CHARS.length;
@@ -64,4 +68,4 @@ function trim(s: string): string {
 }
 
 
-export {generateRandomString, zeroPadding, dateToStr, bytesToStr, trim};
+export {escapeRegex, generateRandomString, zeroPadding, dateToStr, bytesToStr, trim};

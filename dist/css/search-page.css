@@ -1,0 +1,23 @@
+#search-result-wrapper ul {
+    max-width: 38em;
+    margin: 0;
+    padding: 0;
+}
+
+#search-result-wrapper li {
+    list-style: none;
+    padding-bottom: 24px;
+}
+
+#search-result-heading li a {
+    font-size: 108%;
+}
+
+.search-result-data {
+    color: #008000;
+    font-size: 97%;
+}
+
+.search-match {
+    font-weight: bold;
+}

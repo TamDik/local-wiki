@@ -65,11 +65,11 @@ class Params {
 
 
 function initTabs(tabs: TabParams[]) {
-    const search: HTMLLIElement = document.getElementById('search-tag') as HTMLLIElement;
+    const searchTag: HTMLLIElement = document.getElementById('search-tag') as HTMLLIElement;
     for (const tab of tabs) {
         const {title, href, selected} = tab;
         const li: HTMLLIElement = document.createElement('li');
-        search.before(li);
+        searchTag.before(li);
         const a: HTMLAnchorElement = document.createElement('a');
         li.appendChild(a);
         a.href = href;
@@ -78,6 +78,14 @@ function initTabs(tabs: TabParams[]) {
             li.classList.add('selected');
         }
     }
+    const searchField: HTMLInputElement = document.getElementById('search-field') as HTMLInputElement;
+    searchField.addEventListener('keypress', (event: KeyboardEvent) => {
+        if (event.which === 13) {
+            event.preventDefault();
+            let href: string = '?path=Special:Search&search=' + searchField.value;
+            location.href = href;
+        }
+    });
 }
 
 

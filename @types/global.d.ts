@@ -18,6 +18,8 @@ export declare global {
 
 interface IUtils {
     trim(s: string): string;
+    dateToStr(date: Date): string;
+    escapeRegex(str: string): string;
 }
 
 
@@ -35,6 +37,9 @@ interface IIpcApi {
     updatePage(path: string, text: string, comment: string): Promise<boolean>;
     getRawPageText(path: string, version?: number): Promise<string>;
     markdownToHtml(markdown: string): Promise<string>;
+    searchPageByKeywords(path: string, keywords: string[]): void;
+    searchPageByName(path: string, name: string): Promise<{exists: boolean, path: string}>;
+    searchPageResult(lister: (path: string, body: string, created: Date, keywords: string[]) => void): void;
 }
 
 
