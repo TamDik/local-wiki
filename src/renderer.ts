@@ -132,20 +132,23 @@ function initAccessArea(params: Params) {
 }
 
 
-const headTag: HTMLHeadElement = document.getElementsByTagName('head')[0];
-
 function linkCSS(href: string): void {
     const linkTag: HTMLLinkElement = document.createElement('link');
     linkTag.rel = 'stylesheet';
     linkTag.type = 'text/css';
     linkTag.href = href;
-    headTag.appendChild(linkTag);
+    document.head.appendChild(linkTag);
 }
 
-function importJS(src: string): void {
-    const scriptTag: HTMLScriptElement = document.createElement('script');
-    scriptTag.src = src;
-    headTag.appendChild(scriptTag);
+function importJS(src: string): void{
+    const request: XMLHttpRequest = new XMLHttpRequest();
+    request.open('GET', src, false);
+    request.send(null);
+    if (request.status === 200) {
+        const script: HTMLScriptElement = document.createElement('script');
+        script.text = request.responseText;
+        document.head.appendChild(script);
+    }
 }
 
 async function getMainContent(params: Params): Promise<{linkElement: WikiLinkElement,
