@@ -10,6 +10,16 @@ interface NameSpaceConfig {
     rootDir?: string;
 }
 
+interface SideMenuConfig {
+    main: SectionData;
+    sub: {title: string, data: SectionData}[]
+}
+
+interface ConfigData {
+    namespace: NameSpaceConfig[];
+    sidemenu: SideMenuConfig;
+}
+
 
 const DATA_DIR: string = path.join(__dirname, '../../data');
 if (!fs.existsSync(DATA_DIR)) {
@@ -18,62 +28,104 @@ if (!fs.existsSync(DATA_DIR)) {
 
 
 class WikiConfig {
-    private data: Map<string, NameSpaceConfig>;
     private configPath: string;
     public constructor(configPath?: string, private mkdir: boolean=true) {
         this.configPath = configPath || path.join(DATA_DIR, 'config.json');
-        if (fs.existsSync(this.configPath)) {
-            const dataList: NameSpaceConfig[] = JSON.parse(fs.readFileSync(this.configPath, 'utf-8'));
-            this.data = new Map(dataList.map(data => [data.namespace, data]));
-        } else {
-            this.data = new Map();
-            this.addNameSpace({namespace: DEFAULT_NAMESPACE, type: 'internal'});
-        }
     }
 
-    private saveConfigFile(): void {
-        const data: NameSpaceConfig[] = Array.from(this.data.values());
-        const text: string = JSON.stringify(data, null, '  ');
+    private __data: ConfigData|null = null;
+    private get data(): ConfigData {
+        if (this.__data !== null) {
+            return this.__data;
+        }
+        if (fs.existsSync(this.configPath)) {
+            this.__data = JSON.parse(fs.readFileSync(this.configPath, 'utf-8'));
+            return this.__data as ConfigData;
+        }
+
+        this.__data = {
+            namespace: [],
+            sidemenu: {
+                main: [
+                    {type: 'link', text: 'Main', path: 'Main'},
+                    {type: 'link', text: 'Special pages', path: 'Special:SpecialPages'},
+                    {type: 'link', text: 'Upload file', path: 'Special:UploadFile'},
+                ],
+                sub: [],
+            }
+        };
+        // NOTE: ディレクトリを作るために，addNameSpace を呼び出す必要がある
+        this.addNameSpace({namespace: DEFAULT_NAMESPACE, type: 'internal'});
+        return this.__data;
+    }
+
+    private saveData(): void {
+        const text: string = JSON.stringify(this.data, null, '  ');
         fs.writeFileSync(this.configPath, text);
     }
 
-    public addNameSpace(data: NameSpaceConfig): void {
-        if (data.type === 'external' && typeof(data.rootDir) !== 'string') {
+    public addNameSpace(namespace: NameSpaceConfig): void {
+        if (namespace.type === 'external' && typeof(namespace.rootDir) !== 'string') {
             throw new Error('rootDir must be string when type is external');
         }
-        if (data.type === 'internal' && typeof(data.rootDir) !== 'undefined') {
+        if (namespace.type === 'internal' && typeof(namespace.rootDir) !== 'undefined') {
             throw new Error('rootDir must be undefined when type is internal');
         }
-        this.data.set(data.namespace, data);
-        this.saveConfigFile();
-        if (data.type === 'internal') {
-            const rootDir: string = this.rootDirOf(data.namespace);
+        if (this.hasNameSpace(namespace.namespace)) {
+            this.data.namespace = this.data.namespace.map(ns => {
+                if (ns.namespace !== namespace.namespace) {
+                    return ns;
+                }
+                return namespace;
+            });
+        } else {
+            this.data.namespace.push(namespace);
+        }
+        this.saveData();
+        if (namespace.type === 'internal') {
+            const rootDir: string = this.rootDirOf(namespace.namespace);
             if (this.mkdir && !fs.existsSync(rootDir)) {
                 fs.mkdirSync(rootDir);
             }
         }
     }
 
-    public hasNameSpace(ns: string): boolean {
-        return this.data.has(ns);
-    }
-
-    public typeOf(ns: string): NameSpaceType {
-        return this.configOf(ns).type;
-    }
-
-    public rootDirOf(ns: string): string {
-        if (this.typeOf(ns) === 'internal') {
-            return path.join(DATA_DIR, ns);
+    public hasNameSpace(namespace: string): boolean {
+        for (const ns of this.data.namespace) {
+            if (ns.namespace === namespace) {
+                return true;
+            }
         }
-        return this.configOf(ns).rootDir as string;
+        return false;
     }
 
-    private configOf(ns: string): NameSpaceConfig {
-        if (!this.hasNameSpace(ns)) {
-            throw new Error('Not found the namespace: ' + ns);
+    public typeOf(namespace: string): NameSpaceType {
+        return this.getNameSpaceConfig(namespace).type;
+    }
+
+    public rootDirOf(namespace: string): string {
+        if (this.typeOf(namespace) === 'internal') {
+            return path.join(DATA_DIR, namespace);
         }
-        return this.data.get(ns) as NameSpaceConfig;
+        return this.getNameSpaceConfig(namespace).rootDir as string;
+    }
+
+    private getNameSpaceConfig(namespace: string): NameSpaceConfig {
+        for (const ns of this.data.namespace) {
+            if (ns.namespace === namespace) {
+                return ns;
+            }
+        }
+        throw new Error('Not found the namespace: ' + namespace);
+    }
+
+    public getSideMenu(): SideMenuConfig {
+        return this.data.sidemenu;
+    }
+
+    public setSideMenu(data: SideMenuConfig): void {
+        this.data.sidemenu = data;
+        this.saveData();
     }
 }
 

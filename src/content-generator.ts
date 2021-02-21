@@ -40,6 +40,10 @@ function existsVersion(path: string, version: number): boolean {
 
 
 class ContentGenerator {
+    public static sideMenu(): string {
+        return SideMenuGenerator.html;
+    }
+
     public static title(mode: PageMode, wikiLink: WikiLink): string {
         const normalizedPath: string = wikiLink.toPath();
         switch (mode) {
@@ -127,6 +131,74 @@ class ContentGenerator {
 
 
 // -----------------------------------------------------------------------------
+// SideMenuGenerator
+// -----------------------------------------------------------------------------
+class SideMenuGenerator {
+    public static get html(): string {
+        const config: WikiConfig = new WikiConfig();
+        const {main, sub} = config.getSideMenu();
+        const lines: string[] = [];
+        lines.push(SideMenuGenerator.mainSection(main));
+        for (const {title, data} of sub) {
+            lines.push(SideMenuGenerator.subSection(title, data));
+        }
+        return lines.join('');
+    }
+
+    private static mainSection(data: SectionData): string {
+        return [
+        '<nav id="wiki-side-main">',
+          '<ul class="menu-contents">',
+            SideMenuGenerator.menuContents(data),
+          '</ul>',
+        '</nav>'
+        ].join('');
+    }
+
+    private static subSection(title: string, data: SectionData): string {
+         return [
+            '<nav class="wiki-side-sub">',
+              `<h3 class="wiki-side-label">${title}</h3>`,
+              '<ul class="menu-contents">',
+                SideMenuGenerator.menuContents(data),
+              '</ul>',
+            '</nav>',
+        ].join('');
+    }
+
+    private static menuContents(data: SectionData): string {
+        const lines: string[] = [];
+        lines.push('<ul class="menu-contents">');
+        for (const content of data) {
+            lines.push('<li>');
+            if (content.type === 'text') {
+                lines.push(SideMenuGenerator.text(content.value));
+            } else if (content.type === 'link') {
+                lines.push(SideMenuGenerator.link(content.text, content.path));
+            }
+            lines.push('</li>');
+        }
+        lines.push('</ul>');
+        return lines.join('');
+    }
+
+    private static text(value: string): string {
+        return value;
+    }
+
+    private static link(text: string, path: string): string {
+        if (WikiLink.isWikiLink(path)) {
+            const wikiPath: string = new WikiLink(path).toPath();
+            const href: string = `?path=${wikiPath}`;
+            return `<a href="${href}">${text}</a>`;
+        } else {
+            return `<a class="external" href="${path}">${text}</a>`;
+        }
+    }
+}
+
+
+// -----------------------------------------------------------------------------
 // ContentBodyDispatcher
 // -----------------------------------------------------------------------------
 abstract class ContentBodyDispatcher {
@@ -202,6 +274,7 @@ class SpecialContentBodyDispatcher extends ContentBodyDispatcher {
             new AllFilesBody(wikiLink),
             new UploadFileBody(wikiLink),
             new PageDiffBody(wikiLink),
+            new SideMenuBody(wikiLink),
         ];
         for (const special of specials) {
             if (special.name === wikiLink.name) {
@@ -720,7 +793,11 @@ class SpecialPagesBody extends SpecialContentBody {
                 const title: string = contentBody.title;
                 const wikiLink: WikiLink = new WikiLink({namespace: this.wikiLink.namespace, type: 'Special', name: contentBody.name});
                 const path: string = wikiLink.toPath();
-                lines.push(`<li><a href="?path=${path}">${title}</a></li>`);
+                if (contentBody === this) {
+                    lines.push(`<li>${title}</li>`);
+                } else {
+                    lines.push(`<li><a href="?path=${path}">${title}</a></li>`);
+                }
             }
             lines.push('</ul>');
         }
@@ -929,6 +1006,37 @@ class SearchBody extends SpecialContentBody {
               '</div>',
             '</div>'
         ]
+        return lines.join('');
+    }
+}
+
+
+class SideMenuBody extends SpecialContentBody {
+    public css: string[] = ['./css/side-menu.css'];
+    public js: string[] = [
+        '../node_modules/sortablejs/Sortable.min.js',
+        './js/side-menu.js'
+    ];
+    public name: string = 'SideMenu';
+    public title: string = 'Side menu';
+    public type: SpecialContentType = 'others';
+    public get html(): string {
+        const lines: string[] = [
+            '<h3>Main</h3>',
+            '<div id="main-side-menu-section">',
+              '<div class="list-group side-menu-contents"></div>',
+            '</div>',
+            '<div class="d-flex align-items-end mt-3 mb-1">',
+              '<h3 class="d-inline m-0">Sub Sections</h3>',
+              '<button class="btn btn-outline-secondary ml-3" id="add-section-button">add</button>',
+            '</div>',
+            '<div id="side-menu-sections"></div>',
+            '<div class="row mt-3">',
+              '<div class="col-2">',
+                '<button class="btn btn-outline-primary btn-block" id="save-side-menu-button">Save</button>',
+              '</div>',
+            '</div>',
+        ];
         return lines.join('');
     }
 }

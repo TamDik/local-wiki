@@ -15,7 +15,8 @@
         "highlightjs": "^9.16.2",
         "jsdifflib": "^1.1.0",
         "marked": "^1.2.9",
-        "simplemde": "^1.11.2"
+        "simplemde": "^1.11.2",
+        "sortablejs": "^1.13.0"
     },
     "devDependencies": {
         "@types/highlightjs": "^10.1.0",

@@ -42,9 +42,9 @@ contextBridge.exposeInMainWorld(
             return ipcRenderer.invoke('current-version', path);
         },
         async getMainContent(mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement,
-                                                                                       title: string, body: string,
+                                                                                       title: string, body: string, sideMenu: string, tabs: TabParams[],
                                                                                        dependences: {css: string[], js: string[]}}> {
-            return ipcRenderer.invoke('get-main-content', mode, path, version);
+            return ipcRenderer.invoke('get-html-contents', mode, path, version);
         },
         goBack(): void {
             ipcRenderer.send('go-back');
@@ -75,6 +75,12 @@ contextBridge.exposeInMainWorld(
         },
         searchPageResult(lister: (path: string, body: string, created: Date, keywords: string[]) => void): void {
             ipcRenderer.on('search-page-result', (event, p: string, b: string, c: Date, k: string[]) => lister(p, b, c, k));
-        }
+        },
+        async getSideMenuData(): Promise<{main: SectionData, sub: {title: string, data: SectionData}[]}> {
+            return ipcRenderer.invoke('get-side-menu-data');
+        },
+        async updateSideMenu(main: SectionData, sub: {title: string, data: SectionData}[]): Promise<boolean> {
+            return ipcRenderer.invoke('update-side-menu', main, sub);
+        },
     }
 );

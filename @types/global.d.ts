@@ -1,11 +1,10 @@
 export declare global {
     type WikiType = 'Page'|'File'|'Special';
-
     type PageMode = 'read'|'edit'|'history';
-
     type WikiLinkElement = {namespace: string, name: string, type: WikiType};
-
     type TabParams = {title: string, href: string, selected: boolean};
+    type ContentData = {type: 'text', value: string}|{type: 'link', text: string, path: string};
+    type SectionData = ContentData[];
 
     interface Window {
         utils: IUtils;
@@ -28,7 +27,7 @@ interface IIpcApi {
     existsPath(path: string): Promise<boolean>;
     currentVersion(path: string): Promise<number>;
     getMainContent(mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement,
-                                                                             title: string, body: string, tabs: TabParams[],
+                                                                             title: string, body: string, sideMenu: string, tabs: TabParams[],
                                                                              dependences: {css: string[], js: string[]}}>;
     goBack(): void;
     goForward(): void;
@@ -40,6 +39,8 @@ interface IIpcApi {
     searchPageByKeywords(path: string, keywords: string[]): void;
     searchPageByName(path: string, name: string): Promise<{exists: boolean, path: string}>;
     searchPageResult(lister: (path: string, body: string, created: Date, keywords: string[]) => void): void;
+    getSideMenuData(): Promise<{main: SectionData, sub: {title: string, data: SectionData}[]}>;
+    updateSideMenu(main: SectionData, sub: {title: string, data: SectionData}[]): Promise<boolean>;
 }
 
 

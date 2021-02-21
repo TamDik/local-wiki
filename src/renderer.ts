@@ -152,7 +152,7 @@ function importJS(src: string): void{
 }
 
 async function getMainContent(params: Params): Promise<{linkElement: WikiLinkElement,
-                                                        title: string, body: string, tabs: TabParams[],
+                                                        title: string, body: string, sideMenu: string, tabs: TabParams[],
                                                         dependences: {css: string[], js: string[]}}> {
     const version: string = params.getValueOf('version');
     if (version.match(/^\d+$/)) {
@@ -164,9 +164,9 @@ async function getMainContent(params: Params): Promise<{linkElement: WikiLinkEle
 
 window.addEventListener('load', () => {
     const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
-    contentBody.addEventListener('click', function(event) {
+    document.body.addEventListener('click', function(event) {
         let element: HTMLElement|null = event.target as HTMLElement;
-        while (element && element !== contentBody) {
+        while (element && element !== document.body) {
             if (element.nodeName === 'A') {
                 const anchor: HTMLAnchorElement = element as HTMLAnchorElement;
                 if (anchor.classList.contains('external')) {
@@ -186,10 +186,12 @@ window.addEventListener('load', () => {
     initAccessArea(params);
 
     getMainContent(params)
-    .then(({linkElement, title, body, tabs, dependences}) => {
+    .then(({linkElement, title, body, sideMenu, tabs, dependences}) => {
         initTabs(tabs);
         contentHead.innerHTML = title;
         contentBody.innerHTML = body;
+        const sideMenuEl: HTMLElement = document.getElementById('wiki-side-menu') as HTMLElement;
+        sideMenuEl.innerHTML = sideMenu;
         for (const css of dependences.css) {
             linkCSS(css);
         }
