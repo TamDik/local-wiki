@@ -101,41 +101,19 @@ interface IMagicHandler {
 }
 
 
-abstract class FileHandler implements IMagicHandler {
-    private readonly extensions: string[];
-
-    public constructor(extensions: string[]) {
-        this.extensions = extensions;
-    }
-
-    public addExtention(extensions: string[]) {
-        this.extensions.push(...extensions);
+type ImageFormat = 'none'|'frameless'|'border'|'frame'|'thumb';
+class ImageFileHandler implements IMagicHandler {
+    public constructor(private readonly isWikiLink: (href: string) => boolean) {
     }
 
     public isTarget(content: string): boolean {
-        const [path, ...options]: string[] = content.split('|');
-        for (const extension of this.extensions) {
-            if (path.endsWith('.' + extension)) {
-                return true;
-            }
-        }
-        return false;
+        const marker: string = content.split('|')[0].toLowerCase();
+        return marker === 'img' || marker === 'image';
     }
 
     public expand(content: string): string {
-        const [path, ...options]: string[] = content.split('|');
+        const [marker, path, ...options]: string[] = content.split('|');
         return this.createHTML(path, options);
-    }
-
-    protected abstract createHTML(path: string, options: string[]): string;
-}
-
-
-type ImageFormat = 'none'|'frameless'|'border'|'frame'|'thumb';
-
-class ImageFileHandler extends FileHandler {
-    public constructor() {
-        super(['jpeg', 'jpg', 'png', 'gif', 'tiff']);
     }
 
     public createHTML(path: string, options: string[]): string {
@@ -161,18 +139,33 @@ class ImageFileHandler extends FileHandler {
         if (styleResults.link === '') {
             html += img;
         } else if (styleResults.link === null) {
-            html += `<a href="${path}" class="image">` + img + '</a>';
-        } else {
+            html += `<a href="[:link:]" class="image">` + img + '</a>';
+        } else if (this.isWikiLink(styleResults.link)) {
             // FIXME: styleResults.link に特殊文字 (空白文字等)が来たときエスケープ
-            html += `<a href="${styleResults.link}">` + img + '</a>';
+            html += `<a href="?path=${styleResults.link}">` + img + '</a>';
+        } else {
+            html += `<a href="${styleResults.link} class="external"">` + img + '</a>';
+            
         }
         html += styleResults.closeTag;
-        return html.replace(/\[:caption:\]/g, replaceCaption)
-                   .replace(/\[:link:\]/g, styleResults.link === null ? path : styleResults.link);
+
+        html = html.replace(/\[:caption:\]/g, replaceCaption);
+        const LINK_PATTERN: RegExp = /\[:link:\]/g;
+        if (styleResults.link !== null) {
+            html = html.replace(LINK_PATTERN, styleResults.link);
+        } else {
+            html = html.replace(LINK_PATTERN, this.isWikiLink(path) ? `?path=${path}` : path);
+        }
+       return html;
     }
 
     private createImgTag(src: string, alt: string, classNames: string[], props: string[]): string {
-        let img: string = `<img alt="${alt}" src="${src}" decoding="async"`;
+        let img: string;
+        if (this.isWikiLink(src)) {
+            img = `<img alt="${alt}" src="?path=${src}" decoding="async"`;
+        } else {
+            img = `<img alt="${alt}" src="${src}" decoding="async"`;
+        }
         classNames = classNames.filter(name => name !== '');
         if (classNames.length !== 0) {
             img += ' class="' + classNames.join(' ') + '"';
@@ -449,11 +442,20 @@ class ImageFileHandler extends FileHandler {
 
 
 type PDFFormat = 'preview'|'link';
-class PDFFileHandler extends FileHandler {
+class PDFFileHandler implements IMagicHandler {
     private readonly defaultSize = {width: '100%', height: 'calc(100vh - 300px)'};
 
-    public constructor() {
-        super(['pdf']);
+    public constructor(private readonly isWikiLink: (href: string) => boolean) {
+    }
+
+    public isTarget(content: string): boolean {
+        const marker: string = content.split('|')[0].toLowerCase();
+        return marker === 'pdf';
+    }
+
+    public expand(content: string): string {
+        const [marker, path, ...options]: string[] = content.split('|');
+        return this.createHTML(path, options);
     }
 
     protected createHTML(path: string, options: string[]): string {
@@ -470,7 +472,12 @@ class PDFFileHandler extends FileHandler {
                        '</object>';
                     break;
             case 'link':
-                html = `<a href="${path}">${title}</a>`;
+                // TODO: 外部
+                if (this.isWikiLink(path)) {
+                    html = `<a href="?path=${path}">${title}</a>`;
+                } else {
+                    html = `<a href="${path}" class="external">${title}</a>`;
+                }
                 break
         }
         return html;

@@ -382,7 +382,6 @@ class PageEditBody extends ContentBody {
 
 class PageReadBody extends ContentBody {
     public get html(): string {
-        // TODO: ImageFileHandler, PDFFileHandler
         const filepath: string = toFullPath(this.wikiLink.toPath()) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
         return PageReadBody.markdownToHtml(markdown);
@@ -390,8 +389,8 @@ class PageReadBody extends ContentBody {
 
     public static markdownToHtml(markdown: string): string {
         const wmd: WikiMD = new WikiMD({isWikiLink: WikiLink.isWikiLink});
-        /* wmd.addMagicHandler(new ImageFileHandler()); */
-        /* wmd.addMagicHandler(new PDFFileHandler()); */
+        wmd.addMagicHandler(new ImageFileHandler(WikiLink.isWikiLink));
+        wmd.addMagicHandler(new PDFFileHandler(WikiLink.isWikiLink));
         wmd.setValue(markdown);
         let htmlText: string = wmd.toHTML();
         return PageReadBody.replaceInternalSrc(htmlText);
