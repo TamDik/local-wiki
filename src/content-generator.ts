@@ -13,6 +13,12 @@ function toFullPath(path: string, version?: number): string|null {
     const namespace: string = wl.namespace;
     const wikiType: WikiType = wl.type;
     const name: string = wl.name;
+
+    const config: WikiConfig = new WikiConfig();
+    if (!config.hasNameSpace(namespace)) {
+        return null;
+    }
+
     const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
     if (!history.hasName(name)) {
         return null;
@@ -393,29 +399,29 @@ class PageReadBody extends ContentBody {
         wmd.addMagicHandler(new PDFFileHandler(WikiLink.isWikiLink));
         wmd.setValue(markdown);
         let htmlText: string = wmd.toHTML();
-        return PageReadBody.replaceInternalSrc(htmlText);
+        return PageReadBody.expandWikiLink(htmlText);
     }
 
-    public static replaceInternalSrc(html: string): string {
-        const PATTERN_WITH_GLOBAL: RegExp = /src="\?path=[^"]+"/g;
-        const match: RegExpMatchArray|null = html.match(PATTERN_WITH_GLOBAL);
-        if (match === null) {
-            return html;
-        }
-        const PATTERN: RegExp = /src="(\?path=([^"]+))"/;
-        for (const m of match) {
-            const srcMatch: RegExpMatchArray|null = m.match(PATTERN);
-            if (srcMatch === null) {
-                continue;
+    private static expandWikiLink(html: string): string {
+        html = PageReadBody.expandInternalFileLink(html, 'img', 'src');
+        html = PageReadBody.expandInternalFileLink(html, 'object', 'data');
+        return html;
+    }
+
+    private static expandInternalFileLink(html: string, tagName: string, prop: string, replace: string|null='error'): string {
+        const PATTERN: RegExp = new RegExp(`(?<=<${tagName} [^>]*${prop}=")\\?path=[^"]+(?=")`, 'g');
+        html = html.replace(PATTERN, s => {
+            const wikiPath: string = s.slice(6);
+            const wikiLink: WikiLink = new WikiLink(wikiPath);
+            if (wikiLink.type !== 'File') {
+                return replace === null ? s : replace;
             }
-            const src: string = srcMatch[0];
-            const path: string = srcMatch[2];
-            const fullPath: string|null = toFullPath(path);
+            const fullPath: string|null = toFullPath(wikiPath);
             if (fullPath === null) {
-                continue;
+                return replace === null ? s : replace;
             }
-            html = html.replace(src, `src="${fullPath}"`);
-        }
+            return fullPath;
+        });
         return html;
     }
 }

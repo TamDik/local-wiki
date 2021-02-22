@@ -465,14 +465,14 @@ class PDFFileHandler implements IMagicHandler {
 
         switch (pdfFormat) {
             case 'preview':
-                html = `<object style="${style}" type="application/pdf" data="${path}">` +
+                const data: string = this.isWikiLink(path) ? `?path=${path}` : path;
+                html = `<object style="${style}" type="application/pdf" data="${data}">` +
                          '<div class="alert alert-warning">' +
                            `<p>${path} could not be displayed. </p>` +
                          '</div>' +
                        '</object>';
                     break;
             case 'link':
-                // TODO: 外部
                 if (this.isWikiLink(path)) {
                     html = `<a href="?path=${path}">${title}</a>`;
                 } else {
