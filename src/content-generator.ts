@@ -121,7 +121,7 @@ class ContentGenerator {
     private static createFileContentBody(wikiLink: WikiLink, version: number|undefined): ContentBody {
         const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
         if (!history.hasName(wikiLink.name)) {
-            return new NotFoundBody(wikiLink);
+            return new NotFoundFileBody(wikiLink);
         }
 
         if (typeof(version) === 'undefined') {
@@ -638,6 +638,15 @@ class PageHistoryBody extends ContentBody {
 
 
 // File
+class NotFoundFileBody extends ContentBody {
+    public get html(): string {
+        const uplaodLink: WikiLink = new WikiLink({namespace: this.wikiLink.namespace, type: 'Special', name: 'UploadFile'});
+        const href: string = `?path=${uplaodLink.toPath()}&dest=${this.wikiLink.name}`;
+        return `<p>There is currently no file in this page. You can <a href="${href}">upload this file</a>.</p>`;
+    }
+}
+
+
 class FileReadBody extends ContentBody {
     private readonly bufferPathGenerator: BufferPathGenerator;
     private readonly imgExtentions: string[] = ['png', 'jpg', 'jpeg', 'gif'];
