@@ -12,10 +12,6 @@ const filepathLabel: HTMLLabelElement = document.getElementById('chosen-filepath
 setNoFileChosen();
 destInput.value = new Params().getValueOf('dest');
 
-function extensionOf(filename: string): string {
-    return filename.replace(/^.*\./, '');
-}
-
 function getChosenFilepath(): string|null {
     const filepath: string = filepathLabel.innerText;
     if (filepath === NO_FILE_CHOSEN) {
@@ -64,7 +60,7 @@ chooseFileButton.addEventListener('click', () => {
             return;
         }
         const filepath: string = result.filePaths[0];
-        const extension: string = extensionOf(filepath);
+        const extension: string = window.utils.extensionOf(filepath);
         if (!extensions.includes(extension)) {
             setNoFileChosen();
             alert('Invalid file extension');

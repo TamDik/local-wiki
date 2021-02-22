@@ -5,15 +5,11 @@ import {WikiConfig} from './wikiconfig';
 import {WikiHistory, VersionData} from './wikihistory';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {WikiLink} from './wikilink';
-import {escapeRegex, generateRandomString} from './utils';
+import {escapeRegex, extensionOf, generateRandomString} from './utils';
 
 
 function toFullPath(filename: string, namespace: string, wikiType: WikiType): string {
     return BufferPathGeneratorFactory.create(namespace, wikiType).execute(filename);
-}
-
-function extensionOf(filename: string): string {
-    return filename.replace(/^.*\./, '');
 }
 
 ipcMain.handle('open-external-link', async (event, path: string): Promise<void> => {

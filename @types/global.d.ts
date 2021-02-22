@@ -16,6 +16,7 @@ export declare global {
 
 
 interface IUtils {
+    extensionOf(filename: string): string;
     trim(s: string): string;
     dateToStr(date: Date): string;
     escapeRegex(str: string): string;

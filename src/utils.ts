@@ -2,6 +2,12 @@ function escapeRegex(str: string) {
     return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
+
+function extensionOf(filename: string): string {
+    return filename.replace(/^.*\./, '');
+}
+
+
 function generateRandomString(len: number): string {
     const CHARS: string = '0123456789abcdefghijklmnopqrstuvwxyz';
     const charsLen: number = CHARS.length;
@@ -68,4 +74,4 @@ function trim(s: string): string {
 }
 
 
-export {escapeRegex, generateRandomString, zeroPadding, dateToStr, bytesToStr, trim};
+export {escapeRegex, extensionOf, generateRandomString, zeroPadding, dateToStr, bytesToStr, trim};
