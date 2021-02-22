@@ -1,45 +1,5 @@
 import {WikiMD, ImageFileHandler, PDFFileHandler} from '../src/markdown';
 
-describe('test normal markdown syntax', function() {
-    function createWMD(value: string, isWikiLink: boolean=true): WikiMD {
-        const element: HTMLElement = document.createElement('div');
-        const wmd: WikiMD = new WikiMD({
-            isWikiLink: (href: string) => isWikiLink
-        });
-        wmd.setValue(value);
-        return wmd;
-    }
-
-    test('class name of link', () => {
-        function checkAnchor(element: HTMLElement, className: string): void {
-            const a: HTMLElement = element.getElementsByTagName('a')[0];
-            expect(a.className).toBe(className);
-        }
-        const value: string = '[label](href "title")';
-        const e1: HTMLElement = document.createElement('div');
-        e1.innerHTML = createWMD(value, true).toHTML();
-        const e2: HTMLElement = document.createElement('div');
-        e2.innerHTML = createWMD(value, false).toHTML();
-        checkAnchor(e1, '');
-        checkAnchor(e2, 'external');
-    });
-
-    test('class name of image', () => {
-        function checkImage(element: HTMLElement, className: string): void {
-            const img: HTMLElement = element.getElementsByTagName('img')[0];
-            expect(img.className).toBe(className);
-        }
-        const value: string = '![label](href "title")';
-        const e1: HTMLElement = document.createElement('div')
-        e1.innerHTML = createWMD(value, true).toHTML();
-        const e2: HTMLElement = document.createElement('div');
-        e2.innerHTML = createWMD(value, false).toHTML();
-        checkImage(e1, '');
-        checkImage(e2, 'external');
-    });
-});
-
-
 describe('test ImageFileHandler', function() {
     function testImage(value: string, expected: string): void {
         const element: HTMLElement = document.createElement('div');
@@ -216,28 +176,28 @@ describe('test PDFFileHandler', function() {
 
     testPDF(
         '{{Pdf|File:example.pdf}}',
-        '<object style="width: 100%; height: calc(100vh - 300px);" type="application/pdf" data="File:example.pdf">' +
+        '<object style="width: 100%; height: calc(100vh - 300px);" type="application/pdf" data="?path=File:example.pdf">' +
             '<div class="alert alert-warning">File:example.pdf could not be displayed. </div>' +
         '</object>'
     );
 
     testPDF(
         '{{PDF|File:example.pdf|x100px}}',
-        '<object style="width: 100%; height: 100px;" type="application/pdf" data="File:example.pdf">' +
+        '<object style="width: 100%; height: 100px;" type="application/pdf" data="?path=File:example.pdf">' +
             '<div class="alert alert-warning">File:example.pdf could not be displayed. </div>' +
         '</object>'
     );
 
     testPDF(
         '{{PDF|File:example.pdf|100x100px}}',
-        '<object style="width: 100px; height: 100px;" type="application/pdf" data="File:example.pdf">' +
+        '<object style="width: 100px; height: 100px;" type="application/pdf" data="?path=File:example.pdf">' +
             '<div class="alert alert-warning">File:example.pdf could not be displayed. </div>' +
         '</object>'
     );
 
     testPDF(
         '{{PDF|File:example.pdf|preview}}',
-        '<object style="width: 100%; height: calc(100vh - 300px);" type="application/pdf" data="File:example.pdf">' +
+        '<object style="width: 100%; height: calc(100vh - 300px);" type="application/pdf" data="?path=File:example.pdf">' +
             '<div class="alert alert-warning">File:example.pdf could not be displayed. </div>' +
         '</object>'
     );

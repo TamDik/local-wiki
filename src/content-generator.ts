@@ -193,13 +193,12 @@ class SideMenuGenerator {
     }
 
     private static link(text: string, path: string): string {
+        let href: string = path;
         if (WikiLink.isWikiLink(path)) {
             const wikiPath: string = new WikiLink(path).toPath();
-            const href: string = `?path=${wikiPath}`;
-            return `<a href="${href}">${text}</a>`;
-        } else {
-            return `<a class="external" href="${path}">${text}</a>`;
+            href = `?path=${wikiPath}`;
         }
+        return `<a href="${href}">${text}</a>`;
     }
 }
 

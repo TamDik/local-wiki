@@ -10,7 +10,6 @@ class WikiMD {
     private value: string;
     private isWikiLink: iswikilink;
     private readonly magicHandlers: IMagicHandler[] = [];
-    public static readonly EXTERNAL_CLASS_NAME = 'external';
     public static readonly NEW_CLASS_NAME = 'new';
 
     constructor(options: WikiMDOption) {
@@ -44,11 +43,8 @@ class WikiMD {
         title = title === null ? '' : title;
         if (isWikiLink(href)) {
             href = `?path=${href}`
-            return `<a href="${href}" title="${title}">${text}</a>`;
-        } else {
-            const className: string = WikiMD.EXTERNAL_CLASS_NAME;
-            return `<a class="${className}" href="${href}" title="${title}">${text}</a>`;
         }
+        return `<a href="${href}" title="${title}">${text}</a>`;
     }
 
     private image(href: string, title: string|null, text: string, isWikiLink: iswikilink): string {
@@ -56,16 +52,11 @@ class WikiMD {
         const alt: string = text;
         const isInternal: boolean = isWikiLink(href);
         const src: string = isInternal ? `?path=${href}` : href;
+        let img: string = `<img src="${src}" alt="${alt}" title="${title}" decoding="async">`;
         if (isInternal) {
-            return [
-                `<a href="?path=${href}" class="image">`,
-                    `<img src="${src}" alt="${alt}" title="${title}" decoding="async">`,
-                '</a>'
-            ].join('');
-        } else {
-            const className: string = WikiMD.EXTERNAL_CLASS_NAME;
-            return `<img class="${className}" src="${src}" alt="${alt}" title="${title}" decoding="async">`;
+            img = `<a href="?path=${href}" class="image">${img}</a>`;
         }
+        return img;
     }
 
     private text(text: string, magicHandlers: IMagicHandler[]): string {
@@ -144,7 +135,7 @@ class ImageFileHandler implements IMagicHandler {
             // FIXME: styleResults.link に特殊文字 (空白文字等)が来たときエスケープ
             html += `<a href="?path=${styleResults.link}">` + img + '</a>';
         } else {
-            html += `<a href="${styleResults.link} class="external"">` + img + '</a>';
+            html += `<a href="${styleResults.link}>` + img + '</a>';
             
         }
         html += styleResults.closeTag;
@@ -473,11 +464,8 @@ class PDFFileHandler implements IMagicHandler {
                        '</object>';
                     break;
             case 'link':
-                if (this.isWikiLink(path)) {
-                    html = `<a href="?path=${path}">${title}</a>`;
-                } else {
-                    html = `<a href="${path}" class="external">${title}</a>`;
-                }
+                const href: string = this.isWikiLink(path) ? `?path=${path}` : path;
+                html = `<a href="${href}">${title}</a>`;
                 break
         }
         return html;

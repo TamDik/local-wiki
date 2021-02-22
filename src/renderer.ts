@@ -169,7 +169,7 @@ window.addEventListener('load', () => {
         while (element && element !== document.body) {
             if (element.nodeName === 'A') {
                 const anchor: HTMLAnchorElement = element as HTMLAnchorElement;
-                if (anchor.classList.contains('external')) {
+                if (anchor.href.startsWith('http')) {
                     window.ipcApi.openExternalLink(anchor.href);
                     event.preventDefault();
                 }
