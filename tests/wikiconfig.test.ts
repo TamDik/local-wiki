@@ -1,11 +1,12 @@
 import {DEFAULT_NAMESPACE} from '../src/wikilink';
 import {WikiConfig} from '../src/wikiconfig';
+import {DATA_DIR} from '../src/data-dir';
 import * as fs from 'fs';
 import * as path from 'path';
 
 
 function unlinkConfigFile(): string {
-    const configFile: string = path.join(__dirname, '../data/config-test.json');
+    const configFile: string = path.join(DATA_DIR, 'config-test.json');
     if (fs.existsSync(configFile)) {
         fs.unlinkSync(configFile);
     }
@@ -32,9 +33,8 @@ describe('test WikiConfig', () => {
     });
 
     test('rootDirOf', () => {
-        const dataDir: string = path.join(__dirname, '../../data');
-        expect(config.rootDirOf(DEFAULT_NAMESPACE)).toBe(path.join(dataDir, DEFAULT_NAMESPACE));
-        expect(config.rootDirOf('ns1')).toBe(path.join(dataDir, '/ns1'));
+        expect(config.rootDirOf(DEFAULT_NAMESPACE)).toBe(path.join(DATA_DIR, DEFAULT_NAMESPACE));
+        expect(config.rootDirOf('ns1')).toBe(path.join(DATA_DIR, 'ns1'));
         expect(config.rootDirOf('ns2')).toBe('rd2-changed');
     });
     unlinkConfigFile();

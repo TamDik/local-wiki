@@ -1,4 +1,5 @@
 import {DEFAULT_NAMESPACE} from './wikilink';
+import {DATA_DIR} from './data-dir';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -18,12 +19,6 @@ interface SideMenuConfig {
 interface ConfigData {
     namespace: NameSpaceConfig[];
     sidemenu: SideMenuConfig;
-}
-
-
-const DATA_DIR: string = path.join(__dirname, '../../data');
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR);
 }
 
 

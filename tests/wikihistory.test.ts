@@ -1,10 +1,11 @@
 import {BufferPathGenerator, WikiHistory, CurrentVersionManager, PreviousVersionManager, VersionData} from '../src/wikihistory';
+import {DATA_DIR} from '../src/data-dir';
 import * as fs from 'fs';
 import * as path from 'path';
 
 
 function initRootDir(): string {
-    const rootDir: string = path.join(__dirname, '../data/test');
+    const rootDir: string = path.join(DATA_DIR, 'test');
     const cFilepath: string = path.join(rootDir, CurrentVersionManager.FILENAME);
     const pFilepath: string = path.join(rootDir, PreviousVersionManager.FILENAME);
     if (fs.existsSync(cFilepath)) {
