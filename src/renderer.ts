@@ -4,8 +4,8 @@ const DEFAULT_PATH: string = 'Main';
 
 class Params {
     private params: URLSearchParams;
-    public static readonly MODE_KEY: string = 'mode';
-    public static readonly PATH_KEY: string = 'path';
+    private static readonly MODE_KEY: string = 'mode';
+    private static readonly PATH_KEY: string = 'path';
     public constructor() {
         const url: URL = new URL(location.href);
         this.params = url.searchParams;
@@ -51,9 +51,12 @@ class Params {
         return window.utils.trim(value);
     }
 
-    public get keys(): string[] {
-        const keys: string[] = [Params.MODE_KEY, Params.PATH_KEY];
+    public get optionalKeys(): string[] {
+        const keys: string[] = [];
         for (const key of this.params.keys()) {
+            if (key === Params.PATH_KEY) {
+                continue;
+            }
             if (keys.includes(key)) {
                 continue;
             }
@@ -64,7 +67,7 @@ class Params {
 }
 
 
-function initTabs(tabs: TabParams[]) {
+function initTabs(tabs: TopNavTabData[]) {
     const searchTag: HTMLLIElement = document.getElementById('search-tag') as HTMLLIElement;
     for (const tab of tabs) {
         const {title, href, selected} = tab;
@@ -82,8 +85,7 @@ function initTabs(tabs: TabParams[]) {
     searchField.addEventListener('keypress', (event: KeyboardEvent) => {
         if (event.which === 13) {
             event.preventDefault();
-            let href: string = '?path=Special:Search&search=' + searchField.value;
-            location.href = href;
+            location.href = window.localWiki.toURI({type: 'Special', name: 'Search'}, {search: searchField.value});
         }
     });
 }
@@ -92,10 +94,9 @@ function initTabs(tabs: TabParams[]) {
 function initAccessArea(params: Params) {
     const {path, mode} = params;
     const accessField: HTMLInputElement = document.getElementById('access-field') as HTMLInputElement;
-    const accessParams: string = params.keys.filter(key => key !== Params.PATH_KEY)
-                                            .filter(key => !(key === Params.MODE_KEY && mode === DEFAULT_MODE))
-                                            .map(key => `${key}=${params.getValueOf(key)}`)
-                                            .join('&');
+    const accessParams: string = params.optionalKeys.filter(key => !(key === 'mode' && mode === DEFAULT_MODE))
+                                                    .map(key => `${key}=${params.getValueOf(key)}`)
+                                                    .join('&');
     if (accessParams !== '') {
         accessField.value = `${path}?${accessParams}`
     } else {
@@ -106,11 +107,15 @@ function initAccessArea(params: Params) {
         if (event.which === 13) {
             event.preventDefault();
             const fieldValues: string[] = accessField.value.split('?');
-            let href: string = '?path=' + window.utils.trim(fieldValues[0]);
+            const path: string = window.utils.trim(fieldValues[0]);
+            const params: {[key: string]: string} = {};
             if (fieldValues.length > 1) {
-                href += '&' + window.utils.trim(fieldValues[1]);
+                for (const param of window.utils.trim(fieldValues[1]).split('&')) {
+                    const [key, value, ..._] = param.split('=');
+                    params[key] = value;
+                }
             }
-            location.href = href;
+            location.href = window.localWiki.toURI(path, params);
         }
     });
 
@@ -151,8 +156,7 @@ function importJS(src: string): void{
     }
 }
 
-async function getMainContent(params: Params): Promise<{linkElement: WikiLinkElement,
-                                                        title: string, body: string, sideMenu: string, tabs: TabParams[],
+async function getMainContent(params: Params): Promise<{title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
                                                         dependences: {css: string[], js: string[]}}> {
     const version: string = params.getValueOf('version');
     if (version.match(/^\d+$/)) {
@@ -186,7 +190,7 @@ window.addEventListener('load', () => {
     initAccessArea(params);
 
     getMainContent(params)
-    .then(({linkElement, title, body, sideMenu, tabs, dependences}) => {
+    .then(({title, body, sideMenu, tabs, dependences}) => {
         initTabs(tabs);
         contentHead.innerHTML = title;
         contentBody.innerHTML = body;

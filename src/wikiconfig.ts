@@ -11,8 +11,8 @@ interface NameSpaceConfig {
 }
 
 interface SideMenuConfig {
-    main: SectionData;
-    sub: {title: string, data: SectionData}[]
+    main: SideMenuSectionData;
+    sub: {title: string, data: SideMenuSectionData}[]
 }
 
 interface ConfigData {

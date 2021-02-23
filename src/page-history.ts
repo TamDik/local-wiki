@@ -88,5 +88,6 @@ compareButton.addEventListener('click', () => {
         }
     }
     const params: Params = new Params();
-    location.href = `?${Params.PATH_KEY}=Special:PageDiff&page=${params.path}&old=${oldVersion}&diff=${diffVersion}`;
+    location.href = window.localWiki.toURI({type: 'Special', name: 'PageDiff'},
+                                           {page: params.path, old: oldVersion, diff: diffVersion});
 }, false);

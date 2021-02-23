@@ -4,15 +4,14 @@ import {extensionOf, dateToStr, bytesToStr, zeroPadding} from './utils';
 import {WikiConfig} from './wikiconfig';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
-import {WikiLink} from './wikilink';
+import {WikiLink, WikiLocation} from './wikilink';
 import {WikiMD, ImageFileHandler, PDFFileHandler} from './markdown';
 
 
-function toFullPath(path: string, version?: number): string|null {
-    const wl: WikiLink = new WikiLink(path)
-    const namespace: string = wl.namespace;
-    const wikiType: WikiType = wl.type;
-    const name: string = wl.name;
+function toFullPath(wikiLink: WikiLink, version?: number): string|null {
+    const namespace: string = wikiLink.namespace;
+    const wikiType: WikiType = wikiLink.type;
+    const name: string = wikiLink.name;
 
     const config: WikiConfig = new WikiConfig();
     if (!config.hasNameSpace(namespace)) {
@@ -34,10 +33,9 @@ function toFullPath(path: string, version?: number): string|null {
 };
 
 
-function existsVersion(path: string, version: number): boolean {
-    const wl: WikiLink = new WikiLink(path)
-    const history: WikiHistory = WikiHistoryFactory.create(wl.namespace, wl.type);
-    const name: string = wl.name;
+function existsVersion(wikiLink: WikiLink, version: number): boolean {
+    const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
+    const name: string = wikiLink.name;
     if (!history.hasName(name)) {
         return false;
     }
@@ -51,25 +49,30 @@ class ContentGenerator {
     }
 
     public static title(mode: PageMode, wikiLink: WikiLink): string {
-        const normalizedPath: string = wikiLink.toPath();
+        const path: string = wikiLink.toPath();
         switch (mode) {
             case 'read':
-                return normalizedPath;
+                return path;
             case 'edit':
-                return `editing ${normalizedPath}`
+                return `editing ${path}`
             case 'history':
-                return `Revision history of "${normalizedPath}"`;
+                return `Revision history of "${path}"`;
         }
     }
 
-    public static menuTabs(mode: PageMode, wikiLink: WikiLink): TabParams[] {
-        const path: string = wikiLink.toPath();
+    public static menuTabs(mode: PageMode, wikiLink: WikiLink): TopNavTabData[] {
         switch (wikiLink.type) {
             case 'Page':
+                const readLoc: WikiLocation = new WikiLocation(wikiLink);
+                const editLoc: WikiLocation = new WikiLocation(wikiLink);
+                const histLoc: WikiLocation = new WikiLocation(wikiLink);
+                readLoc.addParam('mode', 'read');
+                editLoc.addParam('mode', 'edit');
+                histLoc.addParam('mode', 'history');
                 return [
-                    {title: 'Read'   , href: `?path=${path}&mode=read`   , selected: mode === 'read'},
-                    {title: 'Edit'   , href: `?path=${path}&mode=edit`   , selected: mode === 'edit'},
-                    {title: 'History', href: `?path=${path}&mode=history`, selected: mode === 'history'},
+                    {title: 'Read'   , href: readLoc.toURI(), selected: mode === 'read'},
+                    {title: 'Edit'   , href: editLoc.toURI(), selected: mode === 'edit'},
+                    {title: 'History', href: histLoc.toURI(), selected: mode === 'history'},
                 ];
             case 'File':
             case 'Special':
@@ -111,7 +114,7 @@ class ContentGenerator {
             return new PageContentBodyDispatcher(wikiLink).execute(mode);
         }
 
-        if (existsVersion(wikiLink.toPath(), version)) {
+        if (existsVersion(wikiLink, version)) {
             return new PageWithVersionReadBody(wikiLink, version);
         } else {
             return new NotFoundPageWithVersionReadBody(wikiLink, version);
@@ -128,7 +131,7 @@ class ContentGenerator {
             return new FileReadBody(wikiLink);
         }
 
-        if (existsVersion(wikiLink.toPath(), version)) {
+        if (existsVersion(wikiLink, version)) {
             return new FileWithVersionReadBody(wikiLink, version);
         } else {
             return new NotFoundFileWithVersionReadBody(wikiLink, version);
@@ -178,7 +181,7 @@ class SideMenuGenerator {
         return lines.join('');
     }
 
-    private static mainSection(data: SectionData): string {
+    private static mainSection(data: SideMenuSectionData): string {
         return [
         '<nav id="wiki-side-main">',
           '<ul class="menu-contents">',
@@ -188,7 +191,7 @@ class SideMenuGenerator {
         ].join('');
     }
 
-    private static subSection(title: string, data: SectionData): string {
+    private static subSection(title: string, data: SideMenuSectionData): string {
          return [
             '<nav class="wiki-side-sub">',
               `<h3 class="wiki-side-label">${title}</h3>`,
@@ -199,7 +202,7 @@ class SideMenuGenerator {
         ].join('');
     }
 
-    private static menuContents(data: SectionData): string {
+    private static menuContents(data: SideMenuSectionData): string {
         const lines: string[] = [];
         lines.push('<ul class="menu-contents">');
         for (const content of data) {
@@ -222,8 +225,7 @@ class SideMenuGenerator {
     private static link(text: string, path: string): string {
         let href: string = path;
         if (WikiLink.isWikiLink(path)) {
-            const wikiPath: string = new WikiLink(path).toPath();
-            href = `?path=${wikiPath}`;
+            href = new WikiLocation(new WikiLink(path)).toURI();
         }
         return `<a href="${href}">${text}</a>`;
     }
@@ -247,15 +249,9 @@ abstract class ContentBodyDispatcher {
                 return this.createHistoryContentBody(this.wikiLink);
         }
     }
-    protected createReadContentBody(wikiLink: WikiLink): ContentBody {
-        return new NotFoundBody(wikiLink);
-    }
-    protected createEditContentBody(wikiLink: WikiLink): ContentBody {
-        return new NotFoundBody(wikiLink);
-    }
-    protected createHistoryContentBody(wikiLink: WikiLink): ContentBody {
-        return new NotFoundBody(wikiLink);
-    }
+    protected abstract createReadContentBody(wikiLink: WikiLink): ContentBody;
+    protected abstract createEditContentBody(wikiLink: WikiLink): ContentBody;
+    protected abstract createHistoryContentBody(wikiLink: WikiLink): ContentBody;
 }
 
 
@@ -299,24 +295,13 @@ abstract class ContentBody {
     }
 }
 
-class NotFoundBody extends ContentBody {
-    public get html(): string {
-        const lines: string[] = [
-            '<div class="alert alert-danger" role="alert">',
-              'The Page you are looking for doesn\'t exist or an other error occurred.<br>',
-              'Choose a new direction, or Go to <a href="?path=Main">Main page.</a>',
-            '</div>',
-        ];
-        return lines.join('');
-    }
-}
-
 class NotFoundNameSpaceBody extends ContentBody {
     public get html(): string {
+        const location: WikiLocation = new WikiLocation(new WikiLink());
         const lines: string[] = [
             '<div class="alert alert-warning" role="alert">',
               'The namespace you are looking for doesn\'t exist or an other error occurred.<br>',
-              'Choose a new direction, or Go to <a href="?path=Main">Main page.</a>',
+              `Choose a new direction, or Go to <a href="${location.toURI()}">Main page.</a>`,
             '</div>',
         ];
         return lines.join('');
@@ -326,8 +311,9 @@ class NotFoundNameSpaceBody extends ContentBody {
 // Page
 class NotFoundPageBody extends ContentBody {
     public get html(): string {
-        const path: string = this.wikiLink.toPath();
-        return `<p>There is currently no text in this page. You can <a href="?path=${path}&mode=edit">create this page</a>.</p>`;
+        const location: WikiLocation = new WikiLocation(this.wikiLink);
+        location.addParam('mode', 'edit');
+        return `<p>There is currently no text in this page. You can <a href="${location.toURI()}">create this page</a>.</p>`;
     }
 }
 
@@ -375,15 +361,19 @@ class PageEditBody extends ContentBody {
 
 class PageReadBody extends ContentBody {
     public get html(): string {
-        const filepath: string = toFullPath(this.wikiLink.toPath()) as string;
+        const filepath: string = toFullPath(this.wikiLink) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
         return PageReadBody.markdownToHtml(markdown);
     }
 
     public static markdownToHtml(markdown: string): string {
-        const wmd: WikiMD = new WikiMD({isWikiLink: WikiLink.isWikiLink});
-        wmd.addMagicHandler(new ImageFileHandler(WikiLink.isWikiLink));
-        wmd.addMagicHandler(new PDFFileHandler(WikiLink.isWikiLink));
+        function toWikiURI(href: string): string {
+            const location: WikiLocation = new WikiLocation(new WikiLink(href));
+            return location.toURI();
+        }
+        const wmd: WikiMD = new WikiMD({toWikiURI, isWikiLink: WikiLink.isWikiLink});
+        wmd.addMagicHandler(new ImageFileHandler(WikiLink.isWikiLink, toWikiURI));
+        wmd.addMagicHandler(new PDFFileHandler(WikiLink.isWikiLink, toWikiURI));
         wmd.setValue(markdown);
         let htmlText: string = wmd.toHTML();
         return PageReadBody.expandWikiLink(htmlText);
@@ -403,7 +393,7 @@ class PageReadBody extends ContentBody {
             if (wikiLink.type !== 'File') {
                 return replace === null ? s : replace;
             }
-            const fullPath: string|null = toFullPath(wikiPath);
+            const fullPath: string|null = toFullPath(wikiLink);
             if (fullPath === null) {
                 return replace === null ? s : replace;
             }
@@ -434,7 +424,7 @@ class PageWithVersionReadBody extends PageReadBody {
     }
 
     public get html(): string {
-        const filepath: string = toFullPath(this.wikiLink.toPath(), this.version) as string;
+        const filepath: string = toFullPath(this.wikiLink, this.version) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
         return this.versionAlert() + PageReadBody.markdownToHtml(markdown);
     }
@@ -511,7 +501,9 @@ class PageWithVersionReadBody extends PageReadBody {
     }
 
     private versionLink(version: number, text: string): string {
-        return `<a href="?path=${this.wikiLink.toPath()}&version=${version}">${text}</a>`;
+        const location: WikiLocation = new WikiLocation(this.wikiLink);
+        location.addParam('version', String(version));
+        return `<a href="${location.toURI()}">${text}</a>`;
     }
 
     private surround(text: string): string {
@@ -519,7 +511,7 @@ class PageWithVersionReadBody extends PageReadBody {
     }
 
     private diffLink(old: number, diff: number, text: string): string {
-        const href: string = PageDiffBody.toDiffLink(this.wikiLink, old, diff);
+        const href: string = PageDiffBody.createURI(this.wikiLink, old, diff);
         return `<a href="${href}">${text}</a>`;
     }
 }
@@ -569,8 +561,10 @@ class PageHistoryBody extends ContentBody {
         lines.push(this.curAndPrev(data, currentVersion));
         lines.push(this.radios(data, index));
         lines.push('<span class="changed-date">');
-        const href: string = `?path=${this.wikiLink.toPath()}&version=${data.version}`;
-        lines.push(`<a href="${href}">${dateToStr(data.created)}</a>`);
+
+        const location: WikiLocation = new WikiLocation(this.wikiLink);
+        location.addParam('version', String(data.version));
+        lines.push(`<a href="${location.toURI()}">${dateToStr(data.created)}</a>`);
         lines.push('</span>');
         if (data.comment !== '') {
             lines.push(separator);
@@ -591,17 +585,16 @@ class PageHistoryBody extends ContentBody {
     }
 
     private curAndPrev(data: VersionData, currentVersion: number): string {
-        const path: string = this.wikiLink.toPath();
         const lines: string[] = [];
-        const v: number = data.version;
+        const version: number = data.version;
         lines.push('<span class="cur-and-prev">');
         lines.push('<span>');
-        const curHref: string = PageDiffBody.toDiffLink(this.wikiLink, v, currentVersion);
+        const curHref: string = PageDiffBody.createURI(this.wikiLink, version, currentVersion);
         lines.push(data.next === null ? 'cur' : `<a href="${curHref}">cur</a>`);
         lines.push('</span>');
 
         lines.push('<span>');
-        const prevHref: string = PageDiffBody.toDiffLink(this.wikiLink, v - 1, v);
+        const prevHref: string = PageDiffBody.createURI(this.wikiLink, version - 1, version);
         lines.push(data.prev === null ? 'prev' : `<a href="${prevHref}">prev</a>`);
         lines.push('</span>');
         lines.push('</span>');
@@ -640,8 +633,7 @@ class PageHistoryBody extends ContentBody {
 // File
 class NotFoundFileBody extends ContentBody {
     public get html(): string {
-        const uplaodLink: WikiLink = new WikiLink({namespace: this.wikiLink.namespace, type: 'Special', name: 'UploadFile'});
-        const href: string = `?path=${uplaodLink.toPath()}&dest=${this.wikiLink.name}`;
+        const href: string = UploadFileBody.createURI(this.wikiLink);
         return `<p>There is currently no file in this page. You can <a href="${href}">upload this file</a>.</p>`;
     }
 }
@@ -662,8 +654,7 @@ class FileReadBody extends ContentBody {
     }
 
     protected createHtml(version?: number): string {
-        const uplaodLink: WikiLink = new WikiLink({namespace: this.wikiLink.namespace, type: 'Special', name: 'UploadFile'});
-        const uplaodHref: string = `?path=${uplaodLink.toPath()}&dest=${this.wikiLink.name}`;
+        const href: string = UploadFileBody.createURI(this.wikiLink);
         const lines: string[] = [
             '<div class="row">',
               '<div class="col-12">',
@@ -673,7 +664,7 @@ class FileReadBody extends ContentBody {
             this.historyHtml(),
             '<div class="row">',
               '<div class="col-12 pb-4">',
-                `<a href="${uplaodHref}">Upload a new version of this file</a>`,
+                `<a href="${href}">Upload a new version of this file</a>`,
               '</div>',
             '</div>',
         ]
@@ -681,7 +672,7 @@ class FileReadBody extends ContentBody {
     }
 
     private mainView(version: number|undefined): string {
-        const filepath: string = toFullPath(this.wikiLink.toPath(), version) as string;
+        const filepath: string = toFullPath(this.wikiLink, version) as string;
         switch (this.fileTypeOf(filepath)) {
             case 'image':
                 return `<img src="${filepath}" alt="preview" decoding="async">`
@@ -739,17 +730,19 @@ class FileReadBody extends ContentBody {
         const status: string = data.next === null ? 'current' : 'revert';
         const created: string = dateToStr(data.created);
         const filepath: string = this.bufferPathGenerator.execute(data.filename);
-        const comment: string = data.comment;
         const size: string = bytesToStr(fs.statSync(filepath).size);
+
+        const location: WikiLocation = new WikiLocation(this.wikiLink);
+        location.addParam('version', String(data.version));
         const lines: string[] = [
             '<tr>',
               `<td>${status}</td>`,
-              `<td><a href="?path=${this.wikiLink.toPath()}&version=${data.version}">${created}</a></td>`,
+              `<td><a href="${location.toURI()}">${created}</a></td>`,
               '<td>',
                 this.thumbTd(filepath, data.version),
               '</td>',
               `<td>${size}</td>`,
-              `<td>${comment}</td>`,
+              `<td>${data.comment}</td>`,
             '</tr>',
         ]
         return lines.join('');
@@ -768,8 +761,9 @@ class FileReadBody extends ContentBody {
                 content = `version ${version}`;
                 break;
         }
-        const path: string = this.wikiLink.toPath();
-        return `<a href="?path=${path}&version=${version}">${content}</a>`
+        const location: WikiLocation = new WikiLocation(this.wikiLink);
+        location.addParam('version', String(version));
+        return `<a href="${location.toURI()}">${content}</a>`
     }
 
     private fileTypeOf(filepath: string): 'image'|'pdf'|'other' {
@@ -853,7 +847,9 @@ class FileWithVersionReadBody extends FileReadBody {
     }
 
     private versionLink(version: number, text: string): string {
-        return `<a href="?path=${this.wikiLink.toPath()}&version=${version}">${text}</a>`;
+        const location: WikiLocation = new WikiLocation(this.wikiLink);
+        location.addParam('version', String(version));
+        return `<a href="${location.toURI()}">${text}</a>`;
     }
 }
 
@@ -877,10 +873,12 @@ class NotFoundFileWithVersionReadBody extends ContentBody {
 // Special
 class NotFoundSpecialBody extends ContentBody {
     public get html(): string {
+        const wikiLink: WikiLink = new WikiLink({namespace: this.wikiLink.namespace, type: 'Special', name: 'SpecialPages'});
+        const location: WikiLocation = new WikiLocation(wikiLink);
         const lines: string[] = [
             '<div class="alert alert-warning" role="alert">',
               'The Page you are looking for doesn\'t exist or an other error occurred.<br>',
-              `Choose a new direction, or Go to <a href="?path=${this.wikiLink.namespace}:Special:SpecialPages">Special:SpecialPages.</a>`,
+              `Choose a new direction, or Go to <a href="${location.toURI()}">Special:SpecialPages.</a>`,
             '</div>',
         ];
         return lines.join('');
@@ -933,12 +931,12 @@ class SpecialPagesBody extends SpecialContentBody {
             lines.push('<ul>');
             for (const contentBody of contentBodies) {
                 const title: string = contentBody.title;
-                const wikiLink: WikiLink = new WikiLink({namespace: this.wikiLink.namespace, type: 'Special', name: contentBody.name});
-                const path: string = wikiLink.toPath();
                 if (contentBody === this) {
                     lines.push(`<li>${title}</li>`);
                 } else {
-                    lines.push(`<li><a href="?path=${path}">${title}</a></li>`);
+                    const wikiLink: WikiLink = new WikiLink({namespace: this.wikiLink.namespace, type: 'Special', name: contentBody.name});
+                    const location: WikiLocation = new WikiLocation(wikiLink);
+                    lines.push(`<li><a href="${location.toURI()}">${title}</a></li>`);
                 }
             }
             lines.push('</ul>');
@@ -965,8 +963,9 @@ class AllPagesBody extends SpecialContentBody {
             const namespace: string = this.wikiLink.namespace;
             const wikiType: WikiType = 'Page';
             for (const data of currentData) {
-                const dataLink: WikiLink = new WikiLink({namespace, name: data.name, type: wikiType});
-                lines.push(`<li><a href="?path=${dataLink.toPath()}">${data.name}</a></li>`);
+                const wikiLink: WikiLink = new WikiLink({namespace, name: data.name, type: wikiType});
+                const location: WikiLocation = new WikiLocation(wikiLink);
+                lines.push(`<li><a href="${location.toURI()}">${data.name}</a></li>`);
             }
             lines.push('</ul>');
         }
@@ -993,8 +992,9 @@ class AllFilesBody extends SpecialContentBody {
             const namespace: string = this.wikiLink.namespace;
             const wikiType: WikiType = 'File';
             for (const data of currentData) {
-                const dataLink: WikiLink = new WikiLink({namespace, name: data.name, type: wikiType});
-                lines.push(`<li><a href="?path=${dataLink.toPath()}">${data.name}</a></li>`);
+                const wikiLink: WikiLink = new WikiLink({namespace, name: data.name, type: wikiType});
+                const location: WikiLocation = new WikiLocation(wikiLink);
+                lines.push(`<li><a href="${location.toURI()}">${data.name}</a></li>`);
             }
             lines.push('</ul>');
         }
@@ -1004,10 +1004,17 @@ class AllFilesBody extends SpecialContentBody {
 
 
 class UploadFileBody extends SpecialContentBody {
+    private static wikiName: string = 'UploadFile';
+    public name: string = UploadFileBody.wikiName;
     public js: string[] = ['./js/upload-file.js'];
-    public name: string = 'UploadFile';
     public title: string = 'Upload file';
     public type: SpecialContentType = 'media';
+
+    public static createURI(wikiLink: WikiLink): string {
+        const location: WikiLocation = new WikiLocation(new WikiLink(`Special:${UploadFileBody.wikiName}`));
+        location.addParam('dest', wikiLink.name);
+        return location.toURI();
+    }
 
     public get html(): string {
         const lines: string[] = [
@@ -1053,10 +1060,12 @@ class PageDiffBody extends SpecialContentBody {
         './js/page-diff.js'
     ];
 
-    public static toDiffLink(wikiLink: WikiLink, old: number, diff: number): string {
-        const path: string = `Special:${PageDiffBody.wikiName}`;
-        const page: string = wikiLink.toPath();
-        return `?path=${path}&page=${page}&old=${old}&diff=${diff}`;
+    public static createURI(wikiLink: WikiLink, old: number, diff: number): string {
+        const location: WikiLocation = new WikiLocation(new WikiLink(`Special:${PageDiffBody.wikiName}`));
+        location.addParam('page', wikiLink.toPath());
+        location.addParam('old', String(old));
+        location.addParam('diff', String(diff));
+        return location.toURI();
     }
 
     public get html(): string {
@@ -1066,7 +1075,7 @@ class PageDiffBody extends SpecialContentBody {
             '<div class="border rounded p-3">',
               `<label for="${this.pathId(newPrefix)}">New version page:</label>`,
               this.pathAndVersion(newPrefix),
-              `<label for="${this.pathId(oldPrefix)}">Old revision page:</label>`,
+              `<label for="${this.pathId(oldPrefix)}">Old version page:</label>`,
               this.pathAndVersion(oldPrefix),
               this.showButton(),
             '</div>',

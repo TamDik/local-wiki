@@ -15,7 +15,7 @@ saveButton.addEventListener('click', () => {
     const comment: string = commentArea.value;
     window.ipcApi.updatePage(params.path, text, comment)
     .then(result => {
-        location.href = `?${Params.PATH_KEY}=${params.path}`;
+        location.href = window.localWiki.toURI(params.path);
     })
     .catch(e => {
     });

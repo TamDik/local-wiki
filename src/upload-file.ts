@@ -60,7 +60,7 @@ chooseFileButton.addEventListener('click', () => {
             return;
         }
         const filepath: string = result.filePaths[0];
-        const extension: string = window.utils.extensionOf(filepath);
+        const extension: string = window.utils.extensionOf(filepath).toLowerCase();
         if (!extensions.includes(extension)) {
             setNoFileChosen();
             alert('Invalid file extension');
@@ -90,8 +90,8 @@ uploadButton.addEventListener('click', () => {
     const name: string = window.utils.trim(destInput.value);
     const comment: string = window.utils.trim(commentInput.value);
     window.ipcApi.uploadFile(params.path, name, filepath, comment)
-    .then(path => {
-        location.href = `?${Params.PATH_KEY}=${path}`;
+    .then(result => {
+        location.href = window.localWiki.toURI({name, type: 'File'});
     })
     .catch(e => {
     });

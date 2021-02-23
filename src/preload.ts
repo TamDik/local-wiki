@@ -1,5 +1,6 @@
 import {contextBridge, ipcRenderer, remote} from "electron";
 import * as utils from './utils';
+import {WikiLink, WikiLocation} from './wikilink';
 
 
 contextBridge.exposeInMainWorld(
@@ -7,6 +8,7 @@ contextBridge.exposeInMainWorld(
 );
 
 
+type IncompleteWikiLink = {namespace?: string, type?: WikiType, name?: string};
 contextBridge.exposeInMainWorld(
     'localWiki', {
         isMode: (arg: any): arg is PageMode => {
@@ -14,6 +16,17 @@ contextBridge.exposeInMainWorld(
                 return false
             }
             return ['read', 'edit', 'history'].includes(arg);
+        },
+        toPath: (path: IncompleteWikiLink|string): string => {
+            const wikiLink: WikiLink = new WikiLink(path);
+            return wikiLink.toPath();
+        },
+        toURI: (path: IncompleteWikiLink|string, params: {[key: string]: string}={}): string => {
+            const location: WikiLocation = new WikiLocation(new WikiLink(path));
+            for (const key in params) {
+                location.addParam(key, params[key]);
+            }
+            return location.toURI();
         }
     }
 );
@@ -41,8 +54,7 @@ contextBridge.exposeInMainWorld(
         async currentVersion(path: string): Promise<number> {
             return ipcRenderer.invoke('current-version', path);
         },
-        async getMainContent(mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement,
-                                                                                       title: string, body: string, sideMenu: string, tabs: TabParams[],
+        async getMainContent(mode: PageMode, path: string, version?: number): Promise<{title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
                                                                                        dependences: {css: string[], js: string[]}}> {
             return ipcRenderer.invoke('get-html-contents', mode, path, version);
         },
@@ -55,7 +67,7 @@ contextBridge.exposeInMainWorld(
         async canGoBackOrForward(): Promise<{back: boolean, forward: boolean}> {
             return ipcRenderer.invoke('can-go-back-or-forward');
         },
-        async uploadFile(path: string, name: string, filepath: string, comment: string): Promise<string> {
+        async uploadFile(path: string, name: string, filepath: string, comment: string): Promise<boolean> {
             return ipcRenderer.invoke('upload-file', path, name, filepath, comment);
         },
         async updatePage(path: string, text: string, comment: string): Promise<boolean> {
@@ -76,10 +88,10 @@ contextBridge.exposeInMainWorld(
         searchPageResult(lister: (path: string, body: string, created: Date, keywords: string[]) => void): void {
             ipcRenderer.on('search-page-result', (event, p: string, b: string, c: Date, k: string[]) => lister(p, b, c, k));
         },
-        async getSideMenuData(): Promise<{main: SectionData, sub: {title: string, data: SectionData}[]}> {
+        async getSideMenuData(): Promise<{main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]}> {
             return ipcRenderer.invoke('get-side-menu-data');
         },
-        async updateSideMenu(main: SectionData, sub: {title: string, data: SectionData}[]): Promise<boolean> {
+        async updateSideMenu(main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]): Promise<boolean> {
             return ipcRenderer.invoke('update-side-menu', main, sub);
         },
     }

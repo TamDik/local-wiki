@@ -31,11 +31,9 @@ ipcMain.on('go-forward', event => {
 });
 
 // htmlに展開するコンテンツを返す
-ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement,
-                                                                                                           title: string, body: string, sideMenu: string, tabs: TabParams[],
-                                                                                                           dependences: {css: string[], js: string[]}}> => {
+ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, version?: number): Promise<{title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
+                                                                                                            dependences: {css: string[], js: string[]}}> => {
     const wikiLink: WikiLink = new WikiLink(path);
-    const linkElement: WikiLinkElement = {namespace: wikiLink.namespace, name: wikiLink.name, type: wikiLink.type};
     const title: string = ContentGenerator.title(mode, wikiLink);
     const sideMenu: string = ContentGenerator.sideMenu();
     let mainContent: {body: string, dependences: {css: string[], js: string[]}};
@@ -44,8 +42,8 @@ ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, 
     } else {
         mainContent = ContentGenerator.mainContent(mode, wikiLink);
     }
-    const tabs: TabParams[] = ContentGenerator.menuTabs(mode, wikiLink);
-    return {linkElement, title, sideMenu, tabs, ...mainContent};
+    const tabs: TopNavTabData[] = ContentGenerator.menuTabs(mode, wikiLink);
+    return {title, sideMenu, tabs, ...mainContent};
 });
 
 // 生のPageデータを返す
@@ -104,7 +102,7 @@ ipcMain.handle('update-page', async (event, path: string, text: string, comment:
 });
 
 // ファイルをアップロードする
-ipcMain.handle('upload-file', async (event, path: string, destName: string, sourcePath: string, comment: string): Promise<string> => {
+ipcMain.handle('upload-file', async (event, path: string, destName: string, sourcePath: string, comment: string): Promise<boolean> => {
     const namespace: string = new WikiLink(path).namespace;
     const wikiType: WikiType = 'File';
     const fileLink: WikiLink = new WikiLink({namespace, name: destName, type: wikiType});
@@ -113,7 +111,7 @@ ipcMain.handle('upload-file', async (event, path: string, destName: string, sour
     const filepath: string = toFullPath(filename, namespace, wikiType);
     fs.copyFileSync(sourcePath, filepath);
     history.add({name: fileLink.name, comment, filename});
-    return fileLink.toPath();
+    return true;
 });
 
 // マークダウンをHTMLに変換
@@ -144,29 +142,29 @@ ipcMain.on('search-page-by-keyword', (event, path: string, keywords: string[]) =
         }
         if (matched) {
             const pageLink: WikiLink = new WikiLink({namespace, name: data.name, type: wikiType});
-            event.sender.send('search-page-result', pageLink.toPath(), text, data.created, keywords);
+            event.sender.send('search-page-result', pageLink, text, data.created, keywords);
         }
     }
 });
 
 // 名前でページを検索
-ipcMain.handle('search-page-by-name', async (event, path: string, name: string): Promise<{exists: boolean, path: string}> => {
+ipcMain.handle('search-page-by-name', async (event, path: string, name: string): Promise<{exists: boolean, wikiLink: IWikiLink}> => {
     const namespace: string = new WikiLink(path).namespace;
     const wikiType: WikiType = 'Page';
     const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
-    const pagePath: string = new WikiLink({namespace, name, type: wikiType}).toPath();
+    const wikiLink: IWikiLink = new WikiLink({namespace, name, type: wikiType});
     const exists: boolean = history.hasName(name);
-    return {exists, path: pagePath};
+    return {exists, wikiLink};
 });
 
 // サイドメニューのデータを返す
-ipcMain.handle('get-side-menu-data', async (event): Promise<{main: SectionData, sub: {title: string, data: SectionData}[]}> => {
+ipcMain.handle('get-side-menu-data', async (event): Promise<{main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]}> => {
     const config: WikiConfig = new WikiConfig();
     return config.getSideMenu();
 });
 
 // サイドメニューをアップデートする
-ipcMain.handle('update-side-menu', async(event, main: SectionData, sub: {title: string, data: SectionData}[]): Promise<boolean> => {
+ipcMain.handle('update-side-menu', async(event, main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]): Promise<boolean> => {
     const config: WikiConfig = new WikiConfig();
     config.setSideMenu({main, sub});
     return true;

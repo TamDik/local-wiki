@@ -190,7 +190,7 @@
     }, false);
 
     // 編集前の初期化
-    function setSection(section: HTMLElement, contents: SectionData): void {
+    function setSection(section: HTMLElement, contents: SideMenuSectionData): void {
         for (const content of contents) {
             if (content.type === 'text') {
                 addTextContent(section, content.value);
@@ -200,7 +200,7 @@
         }
     }
 
-    function setSideMenuEditor(main: SectionData, sub: {title: string, data: SectionData}[]): void {
+    function setSideMenuEditor(main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]): void {
         setSection(mainSection, main);
         for (const {title, data} of sub) {
             const section: HTMLElement = addSection(null, title);
@@ -209,12 +209,12 @@
     }
 
     // 編集結果の取得
-    function getSectionData(section: Element): SectionData {
-        const data: SectionData = [];
+    function getSectionData(section: Element): SideMenuSectionData {
+        const data: SideMenuSectionData = [];
         const contents: HTMLCollectionOf<Element> = section.getElementsByClassName(className.content);
         for (const content of contents) {
             const inputs: HTMLCollectionOf<HTMLInputElement> = content.getElementsByTagName('input');
-            let contentData: ContentData;
+            let contentData: SideMenuContentData;
             if (content.classList.contains(className.link)) {
                 contentData = {type: 'link', text: inputs[0].value, path: inputs[1].value};
                 data.push(contentData);
@@ -229,12 +229,12 @@
     // 保存
     const saveButton: HTMLInputElement = document.getElementById('save-side-menu-button') as HTMLInputElement;
     saveButton.addEventListener('click', () => {
-        const mainData: SectionData = getSectionData(mainSection);
-        const subData: {title: string, data: SectionData}[] = [];
+        const mainData: SideMenuSectionData = getSectionData(mainSection);
+        const subData: {title: string, data: SideMenuSectionData}[] = [];
         for (const section of sideMenuSections.getElementsByClassName(className.section)) {
             const titleInput: HTMLInputElement = section.getElementsByClassName(className.title)[0] as HTMLInputElement;
             const title: string = titleInput.value;
-            const data: SectionData = getSectionData(section);
+            const data: SideMenuSectionData = getSectionData(section);
             subData.push({title, data});
         }
         window.ipcApi.updateSideMenu(mainData, subData)

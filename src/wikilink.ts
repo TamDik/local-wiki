@@ -13,24 +13,17 @@ function isWikiType(arg: any): arg is WikiType {
 }
 
 
-type WikiLinkPath = {
-    namespace?: string,  // for external strages
-    type?: WikiType,
-    name?: string,
-};
-
+// namespace:type:name を解析する
 const DEFAULT_NAMESPACE: string = 'Main';
 const DEFAULT_TYPE: WikiType = 'Page';
 const DEFAULT_NAME: string = 'Main';
-
-
-class WikiLink {
+class WikiLink implements IWikiLink {
     static readonly SEPARATOR: string = ':';
     readonly namespace: string;
     readonly type: WikiType;
     readonly name: string;
 
-    public constructor(path?: WikiLinkPath|string) {
+    public constructor(path?: {namespace?: string, type?: WikiType, name?: string}|string) {
         if (path === undefined) {
             path = {};
         } else if (typeof(path) === 'string') {
@@ -59,9 +52,11 @@ class WikiLink {
         return path;
     }
 
-    private static parse(href: string): WikiLinkPath {
+    private static parse(href: string): IWikiLink {
         const arr: string[] = href.split(WikiLink.SEPARATOR);
-        let path: WikiLinkPath = {};
+        let path: IWikiLink = {
+            namespace: DEFAULT_NAMESPACE, type: DEFAULT_TYPE, name: DEFAULT_NAME
+        };
         if (arr.length === 1) {
             const v1: string = arr[0];
             if (isWikiType(v1)) {
@@ -91,4 +86,25 @@ class WikiLink {
 }
 
 
-export {WikiLink, DEFAULT_NAMESPACE, DEFAULT_TYPE, DEFAULT_NAME, WikiType};
+// WikiLinkからURIを解決する
+class WikiLocation {
+    private params: Map<string, string> = new Map();
+    public constructor(private readonly wikiLink: WikiLink) {
+    }
+
+    public addParam(key: string, value: string): void {
+        this.params.set(key, value);
+    }
+
+    public toURI(): string {
+        const params: [string, string][] = [['path', this.wikiLink.toPath()]];
+        for (const key of this.params.keys()) {
+            const value: string = this.params.get(key) as string;
+            params.push([key, value])
+        }
+        return '?' + params.map(([key, value]) => `${key}=${value}`).join('&');
+    }
+}
+
+
+export {WikiLink, DEFAULT_NAMESPACE, DEFAULT_TYPE, DEFAULT_NAME, WikiLocation};

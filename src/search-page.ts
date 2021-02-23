@@ -19,12 +19,14 @@ function heighLightKeywords(text: string, keywords: string[]): string {
     return maxLine.replace(keywordRE, '<span class="search-match">$&</span>');
 }
 
-function addResult(path: string, text: string, created: Date, keywords: string[]): void {
+function addResult(wikiLink: IWikiLink, text: string, created: Date, keywords: string[]): void {
     const li: HTMLLIElement = document.createElement('li');
     li.classList.add('search-result');
+    const href: string = window.localWiki.toURI(wikiLink);
+    const path: string = window.localWiki.toPath(wikiLink);
     const html: string = [
         '<div class="search-result-heading">',
-          `<a href="?path=${path}">${path}</a>`,
+          `<a href="${href}">${path}</a>`,
         '</div>',
         '<div class="search-result-body">',
           heighLightKeywords(text, keywords),
@@ -51,8 +53,8 @@ function splitSeachKeyword(keyword: string): string[] {
     return keywords.filter(keyword => keyword !== '');
 }
 
-window.ipcApi.searchPageResult((path: string, body: string, created: Date, keywords: string[]) => {
-    addResult(path, body, created, keywords);
+window.ipcApi.searchPageResult((wikiLink: IWikiLink, body: string, created: Date, keywords: string[]) => {
+    addResult(wikiLink, body, created, keywords);
 });
 
 function searchPage(): void {
@@ -63,11 +65,13 @@ function searchPage(): void {
     const p: HTMLParagraphElement = document.createElement('p');
     ul.appendChild(p);
     window.ipcApi.searchPageByName(params.path, searchValue)
-    .then(({exists, path}) => {
+    .then(({exists, wikiLink}) => {
         if (exists) {
-            p.innerHTML = `There is a page named "<a href="?path=${path}">${searchValue}</a>" on this wiki.`;
+            const href: string = window.localWiki.toURI(wikiLink);
+            p.innerHTML = `There is a page named "<a href="${href}">${searchValue}</a>" on this wiki.`;
         } else {
-            p.innerHTML = `Create the page "<a href="?path=${path}&mode=edit">${searchValue}</a>" on this wiki!`;
+            const href: string = window.localWiki.toURI(wikiLink, {mode: 'edit'});
+            p.innerHTML = `Create the page "<a href="${href}">${searchValue}</a>" on this wiki!`;
         }
     });
     window.ipcApi.searchPageByKeywords(params.path, keywords);

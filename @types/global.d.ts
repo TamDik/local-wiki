@@ -1,10 +1,14 @@
 export declare global {
     type WikiType = 'Page'|'File'|'Special';
     type PageMode = 'read'|'edit'|'history';
-    type WikiLinkElement = {namespace: string, name: string, type: WikiType};
-    type TabParams = {title: string, href: string, selected: boolean};
-    type ContentData = {type: 'text', value: string}|{type: 'link', text: string, path: string};
-    type SectionData = ContentData[];
+    interface IWikiLink {
+        namespace: string;
+        type: WikiType;
+        name: string;
+    };
+    type TopNavTabData = {title: string, href: string, selected: boolean};
+    type SideMenuContentData = {type: 'text', value: string}|{type: 'link', text: string, path: string};
+    type SideMenuSectionData = SideMenuContentData[];
 
     interface Window {
         utils: IUtils;
@@ -27,21 +31,20 @@ interface IIpcApi {
     openExternalLink(path: string): Promise<void>;
     existsPath(path: string): Promise<boolean>;
     currentVersion(path: string): Promise<number>;
-    getMainContent(mode: PageMode, path: string, version?: number): Promise<{linkElement: WikiLinkElement,
-                                                                             title: string, body: string, sideMenu: string, tabs: TabParams[],
+    getMainContent(mode: PageMode, path: string, version?: number): Promise<{title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
                                                                              dependences: {css: string[], js: string[]}}>;
     goBack(): void;
     goForward(): void;
     canGoBackOrForward(): Promise<{back: boolean, forward: boolean}>;
-    uploadFile(path: string, name: string, filepath: string, comment: string): Promise<string>;
+    uploadFile(path: string, name: string, filepath: string, comment: string): Promise<boolean>;
     updatePage(path: string, text: string, comment: string): Promise<boolean>;
     getRawPageText(path: string, version?: number): Promise<string>;
     markdownToHtml(markdown: string): Promise<string>;
     searchPageByKeywords(path: string, keywords: string[]): void;
-    searchPageByName(path: string, name: string): Promise<{exists: boolean, path: string}>;
-    searchPageResult(lister: (path: string, body: string, created: Date, keywords: string[]) => void): void;
-    getSideMenuData(): Promise<{main: SectionData, sub: {title: string, data: SectionData}[]}>;
-    updateSideMenu(main: SectionData, sub: {title: string, data: SectionData}[]): Promise<boolean>;
+    searchPageByName(path: string, name: string): Promise<{exists: boolean, wikiLink: IWikiLink}>;
+    searchPageResult(lister: (wikiLink: IWikiLink, body: string, created: Date, keywords: string[]) => void): void;
+    getSideMenuData(): Promise<{main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]}>;
+    updateSideMenu(main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]): Promise<boolean>;
 }
 
 
@@ -50,6 +53,9 @@ interface IDialog {
 }
 
 
+type IncompleteWikiLink = {namespace?: string, type?: WikiType, name?: string};
 interface ILocalWiki {
     isMode: (arg: any) => arg is PageMode;
+    toPath: (path: IncompleteWikiLink|string) => string;
+    toURI: (path: IncompleteWikiLink|string, params: {[key: string]: string}={}) => string;
 }
