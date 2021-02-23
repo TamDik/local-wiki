@@ -14,7 +14,7 @@ function toFullPath(wikiLink: WikiLink, version?: number): string|null {
     const name: string = wikiLink.name;
 
     const config: WikiConfig = new WikiConfig();
-    if (!config.hasNameSpace(namespace)) {
+    if (!config.hasNamespace(namespace)) {
         return null;
     }
 
@@ -89,8 +89,8 @@ class ContentGenerator {
         const config: WikiConfig = new WikiConfig();
 
         // 名前空間なし
-        if (!config.hasNameSpace(wikiLink.namespace)) {
-            return new NotFoundNameSpaceBody(wikiLink);
+        if (!config.hasNamespace(wikiLink.namespace)) {
+            return new NotFoundNamespaceBody(wikiLink);
         }
 
         // typeごと
@@ -295,7 +295,7 @@ abstract class ContentBody {
     }
 }
 
-class NotFoundNameSpaceBody extends ContentBody {
+class NotFoundNamespaceBody extends ContentBody {
     public get html(): string {
         const location: WikiLocation = new WikiLocation(new WikiLink());
         const lines: string[] = [

@@ -74,7 +74,7 @@ ipcMain.handle('current-version', async (event, path: string): Promise<number> =
 ipcMain.handle('exists-path', async (event, path: string, version?: number): Promise<boolean> => {
     const wikiLink: WikiLink = new WikiLink(path);
     const config: WikiConfig = new WikiConfig();
-    if (!config.hasNameSpace(wikiLink.namespace)) {
+    if (!config.hasNamespace(wikiLink.namespace)) {
         return false;
     }
     const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);

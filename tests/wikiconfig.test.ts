@@ -16,14 +16,14 @@ function unlinkConfigFile(): string {
 describe('test WikiConfig', () => {
     const configFile: string = unlinkConfigFile();
     const config: WikiConfig = new WikiConfig(configFile, false);
-    config.addNameSpace({namespace: 'ns1', type: 'internal'});
-    config.addNameSpace({namespace: 'ns2', type: 'external', rootDir: 'rd2'});
+    config.addNamespace({namespace: 'ns1', type: 'internal'});
+    config.addNamespace({namespace: 'ns2', type: 'external', rootDir: 'rd2'});
     // changing config
-    config.addNameSpace({namespace: 'ns2', type: 'external', rootDir: 'rd2-changed'});
-    test('hasNameSpace', () => {
-        expect(config.hasNameSpace(DEFAULT_NAMESPACE)).toBe(true);
-        expect(config.hasNameSpace('ns1')).toBe(true);
-        expect(config.hasNameSpace('dummy')).toBe(false);
+    config.addNamespace({namespace: 'ns2', type: 'external', rootDir: 'rd2-changed'});
+    test('hasNamespace', () => {
+        expect(config.hasNamespace(DEFAULT_NAMESPACE)).toBe(true);
+        expect(config.hasNamespace('ns1')).toBe(true);
+        expect(config.hasNamespace('dummy')).toBe(false);
     });
 
     test('typeOf', () => {

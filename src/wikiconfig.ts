@@ -4,10 +4,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 
-type NameSpaceType = 'internal'|'external';
-interface NameSpaceConfig {
+type NamespaceType = 'internal'|'external';
+interface NamespaceConfig {
     namespace: string;
-    type: NameSpaceType;
+    type: NamespaceType;
     rootDir?: string;
 }
 
@@ -17,7 +17,7 @@ interface SideMenuConfig {
 }
 
 interface ConfigData {
-    namespace: NameSpaceConfig[];
+    namespace: NamespaceConfig[];
     sidemenu: SideMenuConfig;
 }
 
@@ -49,8 +49,8 @@ class WikiConfig {
                 sub: [],
             }
         };
-        // NOTE: ディレクトリを作るために，addNameSpace を呼び出す必要がある
-        this.addNameSpace({namespace: DEFAULT_NAMESPACE, type: 'internal'});
+        // NOTE: ディレクトリを作るために，addNamespace を呼び出す必要がある
+        this.addNamespace({namespace: DEFAULT_NAMESPACE, type: 'internal'});
         return this.__data;
     }
 
@@ -59,14 +59,14 @@ class WikiConfig {
         fs.writeFileSync(this.configPath, text);
     }
 
-    public addNameSpace(namespace: NameSpaceConfig): void {
+    public addNamespace(namespace: NamespaceConfig): void {
         if (namespace.type === 'external' && typeof(namespace.rootDir) !== 'string') {
             throw new Error('rootDir must be string when type is external');
         }
         if (namespace.type === 'internal' && typeof(namespace.rootDir) !== 'undefined') {
             throw new Error('rootDir must be undefined when type is internal');
         }
-        if (this.hasNameSpace(namespace.namespace)) {
+        if (this.hasNamespace(namespace.namespace)) {
             this.data.namespace = this.data.namespace.map(ns => {
                 if (ns.namespace !== namespace.namespace) {
                     return ns;
@@ -85,7 +85,7 @@ class WikiConfig {
         }
     }
 
-    public hasNameSpace(namespace: string): boolean {
+    public hasNamespace(namespace: string): boolean {
         for (const ns of this.data.namespace) {
             if (ns.namespace === namespace) {
                 return true;
@@ -94,18 +94,18 @@ class WikiConfig {
         return false;
     }
 
-    public typeOf(namespace: string): NameSpaceType {
-        return this.getNameSpaceConfig(namespace).type;
+    public typeOf(namespace: string): NamespaceType {
+        return this.getNamespaceConfig(namespace).type;
     }
 
     public rootDirOf(namespace: string): string {
         if (this.typeOf(namespace) === 'internal') {
             return path.join(DATA_DIR, namespace);
         }
-        return this.getNameSpaceConfig(namespace).rootDir as string;
+        return this.getNamespaceConfig(namespace).rootDir as string;
     }
 
-    private getNameSpaceConfig(namespace: string): NameSpaceConfig {
+    private getNamespaceConfig(namespace: string): NamespaceConfig {
         for (const ns of this.data.namespace) {
             if (ns.namespace === namespace) {
                 return ns;
