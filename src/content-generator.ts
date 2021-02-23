@@ -318,7 +318,10 @@ class NotFoundPageBody extends ContentBody {
 }
 
 class PageEditBody extends ContentBody {
-    public css: string[] = ['./css/editor.css'];
+    public css: string[] = [
+        './css/editor.css',
+        '../node_modules/highlight.js/styles/github-gist.css',
+    ];
     public js: string[] = ['./js/editor.js'];
 
     public get html(): string {
@@ -360,6 +363,9 @@ class PageEditBody extends ContentBody {
 
 
 class PageReadBody extends ContentBody {
+    public css: string[] = [
+        '../node_modules/highlight.js/styles/github-gist.css',
+    ];
     public get html(): string {
         const filepath: string = toFullPath(this.wikiLink) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
