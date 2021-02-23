@@ -50,7 +50,9 @@
     },
     "build": {
         "appId": "com.electron.TamDik.local-wiki",
-        "asar": false,
+        "asarUnpack": [
+            "data/**/*"
+        ],
         "directories": {
             "output": "build",
             "buildResources": "src"
