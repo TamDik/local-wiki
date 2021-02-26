@@ -17,6 +17,10 @@ contextBridge.exposeInMainWorld(
             }
             return ['read', 'edit', 'history'].includes(arg);
         },
+        parsePath: (path: string): IWikiLink => {
+            const wikiLink: WikiLink = new WikiLink(path);
+            return {namespace: wikiLink.namespace, type: wikiLink.type, name: wikiLink.name};
+        },
         toPath: (path: IncompleteWikiLink|string): string => {
             const wikiLink: WikiLink = new WikiLink(path);
             return wikiLink.toPath();

@@ -37,6 +37,18 @@ class Params {
         return value;
     }
 
+    public get namespace(): string {
+        return window.localWiki.parsePath(this.path).namespace;
+    }
+
+    public get type(): WikiType {
+        return window.localWiki.parsePath(this.path).type;
+    }
+
+    public get name(): string {
+        return window.localWiki.parsePath(this.path).name;
+    }
+
     public getValueOf(key: string): string {
         if (key === Params.MODE_KEY) {
             return this.mode;
@@ -67,12 +79,15 @@ class Params {
 }
 
 
-function initTabs(tabs: TopNavTabData[]) {
-    const searchTag: HTMLLIElement = document.getElementById('search-tag') as HTMLLIElement;
+function initTabs(namespace: string, tabs: TopNavTabData[]) {
+    const manespaceTab: HTMLLIElement = document.getElementById('namespace-tab') as HTMLLIElement;
+    manespaceTab.innerHTML = `<a href="#">${namespace}</a>`;
+
+    const searchTab: HTMLLIElement = document.getElementById('search-tab') as HTMLLIElement;
     for (const tab of tabs) {
         const {title, href, selected} = tab;
         const li: HTMLLIElement = document.createElement('li');
-        searchTag.before(li);
+        searchTab.before(li);
         const a: HTMLAnchorElement = document.createElement('a');
         li.appendChild(a);
         a.href = href;
@@ -191,7 +206,7 @@ window.addEventListener('load', () => {
 
     getMainContent(params)
     .then(({title, body, sideMenu, tabs, dependences}) => {
-        initTabs(tabs);
+        initTabs(params.namespace, tabs);
         contentHead.innerHTML = title;
         contentBody.innerHTML = body;
         const sideMenuEl: HTMLElement = document.getElementById('wiki-side-menu') as HTMLElement;

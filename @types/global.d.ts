@@ -63,6 +63,7 @@ interface IDialog {
 type IncompleteWikiLink = {namespace?: string, type?: WikiType, name?: string};
 interface ILocalWiki {
     isMode: (arg: any) => arg is PageMode;
+    parsePath: (path: string) => IWikiLink;
     toPath: (path: IncompleteWikiLink|string) => string;
     toURI: (path: IncompleteWikiLink|string, params: {[key: string]: string}={}) => string;
 }
