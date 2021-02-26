@@ -102,6 +102,11 @@ createButton.addEventListener('click', () => {
 });
 
 
-directoryLabel.innerText = NO_DIRECTORY_CHOSEN;
-setCreateButton();
-setDirectoryButton();
+(() => {
+    const params: Params = new Params();
+    const newName: string = params.getValueOf('new');
+    nameInput.value = newName;
+    directoryLabel.innerText = NO_DIRECTORY_CHOSEN;
+    setCreateButton();
+    setDirectoryButton();
+})();
