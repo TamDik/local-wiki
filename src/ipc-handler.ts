@@ -169,3 +169,33 @@ ipcMain.handle('update-side-menu', async(event, main: SideMenuSectionData, sub: 
     config.setSideMenu({main, sub});
     return true;
 });
+
+// 名前空間の存在確認
+ipcMain.handle('exists-namespace', async (event, namespace: string): Promise<boolean> => {
+    const config: WikiConfig = new WikiConfig();
+    return config.hasNamespace(namespace);
+});
+
+ipcMain.handle('used-as-an-external-namespace', async (event, rootDir: string): Promise<boolean> => {
+    return WikiConfig.usedAsAnExternalNamespace(rootDir);
+});
+
+// 名前空間の作成
+ipcMain.handle('create-internal-namespace', async (event, name: string): Promise<boolean> => {
+    const config: WikiConfig = new WikiConfig();
+    config.newNamespace(name, 'internal');
+    return true;
+});
+
+ipcMain.handle('create-external-namespace', async (event, name: string, rootDir: string): Promise<boolean> => {
+    const config: WikiConfig = new WikiConfig();
+    config.newNamespace(name, 'external', rootDir);
+    return true;
+});
+
+// 名前空間の復元
+ipcMain.handle('revert-external-namespace', async (event, rootDir: string): Promise<boolean> => {
+    const config: WikiConfig = new WikiConfig();
+    config.revertExternalNamespace(rootDir);
+    return true;
+});

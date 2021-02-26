@@ -89,7 +89,8 @@ class ContentGenerator {
         const config: WikiConfig = new WikiConfig();
 
         // 名前空間なし
-        if (!config.hasNamespace(wikiLink.namespace)) {
+        if (!config.hasNamespace(wikiLink.namespace)
+            && !(wikiLink.type === 'Special' && wikiLink.name === NewNamespaceBody.wikiName)) {
             return new NotFoundNamespaceBody(wikiLink);
         }
 
@@ -146,6 +147,7 @@ class ContentGenerator {
             new UploadFileBody(wikiLink),
             new PageDiffBody(wikiLink),
             new SideMenuBody(wikiLink),
+            new NewNamespaceBody(wikiLink),
         ];
         for (const special of specials) {
             if (special.name === wikiLink.name) {
@@ -297,11 +299,11 @@ abstract class ContentBody {
 
 class NotFoundNamespaceBody extends ContentBody {
     public get html(): string {
-        const location: WikiLocation = new WikiLocation(new WikiLink());
+        const href: string = NewNamespaceBody.createURI(this.wikiLink.namespace);
         const lines: string[] = [
             '<div class="alert alert-warning" role="alert">',
               'The namespace you are looking for doesn\'t exist or an other error occurred.<br>',
-              `Choose a new direction, or Go to <a href="${location.toURI()}">Main page.</a>`,
+              `Choose a new direction, or you can <a href="${href}">create this namespace.</a>`,
             '</div>',
         ];
         return lines.join('');
@@ -879,7 +881,9 @@ class NotFoundFileWithVersionReadBody extends ContentBody {
 // Special
 class NotFoundSpecialBody extends ContentBody {
     public get html(): string {
-        const wikiLink: WikiLink = new WikiLink({namespace: this.wikiLink.namespace, type: 'Special', name: 'SpecialPages'});
+        const wikiLink: WikiLink = new WikiLink(
+            {namespace: this.wikiLink.namespace, type: 'Special', name: SpecialPagesBody.wikiName}
+        );
         const location: WikiLocation = new WikiLocation(wikiLink);
         const lines: string[] = [
             '<div class="alert alert-warning" role="alert">',
@@ -903,9 +907,9 @@ type SpecialContentType = keyof typeof specialContentLabels;
 
 
 abstract class SpecialContentBody extends ContentBody {
-    public abstract name: string;
-    public abstract title: string;
-    public abstract type: SpecialContentType;
+    public readonly abstract name: string;
+    public readonly abstract title: string;
+    public readonly abstract type: SpecialContentType;
 }
 
 
@@ -922,7 +926,8 @@ class SpecialPagesBody extends SpecialContentBody {
         this.specialContentBodies.push(contentBody);
     }
 
-    public name: string = 'SpecialPages';
+    public static readonly wikiName: string = 'SpecialPages';
+    public name: string = SpecialPagesBody.wikiName;
     public type: SpecialContentType = 'others';
     public title: string = 'Special pages';
 
@@ -1010,14 +1015,16 @@ class AllFilesBody extends SpecialContentBody {
 
 
 class UploadFileBody extends SpecialContentBody {
-    private static wikiName: string = 'UploadFile';
+    private static readonly wikiName: string = 'UploadFile';
     public name: string = UploadFileBody.wikiName;
     public js: string[] = ['./js/upload-file.js'];
     public title: string = 'Upload file';
     public type: SpecialContentType = 'media';
 
     public static createURI(wikiLink: WikiLink): string {
-        const location: WikiLocation = new WikiLocation(new WikiLink(`Special:${UploadFileBody.wikiName}`));
+        const location: WikiLocation = new WikiLocation(
+            new WikiLink({namespace: wikiLink.namespace, type: 'Special', name: UploadFileBody.wikiName})
+        );
         location.addParam('dest', wikiLink.name);
         return location.toURI();
     }
@@ -1054,7 +1061,7 @@ class UploadFileBody extends SpecialContentBody {
 
 
 class PageDiffBody extends SpecialContentBody {
-    private static wikiName: string = 'PageDiff';
+    private static readonly wikiName: string = 'PageDiff';
     public name: string = PageDiffBody.wikiName;
     public title: string = 'differences';
     public type: SpecialContentType = 'others';
@@ -1067,7 +1074,9 @@ class PageDiffBody extends SpecialContentBody {
     ];
 
     public static createURI(wikiLink: WikiLink, old: number, diff: number): string {
-        const location: WikiLocation = new WikiLocation(new WikiLink(`Special:${PageDiffBody.wikiName}`));
+        const location: WikiLocation = new WikiLocation(
+            new WikiLink({type: 'Special', name: PageDiffBody.wikiName})
+        );
         location.addParam('page', wikiLink.toPath());
         location.addParam('old', String(old));
         location.addParam('diff', String(diff));
@@ -1192,6 +1201,59 @@ class SideMenuBody extends SpecialContentBody {
               '<div class="col-2">',
                 '<button class="btn btn-outline-primary btn-block" id="save-side-menu-button">Save</button>',
               '</div>',
+            '</div>',
+        ];
+        return lines.join('');
+    }
+}
+
+
+class NewNamespaceBody extends SpecialContentBody {
+    public static readonly wikiName: string = 'NewNamespace';
+    public name: string = NewNamespaceBody.wikiName;
+    public title: string = 'New namespace';
+    public type: SpecialContentType = 'others';
+    public js: string[] = [
+        './js/new-namespace.js'
+    ];
+
+    public static createURI(namespace: string): string {
+        const location: WikiLocation = new WikiLocation(
+            new WikiLink({type: 'Special', name: NewNamespaceBody.wikiName})
+        );
+        location.addParam('new', namespace);
+        return location.toURI();
+    }
+
+    public get html(): string {
+        const lines: string[] = [
+            '<div class="border rounded p-3">',
+              '<div class="form-group">',
+                '<label for="new-namespace-name">Namespace:</label>',
+                '<input type="text" id="new-namespace-name" class="form-control" placeholder="Namespace">',
+              '</div>',
+              '<div id="namespace-name-alert" class="alert alert-danger d-none" role="alert">',
+                'The namespace is already in use!',
+              '</div>',
+              '<div class="form-group">',
+                '<label for="new-namespace-type">Type:</label>',
+                '<select id="new-namespace-type" class="form-control">',
+                  '<option value="internal" selected>Internal</option>',
+                  '<option value="external">External</option>',
+                '</select>',
+              '</div>',
+              '<div class="form-group">',
+                '<label for="external-namespace-directory">Directory (for external):</label>',
+                '<div class="input-group">',
+                  '<div class="input-group-prepend">',
+                    '<button id="external-namespace-directory-button" class="form-control btn btn-outline-secondary" disabled>Choose Directory</button>',
+                  '</div>',
+                  '<div class="input-group-append">',
+                    '<label id="external-namespace-directory" for="external-namespace-directory-button" class="form-control">No direcotry chosen</label>',
+                  '</div>',
+                '</div>',
+              '</div>',
+              '<button type="submit" id="create-namespace-button" class="btn btn-outline-primary" disabled>Create</button>',
             '</div>',
         ];
         return lines.join('');

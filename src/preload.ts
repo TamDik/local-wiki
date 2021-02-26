@@ -32,11 +32,14 @@ contextBridge.exposeInMainWorld(
 );
 
 
-type DialogResult = {canceled: boolean, filePaths: string[]};
+type OpenDialogReturnValue = {canceled: boolean, filePaths: string[]};
 contextBridge.exposeInMainWorld(
     'dialog', {
-        async openFileDialog(): Promise<{canceled: boolean, filePaths: string[]}> {
+        async openFileDialog(): Promise<OpenDialogReturnValue> {
             return remote.dialog.showOpenDialog({properties: ['openFile']});
+        },
+        async openDirectoryDialog(): Promise<OpenDialogReturnValue> {
+            return remote.dialog.showOpenDialog({properties: ['openDirectory', 'createDirectory']});
         }
     }
 );
@@ -94,5 +97,20 @@ contextBridge.exposeInMainWorld(
         async updateSideMenu(main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]): Promise<boolean> {
             return ipcRenderer.invoke('update-side-menu', main, sub);
         },
+        async existsNamespace(namespace: string): Promise<boolean> {
+            return ipcRenderer.invoke('exists-namespace', namespace);
+        },
+        async usedAsAnExternalNamespace(rootDir: string): Promise<boolean> {
+            return ipcRenderer.invoke('used-as-an-external-namespace', rootDir)
+        },
+        async createInternalNamespace(name: string): Promise<boolean> {
+            return ipcRenderer.invoke('create-internal-namespace', name);
+        },
+        async createExternalNamespace(name: string, rootDir: string): Promise<boolean> {
+            return ipcRenderer.invoke('create-external-namespace', name, rootDir);
+        },
+        async revertExternalNamespace(rootDir: string): Promise<boolean> {
+            return ipcRenderer.invoke('revert-external-namespace', rootDir);
+        }
     }
 );

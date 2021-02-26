@@ -5,7 +5,8 @@ import * as path from 'path';
 
 
 function initRootDir(): string {
-    const rootDir: string = path.join(DATA_DIR, 'test');
+    const testDataDir: string = path.join(__dirname, 'data');
+    const rootDir: string = path.join(testDataDir, 'history');
     const cFilepath: string = path.join(rootDir, CurrentVersionManager.FILENAME);
     const pFilepath: string = path.join(rootDir, PreviousVersionManager.FILENAME);
     if (fs.existsSync(cFilepath)) {
@@ -13,6 +14,9 @@ function initRootDir(): string {
     }
     if (fs.existsSync(pFilepath)) {
         fs.unlinkSync(pFilepath);
+    }
+    if (!fs.existsSync(testDataDir)) {
+        fs.mkdirSync(testDataDir);
     }
     if (!fs.existsSync(rootDir)) {
         fs.mkdirSync(rootDir);

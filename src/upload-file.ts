@@ -54,12 +54,12 @@ function setChosenFilepath(filepath: string): void {
 
 chooseFileButton.addEventListener('click', () => {
     window.dialog.openFileDialog()
-    .then((result: {canceled: boolean, filePaths: string[]}) => {
-        if (result.canceled || result.filePaths.length !== 1) {
+    .then(({canceled, filePaths}) => {
+        if (canceled || filePaths.length !== 1) {
             setNoFileChosen();
             return;
         }
-        const filepath: string = result.filePaths[0];
+        const filepath: string = filePaths[0];
         const extension: string = window.utils.extensionOf(filepath).toLowerCase();
         if (!extensions.includes(extension)) {
             setNoFileChosen();

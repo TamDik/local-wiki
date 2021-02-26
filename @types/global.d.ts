@@ -45,11 +45,18 @@ interface IIpcApi {
     searchPageResult(lister: (wikiLink: IWikiLink, body: string, created: Date, keywords: string[]) => void): void;
     getSideMenuData(): Promise<{main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]}>;
     updateSideMenu(main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]): Promise<boolean>;
+    existsNamespace(namespace: string): Promise<boolean>;
+    usedAsAnExternalNamespace(rootDir: string): Promise<boolean>;
+    createInternalNamespace(name: string): Promise<boolean>;
+    createExternalNamespace(name: string, rootDir: string): Promise<boolean>;
+    revertExternalNamespace(rootDir: string): Promise<boolean>;
 }
 
 
+type OpenDialogReturnValue = {canceled: boolean, filePaths: string[]};
 interface IDialog {
-    openFileDialog(): Promise<{canceled: boolean, filePaths: string[]}>;
+    openFileDialog(): Promise<OpenDialogReturnValue>;
+    openDirectoryDialog(): Promise<OpenDialogReturnValue>;
 }
 
 
