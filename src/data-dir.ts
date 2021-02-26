@@ -14,7 +14,11 @@ let dataDir: string = '';
 if (appPath.indexOf('app.asar') === -1) {
     dataDir = path.join(appPath, 'data');
 } else {
-    dataDir = path.join(appPath, '../app.asar.unpacked/data');
+    const asarDir: string = path.join(appPath, '../app.asar.unpacked');
+    if (!fs.existsSync(asarDir)) {
+        fs.mkdirSync(asarDir);
+    }
+    dataDir = path.join(asarDir, 'data');
 }
 
 const DATA_DIR: string = dataDir;
