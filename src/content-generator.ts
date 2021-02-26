@@ -989,7 +989,8 @@ class AllPagesBody extends SpecialContentBody {
 
 
 class AllFilesBody extends SpecialContentBody {
-    public name: string = 'AllFiles';
+    public static wikiName: string = 'AllFiles';
+    public name: string = AllFilesBody.wikiName;
     public title: string = 'All files';
     public type: SpecialContentType = 'media';
 
@@ -1239,12 +1240,20 @@ class AllNamespacesBody extends SpecialContentBody {
         const lines: string[] = [];
         lines.push('<ul>');
         for (const config of configs) {
-            const wikiLink: WikiLink = new WikiLink({namespace: config.name, type: 'Special', name: AllPagesBody.wikiName});
-            const location: WikiLocation = new WikiLocation(wikiLink);
-            lines.push(`<li>${config.name} (<a href="${location.toURI()}">${AllPagesBody.wikiName}</a>)</li>`);
+            lines.push(`<li>${config.name} (` + this.namespaceLinks(config) + ')</li>');
         }
         lines.push('</ul>');
         return lines.join('');
+    }
+
+    private namespaceLinks(config: MergedNamespaceConfig): string {
+        const lines: string[] = [];
+        for (const name of [SpecialPagesBody.wikiName, AllPagesBody.wikiName, AllFilesBody.wikiName]) {
+            const wikiLink: WikiLink = new WikiLink({namespace: config.name, type: 'Special', name});
+            const location: WikiLocation = new WikiLocation(wikiLink);
+            lines.push(`<a href="${location.toURI()}">${name}</a>`);
+        }
+        return lines.join(', ');
     }
 }
 
