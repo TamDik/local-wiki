@@ -91,7 +91,7 @@ uploadButton.addEventListener('click', () => {
     const comment: string = window.utils.trim(commentInput.value);
     window.ipcApi.uploadFile(params.path, name, filepath, comment)
     .then(result => {
-        location.href = window.localWiki.toURI({name, type: 'File'});
+        location.href = window.localWiki.toURI({namespace: params.namespace, type: 'File', name});
     })
     .catch(e => {
     });
