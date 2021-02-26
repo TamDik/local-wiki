@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {extensionOf, dateToStr, bytesToStr, zeroPadding} from './utils';
-import {WikiConfig} from './wikiconfig';
+import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
 import {WikiLink, WikiLocation} from './wikilink';
@@ -147,6 +147,7 @@ class ContentGenerator {
             new UploadFileBody(wikiLink),
             new PageDiffBody(wikiLink),
             new SideMenuBody(wikiLink),
+            new AllNamespacesBody(wikiLink),
             new NewNamespaceBody(wikiLink),
         ];
         for (const special of specials) {
@@ -897,6 +898,7 @@ class NotFoundSpecialBody extends ContentBody {
 
 
 const specialContentLabels = {
+    namespace: 'Namespace',
     pages: 'Lists of pages',
     media: 'Media reports and uploads',
     redirect: 'Redirecting special pages',
@@ -958,7 +960,8 @@ class SpecialPagesBody extends SpecialContentBody {
 
 
 class AllPagesBody extends SpecialContentBody {
-    public name: string = 'AllPages';
+    public static wikiName: string = 'AllPages';
+    public name: string = AllPagesBody.wikiName;
     public title: string = 'All pages';
     public type: SpecialContentType = 'pages';
 
@@ -1208,11 +1211,49 @@ class SideMenuBody extends SpecialContentBody {
 }
 
 
+class AllNamespacesBody extends SpecialContentBody {
+    public name: string = 'AllNamespaces';
+    public title: string = 'All namespaces';
+    public type: SpecialContentType = 'namespace';
+
+    public get html(): string {
+        const lines: string[] = [
+            '<p>This special page shows all created namespaces.</p>'
+        ];
+        const config: WikiConfig = new WikiConfig();
+        const namespaceConfigs: MergedNamespaceConfig[] = config.getNamespaces();
+        const internals: MergedNamespaceConfig[] = namespaceConfigs.filter(config => config.type === 'internal');
+        const externals: MergedNamespaceConfig[] = namespaceConfigs.filter(config => config.type === 'external');
+        if (internals.length !== 0) {
+            lines.push('<h2>Internal namespaces</h2>');
+            lines.push(this.namespaceList(internals));
+        }
+        if (externals.length !== 0) {
+            lines.push('<h2>External namespaces</h2>');
+            lines.push(this.namespaceList(externals));
+        }
+        return lines.join('');
+    }
+
+    private namespaceList(configs: MergedNamespaceConfig[]): string {
+        const lines: string[] = [];
+        lines.push('<ul>');
+        for (const config of configs) {
+            const wikiLink: WikiLink = new WikiLink({namespace: config.name, type: 'Special', name: AllPagesBody.wikiName});
+            const location: WikiLocation = new WikiLocation(wikiLink);
+            lines.push(`<li>${config.name} (<a href="${location.toURI()}">${AllPagesBody.wikiName}</a>)</li>`);
+        }
+        lines.push('</ul>');
+        return lines.join('');
+    }
+}
+
+
 class NewNamespaceBody extends SpecialContentBody {
     public static readonly wikiName: string = 'NewNamespace';
     public name: string = NewNamespaceBody.wikiName;
     public title: string = 'New namespace';
-    public type: SpecialContentType = 'others';
+    public type: SpecialContentType = 'namespace';
     public js: string[] = [
         './js/new-namespace.js'
     ];

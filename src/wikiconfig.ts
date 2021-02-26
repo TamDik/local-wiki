@@ -344,4 +344,4 @@ class WikiConfig {
 }
 
 
-export {WikiConfig, setDataDir}
+export {WikiConfig, MergedNamespaceConfig, setDataDir}
