@@ -79,6 +79,18 @@ class Params {
 }
 
 
+function initMainIcon(src: string, namespace: string): void {
+    const mainLogo: HTMLDivElement = document.getElementById('main-logo') as HTMLDivElement;
+    const anchor: HTMLAnchorElement = document.createElement('a');
+    anchor.href = window.localWiki.toURI({namespace});
+    const img: HTMLImageElement = document.createElement('img');
+    img.src = src;
+    img.alt = namespace;
+    anchor.appendChild(img);
+    mainLogo.appendChild(anchor);
+}
+
+
 function initTabs(namespace: string, tabs: TopNavTabData[]) {
     const manespaceTab: HTMLLIElement = document.getElementById('namespace-tab') as HTMLLIElement;
     manespaceTab.innerHTML = `<a href="#">${namespace}</a>`;
@@ -171,7 +183,7 @@ function importJS(src: string): void{
     }
 }
 
-async function getMainContent(params: Params): Promise<{title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
+async function getMainContent(params: Params): Promise<{namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
                                                         dependences: {css: string[], js: string[]}}> {
     const version: string = params.getValueOf('version');
     if (version.match(/^\d+$/)) {
@@ -224,8 +236,10 @@ window.addEventListener('load', () => {
     initAccessArea(params);
 
     getMainContent(params)
-    .then(({title, body, sideMenu, tabs, dependences}) => {
-        initTabs(params.namespace, tabs);
+    .then(({namespaceIcon, title, body, sideMenu, tabs, dependences}) => {
+        const namespace: string = params.namespace;
+        initMainIcon(namespaceIcon, namespace);
+        initTabs(namespace, tabs);
         contentHead.innerHTML = title;
         contentBody.innerHTML = body;
         const sideMenuEl: HTMLElement = document.getElementById('wiki-side-menu') as HTMLElement;

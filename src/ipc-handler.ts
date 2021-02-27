@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import {ipcMain, shell} from 'electron'
 import {ContentGenerator, PageReadBody} from './content-generator';
 import {WikiConfig} from './wikiconfig';
@@ -31,8 +32,8 @@ ipcMain.on('go-forward', event => {
 });
 
 // htmlに展開するコンテンツを返す
-ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, version?: number): Promise<{title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
-                                                                                                            dependences: {css: string[], js: string[]}}> => {
+ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, version?: number): Promise<{
+    namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[], dependences: {css: string[], js: string[]}}> => {
     const wikiLink: WikiLink = new WikiLink(path);
     const title: string = ContentGenerator.title(mode, wikiLink);
     const sideMenu: string = ContentGenerator.sideMenu();
@@ -43,7 +44,8 @@ ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, 
         mainContent = ContentGenerator.mainContent(mode, wikiLink);
     }
     const tabs: TopNavTabData[] = ContentGenerator.menuTabs(mode, wikiLink);
-    return {title, sideMenu, tabs, ...mainContent};
+    const namespaceIcon: string = new WikiConfig().iconPathOf(wikiLink.namespace);
+    return {namespaceIcon, title, sideMenu, tabs, ...mainContent};
 });
 
 // 生のPageデータを返す
@@ -190,15 +192,15 @@ ipcMain.handle('used-as-an-external-namespace', async (event, rootDir: string): 
 });
 
 // 名前空間の作成
-ipcMain.handle('create-internal-namespace', async (event, name: string): Promise<boolean> => {
+ipcMain.handle('create-internal-namespace', async (event, name: string, base64Icon: string): Promise<boolean> => {
     const config: WikiConfig = new WikiConfig();
-    config.newNamespace(name, 'internal');
+    config.newNamespace(name, 'internal', base64Icon);
     return true;
 });
 
-ipcMain.handle('create-external-namespace', async (event, name: string, rootDir: string): Promise<boolean> => {
+ipcMain.handle('create-external-namespace', async (event, name: string, base64Icon: string, rootDir: string): Promise<boolean> => {
     const config: WikiConfig = new WikiConfig();
-    config.newNamespace(name, 'external', rootDir);
+    config.newNamespace(name, 'external', base64Icon, rootDir);
     return true;
 });
 

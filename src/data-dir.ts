@@ -3,18 +3,18 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 
-let appPath: string;
+let APP_DIR: string;
 if (typeof(app) === 'undefined') {
-    appPath = path.join(__dirname, '..');
+    APP_DIR = path.join(__dirname, '..');
 } else {
-    appPath = app.getAppPath();
+    APP_DIR = app.getAppPath();
 }
 
 let dataDir: string = '';
-if (appPath.indexOf('app.asar') === -1) {
-    dataDir = path.join(appPath, 'data');
+if (APP_DIR.indexOf('app.asar') === -1) {
+    dataDir = path.join(APP_DIR, 'data');
 } else {
-    const asarDir: string = path.join(appPath, '../app.asar.unpacked');
+    const asarDir: string = path.join(APP_DIR, '../app.asar.unpacked');
     if (!fs.existsSync(asarDir)) {
         fs.mkdirSync(asarDir);
     }
@@ -26,4 +26,4 @@ if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR);
 }
 
-export {DATA_DIR};
+export {DATA_DIR, APP_DIR};

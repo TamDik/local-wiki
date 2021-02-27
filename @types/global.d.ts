@@ -31,7 +31,7 @@ interface IIpcApi {
     openExternalLink(path: string): Promise<void>;
     existsLink(wikiLink: IWikiLink): Promise<boolean>;
     currentVersion(path: string): Promise<number>;
-    getMainContent(mode: PageMode, path: string, version?: number): Promise<{title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
+    getMainContent(mode: PageMode, path: string, version?: number): Promise<{namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
                                                                              dependences: {css: string[], js: string[]}}>;
     goBack(): void;
     goForward(): void;
@@ -47,8 +47,8 @@ interface IIpcApi {
     updateSideMenu(main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]): Promise<boolean>;
     existsNamespace(namespace: string): Promise<boolean>;
     usedAsAnExternalNamespace(rootDir: string): Promise<boolean>;
-    createInternalNamespace(name: string): Promise<boolean>;
-    createExternalNamespace(name: string, rootDir: string): Promise<boolean>;
+    createInternalNamespace(name: string, base64Icon: string): Promise<boolean>;
+    createExternalNamespace(name: string, base64Icon: string, rootDir: string): Promise<boolean>;
     revertExternalNamespace(rootDir: string): Promise<boolean>;
 }
 

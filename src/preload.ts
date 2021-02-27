@@ -69,7 +69,7 @@ contextBridge.exposeInMainWorld(
         async currentVersion(path: string): Promise<number> {
             return ipcRenderer.invoke('current-version', path);
         },
-        async getMainContent(mode: PageMode, path: string, version?: number): Promise<{title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
+        async getMainContent(mode: PageMode, path: string, version?: number): Promise<{namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
                                                                                        dependences: {css: string[], js: string[]}}> {
             return ipcRenderer.invoke('get-html-contents', mode, path, version);
         },
@@ -115,11 +115,11 @@ contextBridge.exposeInMainWorld(
         async usedAsAnExternalNamespace(rootDir: string): Promise<boolean> {
             return ipcRenderer.invoke('used-as-an-external-namespace', rootDir)
         },
-        async createInternalNamespace(name: string): Promise<boolean> {
-            return ipcRenderer.invoke('create-internal-namespace', name);
+        async createInternalNamespace(name: string, base64Icon: string): Promise<boolean> {
+            return ipcRenderer.invoke('create-internal-namespace', name, base64Icon);
         },
-        async createExternalNamespace(name: string, rootDir: string): Promise<boolean> {
-            return ipcRenderer.invoke('create-external-namespace', name, rootDir);
+        async createExternalNamespace(name: string, base64Icon: string, rootDir: string): Promise<boolean> {
+            return ipcRenderer.invoke('create-external-namespace', name, base64Icon, rootDir);
         },
         async revertExternalNamespace(rootDir: string): Promise<boolean> {
             return ipcRenderer.invoke('revert-external-namespace', rootDir);

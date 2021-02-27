@@ -1,4 +1,4 @@
-import {DATA_DIR} from './data-dir';
+import {DATA_DIR, APP_DIR} from './data-dir';
 import {generateRandomString} from './utils';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -227,6 +227,10 @@ class MergedNamespaceConfig {
     public get type(): NamespaceType {
         return this.masterData.type;
     }
+
+    public get iconPath(): string {
+        return path.join(this.rootDir, 'icon.png');
+    }
 }
 
 
@@ -290,7 +294,7 @@ class WikiConfig {
         return this.setNamespace(config);
     }
 
-    public newNamespace(name: string, type: NamespaceType, rootDir?: string): MergedNamespaceConfig {
+    public newNamespace(name: string, type: NamespaceType, base64Icon: string|null, rootDir?: string): MergedNamespaceConfig {
         let config: NamespaceConfig;
         const id: string = generateRandomString(6);
         const data: MasterConfigData['namespace'][number] = this.masterConfig.newNamespace(id, type, rootDir);
@@ -302,7 +306,22 @@ class WikiConfig {
                 config = NamespaceConfig.createNewExternal(id, name, data.rootDir);
                 break;
         }
-        return this.setNamespace(config);
+        const mergedConfig: MergedNamespaceConfig = this.setNamespace(config);
+        if (typeof(base64Icon) === 'string') {
+            this.saveIcon(mergedConfig, base64Icon);
+        } else {
+            fs.copyFile(path.join(APP_DIR, 'dist/images/not-set-icon.png'), mergedConfig.iconPath, (e) => {
+                if (e) console.log(e);
+            });
+        }
+        return mergedConfig;
+    }
+
+    private saveIcon(config: MergedNamespaceConfig, base64Icon: string): void {
+        const buffer: Buffer = Buffer.from(base64Icon, 'base64');
+        fs.writeFile(config.iconPath, buffer, (e) => {
+            if (e) console.log(e);
+        });
     }
 
     public removeNamespace(id: string): void {
@@ -324,6 +343,10 @@ class WikiConfig {
 
     private checkTarget(target: SearchNamespaceTarget|undefined, key: keyof SearchNamespaceTarget): boolean {
         return target === undefined || target[key] === true;
+    }
+
+    public iconPathOf(value: string, target?: SearchNamespaceTarget): string {
+        return this.getNamespaceConfig(value, target).iconPath;
     }
 
     public typeOf(value: string, target?: SearchNamespaceTarget): NamespaceType {

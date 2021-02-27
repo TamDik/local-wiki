@@ -6,7 +6,7 @@ require('./ipc-handler');
 
 const config: WikiConfig = new WikiConfig();
 if (config.getNamespaces().length === 0) {
-    config.newNamespace(DEFAULT_NAMESPACE, 'internal');
+    config.newNamespace(DEFAULT_NAMESPACE, 'internal', null);
     config.setSideMenu({
         main: [
             {type: 'link', text: 'Main', path: 'Main'},

@@ -16,7 +16,7 @@
         "bootstrap": "^4.6.0",
         "highlight.js": "^10.6.0",
         "jsdifflib": "^1.1.0",
-        "marked": "^1.2.9",
+        "marked": "^2.0.1",
         "simplemde": "^1.11.2",
         "sortablejs": "^1.13.0"
     },

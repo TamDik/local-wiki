@@ -1266,6 +1266,9 @@ class NewNamespaceBody extends SpecialContentBody {
     public js: string[] = [
         './js/new-namespace.js'
     ];
+    public css: string[] = [
+        './css/new-namespace.css'
+    ];
 
     public static createURI(namespace: string): string {
         const location: WikiLocation = new WikiLocation(
@@ -1276,30 +1279,41 @@ class NewNamespaceBody extends SpecialContentBody {
     }
 
     public get html(): string {
+        const iconId: string = 'namespace-icon-canvas';
+        const nameId: string = 'new-namespace-name';
+        const typeId: string = 'new-namespace-type';
+        const dirId: string = 'external-namespace-directory';
+        const dirButonId: string = 'external-namespace-directory-button';
         const lines: string[] = [
             '<div class="border rounded p-3">',
               '<div class="form-group">',
-                '<label for="new-namespace-name">Namespace:</label>',
-                '<input type="text" id="new-namespace-name" class="form-control" placeholder="Namespace">',
+                `<label>Icon:</label>`,
+                '<div>',
+                  `<canvas class="border" id="${iconId}" width="200" height="200"></canvas>`,
+                '</div>',
+              '</div>',
+              '<div class="form-group">',
+                `<label for="${nameId}">Namespace:</label>`,
+                `<input type="text" id="${nameId}" class="form-control" placeholder="Namespace">`,
               '</div>',
               '<div id="namespace-name-alert" class="alert alert-danger d-none" role="alert">',
                 'The namespace is already in use!',
               '</div>',
               '<div class="form-group">',
-                '<label for="new-namespace-type">Type:</label>',
-                '<select id="new-namespace-type" class="form-control">',
+                `<label for="${typeId}">Type:</label>`,
+                `<select id="${typeId}" class="form-control">`,
                   '<option value="internal" selected>Internal</option>',
                   '<option value="external">External</option>',
                 '</select>',
               '</div>',
               '<div class="form-group">',
-                '<label for="external-namespace-directory">Directory (for external):</label>',
+                `<label for="${dirId}">Directory (for external):</label>`,
                 '<div class="input-group">',
                   '<div class="input-group-prepend">',
-                    '<button id="external-namespace-directory-button" class="form-control btn btn-outline-secondary" disabled>Choose Directory</button>',
+                    `<button id="${dirButonId}" class="form-control btn btn-outline-secondary" disabled>Choose Directory</button>`,
                   '</div>',
                   '<div class="input-group-append">',
-                    '<label id="external-namespace-directory" for="external-namespace-directory-button" class="form-control">No direcotry chosen</label>',
+                    `<label id="${dirId}" for="${dirButonId}" class="form-control">No direcotry chosen</label>`,
                   '</div>',
                 '</div>',
               '</div>',
