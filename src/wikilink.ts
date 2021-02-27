@@ -106,6 +106,10 @@ class WikiLocation {
     }
 
     public static parseURI(uri: string): {wikiLink: WikiLink, params: Map<string, string>} {
+        try {
+            uri = decodeURI(uri);
+        } catch (e) {
+        }
         const splitPathAndQuery = uri.split('?');
         if (splitPathAndQuery.length !== 2) {
             return {wikiLink: new WikiLink(), params: new Map<string, string>()};
