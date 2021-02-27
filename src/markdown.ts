@@ -56,7 +56,7 @@ class WikiMD {
         const alt: string = text;
         const isInternal: boolean = isWikiLink(href);
         const src: string = isInternal ? this.toWikiURI(href) : href;
-        let img: string = `<img src="${src}" alt="${alt}" title="${title}" decoding="async">`;
+        let img: string = `<img src="${src}" alt="${alt}" title="${title}" decoding="async" width="300">`;
         if (isInternal) {
             img = `<a href="${this.toWikiURI(href)}" class="image">${img}</a>`;
         }
