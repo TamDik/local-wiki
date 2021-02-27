@@ -25,13 +25,21 @@ contextBridge.exposeInMainWorld(
             const wikiLink: WikiLink = new WikiLink(path);
             return wikiLink.toPath();
         },
+        parseURI: (uri: string): {wikiLink: IWikiLink, params: {[key: string]: string}} => {
+            const result = WikiLocation.parseURI(uri);
+            const params: {[key: string]: string} = {};
+            for (const [key, value] of result.params) {
+                params[key] = value;
+            }
+            return {wikiLink: result.wikiLink, params};
+        },
         toURI: (path: IncompleteWikiLink|string, params: {[key: string]: string}={}): string => {
             const location: WikiLocation = new WikiLocation(new WikiLink(path));
             for (const key in params) {
                 location.addParam(key, params[key]);
             }
             return location.toURI();
-        }
+        },
     }
 );
 
@@ -55,8 +63,8 @@ contextBridge.exposeInMainWorld(
         async openExternalLink(path: string): Promise<void> {
             ipcRenderer.invoke('open-external-link', path);
         },
-        async existsPath(path: string): Promise<boolean> {
-            return ipcRenderer.invoke('exists-path', path);
+        async existsLink(wikiLink: IWikiLink): Promise<boolean> {
+            return ipcRenderer.invoke('exists-link', wikiLink);
         },
         async currentVersion(path: string): Promise<number> {
             return ipcRenderer.invoke('current-version', path);

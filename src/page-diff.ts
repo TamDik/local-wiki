@@ -28,7 +28,11 @@ async function existsPath(path: string): Promise<boolean> {
     if (path === '') {
         return false;
     }
-    return window.ipcApi.existsPath(path);
+    const wikiLink = window.localWiki.parsePath(path);
+    if (wikiLink.type !== 'Page') {
+        return false;
+    }
+    return window.ipcApi.existsLink(wikiLink);
 }
 
 function areInputsFilled(): boolean {

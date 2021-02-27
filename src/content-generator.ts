@@ -139,8 +139,10 @@ class ContentGenerator {
         }
     }
 
-    private static createSpecialContentBody(wikiLink: WikiLink): ContentBody {
+    public static specialContentBodies(wikiLink: WikiLink): SpecialContentBody[] {
+        const specialPages: SpecialPagesBody = new SpecialPagesBody(wikiLink);
         const specials: SpecialContentBody[] = [
+            specialPages,
             new AllPagesBody(wikiLink),
             new SearchBody(wikiLink),
             new AllFilesBody(wikiLink),
@@ -151,19 +153,17 @@ class ContentGenerator {
             new NewNamespaceBody(wikiLink),
         ];
         for (const special of specials) {
+            specialPages.addSpecialContentBody(special);
+        }
+        return specials;
+    }
+
+    private static createSpecialContentBody(wikiLink: WikiLink): ContentBody {
+        for (const special of ContentGenerator.specialContentBodies(wikiLink)) {
             if (special.name === wikiLink.name) {
                 return special;
             }
         }
-
-        const specialPages: SpecialPagesBody = new SpecialPagesBody(wikiLink);
-        if (specialPages.name === wikiLink.name) {
-            for (const special of specials) {
-                specialPages.addSpecialContentBody(special);
-            }
-            return specialPages;
-        }
-
         return new NotFoundSpecialBody(wikiLink);
     }
 }
@@ -921,7 +921,6 @@ class SpecialPagesBody extends SpecialContentBody {
     public constructor(wikiLink: WikiLink) {
         super(wikiLink);
         this.specialContentBodies = [];
-        this.addSpecialContentBody(this);
     }
 
     public addSpecialContentBody(contentBody: SpecialContentBody): void {

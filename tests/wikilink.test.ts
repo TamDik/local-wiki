@@ -28,7 +28,7 @@ describe('test WikiLink', () => {
 
 
 describe('test WikiLocation', () => {
-    function testURI(path: string, params: [string, string][], expected: string) {
+    function testToURI(path: string, params: [string, string][], expected: string) {
         const location: WikiLocation = new WikiLocation(new WikiLink(path));
         for (const [key, value] of params) {
             location.addParam(key, value);
@@ -38,7 +38,19 @@ describe('test WikiLocation', () => {
             expect(location.toURI()).toBe(expected);
         });
     }
-    testURI('a:File:b', []                           , '?path=a:File:b');
-    testURI('a:File:b', [['k1', 'v1']]               , '?path=a:File:b&k1=v1');
-    testURI('a:File:b', [['k1', 'v1'] , ['k2', 'v2']], '?path=a:File:b&k1=v1&k2=v2');
+    testToURI('a:File:b', []                           , '?path=a:File:b');
+    testToURI('a:File:b', [['k1', 'v1']]               , '?path=a:File:b&k1=v1');
+    testToURI('a:File:b', [['k1', 'v1'] , ['k2', 'v2']], '?path=a:File:b&k1=v1&k2=v2');
+
+    function testParseURI(uri: string, expectedWikiLink: WikiLink, expectedParams: [string, string][]) {
+        const expectedParamMap: Map<string, string> = new Map(expectedParams);
+        const {params, wikiLink} = WikiLocation.parseURI(uri);
+        test(`parseURI: ${uri}`, () => {
+            expect(wikiLink).toEqual(expectedWikiLink);
+            expect(params).toEqual(expectedParamMap);
+        });
+    }
+    testParseURI('http://example.com'                          , new WikiLink('')    , []);
+    testParseURI('http://example.com?k1=v1&path=path&k2=v2#abc', new WikiLink('path'), [['k1', 'v1'], ['k2', 'v2']]);
+    testParseURI('?k1=v1&path=path&k2=v2#abc'                  , new WikiLink('path'), [['k1', 'v1'], ['k2', 'v2']]);
 });

@@ -29,7 +29,7 @@ interface IUtils {
 
 interface IIpcApi {
     openExternalLink(path: string): Promise<void>;
-    existsPath(path: string): Promise<boolean>;
+    existsLink(wikiLink: IWikiLink): Promise<boolean>;
     currentVersion(path: string): Promise<number>;
     getMainContent(mode: PageMode, path: string, version?: number): Promise<{title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
                                                                              dependences: {css: string[], js: string[]}}>;
@@ -65,5 +65,6 @@ interface ILocalWiki {
     isMode: (arg: any) => arg is PageMode;
     parsePath: (path: string) => IWikiLink;
     toPath: (path: IncompleteWikiLink|string) => string;
+    parseURI: (uri: string) => {wikiLink: IWikiLink, params: {[key: string]: string}};
     toURI: (path: IncompleteWikiLink|string, params: {[key: string]: string}={}) => string;
 }

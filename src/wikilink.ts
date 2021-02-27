@@ -104,6 +104,29 @@ class WikiLocation {
         }
         return '?' + params.map(([key, value]) => `${key}=${value}`).join('&');
     }
+
+    public static parseURI(uri: string): {wikiLink: WikiLink, params: Map<string, string>} {
+        const splitPathAndQuery = uri.split('?');
+        if (splitPathAndQuery.length !== 2) {
+            return {wikiLink: new WikiLink(), params: new Map<string, string>()};
+        }
+
+        const params: Map<string, string> = new Map();
+        for (const query of splitPathAndQuery[1].split('#')[0].split('&')) {
+            const keyAndValue: string[] = query.split('=');
+            if (keyAndValue.length !== 2) {
+                continue;
+            }
+            params.set(keyAndValue[0], keyAndValue[1]);
+        }
+        if (!params.has('path')) {
+            return {wikiLink: new WikiLink(), params};
+        }
+
+        const wikiLink: WikiLink = new WikiLink(params.get('path'))
+        params.delete('path');
+        return {wikiLink, params};
+    }
 }
 
 

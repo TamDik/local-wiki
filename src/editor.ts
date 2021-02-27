@@ -31,6 +31,7 @@ previewButton.addEventListener('click', () => {
     window.ipcApi.markdownToHtml(markdown)
     .then(html => {
         previewWrapper.innerHTML = html;
+        markInvalidInternalLinks(previewWrapper);
     });
 }, false);
 

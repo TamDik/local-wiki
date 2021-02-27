@@ -174,3 +174,7 @@ a[href^="http"] {
     background-repeat: no-repeat;
     padding-right: 15px;
 }
+
+a.new {
+    color: #ba0000;
+}

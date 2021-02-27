@@ -181,6 +181,25 @@ async function getMainContent(params: Params): Promise<{title: string, body: str
     }
 }
 
+function isExternalLink(href: string): boolean {
+    return href.startsWith('http');
+}
+
+function markInvalidInternalLinks(elment: HTMLElement): void {
+    for (const anchor of elment.getElementsByTagName('a')) {
+        const href: string = anchor.href;
+        if (!isExternalLink(href)) {
+            const {wikiLink} = window.localWiki.parseURI(href);
+            window.ipcApi.existsLink(wikiLink)
+            .then(exists => {
+                if (!exists) {
+                    anchor.classList.add('new');
+                }
+            });
+        }
+    }
+}
+
 window.addEventListener('load', () => {
     const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
     document.body.addEventListener('click', function(event) {
@@ -188,7 +207,7 @@ window.addEventListener('load', () => {
         while (element && element !== document.body) {
             if (element.nodeName === 'A') {
                 const anchor: HTMLAnchorElement = element as HTMLAnchorElement;
-                if (anchor.href.startsWith('http')) {
+                if (isExternalLink(anchor.href)) {
                     window.ipcApi.openExternalLink(anchor.href);
                     event.preventDefault();
                 }
@@ -217,6 +236,9 @@ window.addEventListener('load', () => {
         for (const js of dependences.js) {
             importJS(js);
         }
+    })
+    .then(() => {
+        markInvalidInternalLinks(document.body);
     })
     .catch(e => {
         contentHead.innerHTML = 'This page is not working...';

@@ -71,12 +71,21 @@ ipcMain.handle('current-version', async (event, path: string): Promise<number> =
 });
 
 // 存在確認
-ipcMain.handle('exists-path', async (event, path: string, version?: number): Promise<boolean> => {
-    const wikiLink: WikiLink = new WikiLink(path);
+ipcMain.handle('exists-link', async (event, wikiLink: IWikiLink, version?: number): Promise<boolean> => {
     const config: WikiConfig = new WikiConfig();
     if (!config.hasNamespace(wikiLink.namespace)) {
         return false;
     }
+
+    if (wikiLink.type === 'Special') {
+        for (const special of ContentGenerator.specialContentBodies(new WikiLink(wikiLink))) {
+            if (special.name === wikiLink.name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
     if (!history.hasName(wikiLink.name)) {
         return false;
