@@ -28,7 +28,7 @@ const previewWrapper: HTMLElement = document.getElementById('preview-wrapper') a
 previewButton.addEventListener('click', () => {
     const markdown: string = mdTextArea.value;
     previewAlert.classList.remove('d-none');
-    window.ipcApi.markdownToHtml(markdown)
+    window.ipcApi.markdownToHtml(markdown, new Params().namespace)
     .then(html => {
         previewWrapper.innerHTML = html;
         markInvalidInternalLinks(previewWrapper);

@@ -124,8 +124,8 @@ ipcMain.handle('upload-file', async (event, path: string, destName: string, sour
 });
 
 // マークダウンをHTMLに変換
-ipcMain.handle('markdown-to-html', async (event, markdown: string): Promise<string> => {
-    return PageReadBody.markdownToHtml(markdown);
+ipcMain.handle('markdown-to-html', async (event, markdown: string, baseNamespace: string): Promise<string> => {
+    return PageReadBody.markdownToHtml(markdown, baseNamespace);
 });
 
 // キーワードでページを検索

@@ -372,12 +372,13 @@ class PageReadBody extends ContentBody {
     public get html(): string {
         const filepath: string = toFullPath(this.wikiLink) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
-        return PageReadBody.markdownToHtml(markdown);
+        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
     }
 
-    public static markdownToHtml(markdown: string): string {
+    public static markdownToHtml(markdown: string, baseNamespace: string): string {
         function toWikiURI(href: string): string {
-            const location: WikiLocation = new WikiLocation(new WikiLink(href));
+            const wikiLink: WikiLink = new WikiLink(href, baseNamespace);
+            const location: WikiLocation = new WikiLocation(wikiLink);
             return location.toURI();
         }
         const wmd: WikiMD = new WikiMD({toWikiURI, isWikiLink: WikiLink.isWikiLink});
@@ -385,20 +386,20 @@ class PageReadBody extends ContentBody {
         wmd.addMagicHandler(new PDFFileHandler(WikiLink.isWikiLink, toWikiURI));
         wmd.setValue(markdown);
         let htmlText: string = wmd.toHTML();
-        return PageReadBody.expandWikiLink(htmlText);
+        return PageReadBody.expandWikiLink(htmlText, baseNamespace);
     }
 
-    private static expandWikiLink(html: string): string {
-        html = PageReadBody.expandInternalFileLink(html, 'img', 'src');
-        html = PageReadBody.expandInternalFileLink(html, 'object', 'data');
+    private static expandWikiLink(html: string, baseNamespace: string): string {
+        html = PageReadBody.expandInternalFileLink(html, 'img', 'src', 'error', baseNamespace);
+        html = PageReadBody.expandInternalFileLink(html, 'object', 'data', 'error', baseNamespace);
         return html;
     }
 
-    private static expandInternalFileLink(html: string, tagName: string, prop: string, replace: string|null='error'): string {
+    private static expandInternalFileLink(html: string, tagName: string, prop: string, replace: string|null, baseNamespace: string): string {
         const PATTERN: RegExp = new RegExp(`(?<=<${tagName} [^>]*${prop}=")\\?path=[^"]+(?=")`, 'g');
         html = html.replace(PATTERN, s => {
             const wikiPath: string = s.slice(6);
-            const wikiLink: WikiLink = new WikiLink(wikiPath);
+            const wikiLink: WikiLink = new WikiLink(wikiPath, baseNamespace);
             if (wikiLink.type !== 'File') {
                 return replace === null ? s : replace;
             }
@@ -435,7 +436,7 @@ class PageWithVersionReadBody extends PageReadBody {
     public get html(): string {
         const filepath: string = toFullPath(this.wikiLink, this.version) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
-        return this.versionAlert() + PageReadBody.markdownToHtml(markdown);
+        return this.versionAlert() + PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
     }
 
     private versionAlert(): string {

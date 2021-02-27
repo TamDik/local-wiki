@@ -23,13 +23,13 @@ class WikiLink implements IWikiLink {
     readonly type: WikiType;
     readonly name: string;
 
-    public constructor(path?: {namespace?: string, type?: WikiType, name?: string}|string) {
+    public constructor(path?: {namespace?: string, type?: WikiType, name?: string}|string, private baseNamespace: string=DEFAULT_NAMESPACE) {
         if (path === undefined) {
             path = {};
         } else if (typeof(path) === 'string') {
-            path = WikiLink.parse(path);
+            path = this.parse(path);
         }
-        this.namespace = (path.namespace || DEFAULT_NAMESPACE);
+        this.namespace = (path.namespace || this.baseNamespace);
         this.name = (path.name || DEFAULT_NAME);
         this.type = (path.type || DEFAULT_TYPE);
     }
@@ -52,10 +52,10 @@ class WikiLink implements IWikiLink {
         return path;
     }
 
-    private static parse(href: string): IWikiLink {
+    private parse(href: string): IWikiLink {
         const arr: string[] = href.split(WikiLink.SEPARATOR);
         let path: IWikiLink = {
-            namespace: DEFAULT_NAMESPACE, type: DEFAULT_TYPE, name: DEFAULT_NAME
+            namespace: this.baseNamespace, type: DEFAULT_TYPE, name: DEFAULT_NAME
         };
         if (arr.length === 1) {
             const v1: string = arr[0];

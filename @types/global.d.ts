@@ -39,7 +39,7 @@ interface IIpcApi {
     uploadFile(path: string, name: string, filepath: string, comment: string): Promise<boolean>;
     updatePage(path: string, text: string, comment: string): Promise<boolean>;
     getRawPageText(path: string, version?: number): Promise<string>;
-    markdownToHtml(markdown: string): Promise<string>;
+    markdownToHtml(markdown: string, baseNamespace: string): Promise<string>;
     searchPageByKeywords(path: string, keywords: string[]): void;
     searchPageByName(path: string, name: string): Promise<{exists: boolean, wikiLink: IWikiLink}>;
     searchPageResult(lister: (wikiLink: IWikiLink, body: string, created: Date, keywords: string[]) => void): void;
