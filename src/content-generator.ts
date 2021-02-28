@@ -4,7 +4,7 @@ import {extensionOf, dateToStr, bytesToStr, zeroPadding} from './utils';
 import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
-import {WikiLink, WikiLocation} from './wikilink';
+import {WikiLink, WikiLocation, DEFAULT_NAMESPACE} from './wikilink';
 import {WikiMD, ImageFileHandler, PDFFileHandler} from './markdown';
 
 
@@ -149,6 +149,7 @@ class ContentGenerator {
             new UploadFileBody(wikiLink),
             new PageDiffBody(wikiLink),
             new SideMenuBody(wikiLink),
+            new NamespacePreferencesBody(wikiLink),
             new AllNamespacesBody(wikiLink),
             new NewNamespaceBody(wikiLink),
         ];
@@ -1212,6 +1213,82 @@ class SideMenuBody extends SpecialContentBody {
 }
 
 
+class NamespacePreferencesBody extends SpecialContentBody {
+    public static readonly wikiName: string = 'NamespacePreferences';
+    public readonly name: string = NamespacePreferencesBody.wikiName;
+    public readonly title: string = 'Namespace preferences';
+    public readonly type: SpecialContentType = 'namespace';
+    public readonly js: string[] = [
+        './js/namespace-preferences.js'
+    ];
+    public readonly css: string[] = [
+        './css/namespace-preferences.css'
+    ];
+
+    public get html(): string {
+        const config: MergedNamespaceConfig = new WikiConfig().getNamespaceConfig(this.wikiLink.namespace, {id: true, name: true});
+
+        const canvasId: string = 'namespace-icon-canvas';
+        const imgId: string = 'namespace-icon-image';
+
+        const lines: string[] = [
+            '<div class="border rounded p-3">',
+              this.nameInput(config),
+              '<div id="namespace-name-alert" class="alert alert-danger d-none" role="alert">',
+                'The namespace is already in use!',
+              '</div>',
+              '<div class="form-group">',
+                `<label>ID:</label>`,
+                `<input type="text" id="namespace-id" class="form-control" value="${config.id}" readonly>`,
+              '</div>',
+              '<div class="form-group">',
+                `<label>Icon:</label>`,
+                '<div>',
+                  `<canvas class="border" id="${canvasId}" width="200" height="200"></canvas>`,
+                  `<img class="border d-none" src="${config.iconPath}" id="${imgId}"></img>`,
+                '</div>',
+              '</div>',
+              '<div class="form-group">',
+                `<label>Type:</label>`,
+                `<input type="text" class="form-control" value="${config.type}" readonly>`,
+              '</div>',
+              this.direcotrySelection(config),
+              '<button type="submit" id="save-namespace-button" class="btn btn-outline-primary">Save</button>',
+            '</div>',
+        ];
+        return lines.join('');
+    }
+
+    private nameInput(config: MergedNamespaceConfig): string {
+        const nameId: string = 'new-namespace-name';
+        const lines: string[] = [];
+        lines.push('<div class="form-group">');
+        lines.push(`<label for="${nameId}">Namespace:</label>`);
+        if (config.name === DEFAULT_NAMESPACE) {
+            lines.push(`<input type="text" id="${nameId}" class="form-control" value="${config.name}" readonly>`);
+            lines.push(`<small class="form-text text-muted">"${DEFAULT_NAMESPACE}" is the default namespace and cannot be changed.</small>`)
+        } else {
+            lines.push(`<input type="text" id="${nameId}" class="form-control" placeholder="Namespace" value="${config.name}">`);
+        }
+        lines.push('</div>');
+        return lines.join('');
+    }
+
+    private direcotrySelection(config: MergedNamespaceConfig): string {
+        if (config.type === 'internal') {
+            return '';
+        }
+        const lines: string[] = [
+            '<div class="form-group">',
+              `<label>Directory:</label>`,
+              `<input type="text" class="form-control" value="${config.rootDir}" readonly>`,
+            '</div>',
+        ];
+        return lines.join('');
+    }
+}
+
+
 class AllNamespacesBody extends SpecialContentBody {
     public name: string = 'AllNamespaces';
     public title: string = 'All namespaces';
@@ -1248,7 +1325,13 @@ class AllNamespacesBody extends SpecialContentBody {
 
     private namespaceLinks(config: MergedNamespaceConfig): string {
         const lines: string[] = [];
-        for (const name of [SpecialPagesBody.wikiName, AllPagesBody.wikiName, AllFilesBody.wikiName]) {
+        const names: string[] = [
+            SpecialPagesBody.wikiName,
+            AllPagesBody.wikiName,
+            AllFilesBody.wikiName,
+            NamespacePreferencesBody.wikiName,
+        ];
+        for (const name of names) {
             const wikiLink: WikiLink = new WikiLink({namespace: config.name, type: 'Special', name});
             const location: WikiLocation = new WikiLocation(wikiLink);
             lines.push(`<a href="${location.toURI()}">${name}</a>`);
@@ -1279,45 +1362,104 @@ class NewNamespaceBody extends SpecialContentBody {
     }
 
     public get html(): string {
+        const lines: string[] = [
+            '<div class="border rounded p-3">',
+              this.iconRow(),
+              this.nameRow(),
+              this.typeRow(),
+              this.directoryRow(),
+              '<button type="submit" id="create-namespace-button" class="btn btn-outline-primary" disabled>Create</button>',
+            '</div>',
+        ];
+        return lines.join('');
+    }
+
+    private iconRow(): string {
         const iconId: string = 'namespace-icon-canvas';
+        const lines: string[] = [
+            '<div class="form-group">',
+              `<label>Icon:</label>`,
+              '<div>',
+                `<canvas class="border" id="${iconId}" width="200" height="200"></canvas>`,
+              '</div>',
+            '</div>',
+            this.iconWarning(),
+        ];
+        return lines.join('');
+    }
+
+    private nameRow(): string {
         const nameId: string = 'new-namespace-name';
+        const lines: string[] = [
+            '<div class="form-group">',
+              `<label for="${nameId}">Namespace:</label>`,
+              '<div>',  // NOTE: disabled のときに click イベントを検知するために wrap している
+                `<input type="text" id="${nameId}" class="form-control" placeholder="Namespace">`,
+              '</div>',
+            '</div>',
+            this.namespaceWarning(),
+            this.namespaceAlert(),
+        ];
+        return lines.join('');
+    }
+
+    private typeRow(): string {
         const typeId: string = 'new-namespace-type';
+        const lines: string[] = [
+            '<div class="form-group">',
+              `<label for="${typeId}">Type:</label>`,
+              `<select id="${typeId}" class="form-control">`,
+                '<option value="internal" selected>Internal</option>',
+                '<option value="external">External</option>',
+              '</select>',
+            '</div>',
+        ];
+        return lines.join('');
+    }
+
+    private directoryRow(): string {
         const dirId: string = 'external-namespace-directory';
         const dirButonId: string = 'external-namespace-directory-button';
         const lines: string[] = [
-            '<div class="border rounded p-3">',
-              '<div class="form-group">',
-                `<label>Icon:</label>`,
-                '<div>',
-                  `<canvas class="border" id="${iconId}" width="200" height="200"></canvas>`,
+            '<div class="form-group">',
+              `<label for="${dirId}">Directory (for external):</label>`,
+              '<div class="input-group">',
+                '<div class="input-group-prepend">',
+                  `<button id="${dirButonId}" class="form-control btn btn-outline-secondary" disabled>Choose Directory</button>`,
+                '</div>',
+                '<div class="input-group-append">',
+                  `<label id="${dirId}" for="${dirButonId}" class="form-control">No direcotry chosen</label>`,
                 '</div>',
               '</div>',
-              '<div class="form-group">',
-                `<label for="${nameId}">Namespace:</label>`,
-                `<input type="text" id="${nameId}" class="form-control" placeholder="Namespace">`,
-              '</div>',
-              '<div id="namespace-name-alert" class="alert alert-danger d-none" role="alert">',
-                'The namespace is already in use!',
-              '</div>',
-              '<div class="form-group">',
-                `<label for="${typeId}">Type:</label>`,
-                `<select id="${typeId}" class="form-control">`,
-                  '<option value="internal" selected>Internal</option>',
-                  '<option value="external">External</option>',
-                '</select>',
-              '</div>',
-              '<div class="form-group">',
-                `<label for="${dirId}">Directory (for external):</label>`,
-                '<div class="input-group">',
-                  '<div class="input-group-prepend">',
-                    `<button id="${dirButonId}" class="form-control btn btn-outline-secondary" disabled>Choose Directory</button>`,
-                  '</div>',
-                  '<div class="input-group-append">',
-                    `<label id="${dirId}" for="${dirButonId}" class="form-control">No direcotry chosen</label>`,
-                  '</div>',
-                '</div>',
-              '</div>',
-              '<button type="submit" id="create-namespace-button" class="btn btn-outline-primary" disabled>Create</button>',
+            '</div>',
+        ];
+        return lines.join('');
+    }
+
+    private iconWarning(): string {
+        return this.warning('the icon', 'namespace-icon-warning');
+    }
+
+    private namespaceWarning(): string {
+        return this.warning('the namespace', 'namespace-name-warning');
+    }
+
+    private warning(target: string, id: string): string {
+        const lines: string[] = [
+            `<div id="${id}" class="alert alert-warning alert-dismissible d-none">`,
+              'The specified directory is being used as a namespace. ',
+              `You cannot change ${target} here. `,
+              `Visit "<span class="namespace-preferences-wikilink"></span>" after creation!`,
+              '<button type="button" class="close">&times;</button>',
+            '</div>',
+        ];
+        return lines.join('');
+    }
+
+    private namespaceAlert(): string {
+        const lines: string[] = [
+            '<div id="namespace-name-alert" class="alert alert-danger d-none" role="alert">',
+              'The namespace is already in use!',
             '</div>',
         ];
         return lines.join('');

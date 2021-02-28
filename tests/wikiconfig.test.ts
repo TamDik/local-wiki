@@ -1,4 +1,4 @@
-import {WikiConfig, setDataDir} from '../src/wikiconfig';
+import {WikiConfig, setDataDir, usedAsAnExternalNamespace} from '../src/wikiconfig';
 import {DATA_DIR} from '../src/data-dir';
 import {generateRandomString} from '../src/utils';
 import * as fs from 'fs';
@@ -69,27 +69,13 @@ describe('test WikiConfig', () => {
         expect(config.hasNamespace('dummy')).toBe(false);
     });
 
-    test('typeOf', () => {
-        expect(config.typeOf(ns1.name)).toBe('internal');
-        expect(config.typeOf(ns1.id)).toBe('internal');
-        expect(config.typeOf(ns3.id)).toBe('external');
-    });
-
-    test('rootDirOf', () => {
-        expect(config.rootDirOf(ns1.name)).toBe(path.join(testDataDir, ns1.id));
-        expect(config.rootDirOf(ns1.id)).toBe(path.join(testDataDir, ns1.id));
-        expect(config.rootDirOf(ns3.id)).toBe(ns3RootDir);
-    });
-
     test('revertExternalNamespace', () => {
-        expect(WikiConfig.usedAsAnExternalNamespace(externalDir)).toBe(true);
-        expect(WikiConfig.usedAsAnExternalNamespace('dummy')).toBe(false);
+        expect(usedAsAnExternalNamespace(externalDir)).toBe(true);
+        expect(usedAsAnExternalNamespace('dummy')).toBe(false);
         expect(ns4.id).toBe(exns.id);
         expect(ns4.name).toBe(exns.name);
         expect(ns4.rootDir).toBe(exns.rootDir);
         expect(config.hasNamespace(ns4.name)).toBe(true);
         expect(config.hasNamespace(ns4.id)).toBe(true);
-        expect(config.typeOf(ns4.id)).toBe('external');
-        expect(config.rootDirOf(ns4.id)).toBe(ns4.rootDir);
     });
 });

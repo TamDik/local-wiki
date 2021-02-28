@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {ipcMain, shell} from 'electron'
 import {ContentGenerator, PageReadBody} from './content-generator';
-import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
+import {WikiConfig, MergedNamespaceConfig, usedAsAnExternalNamespace, parseNamespaceConfig} from './wikiconfig';
 import {WikiHistory, VersionData} from './wikihistory';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {WikiLink} from './wikilink';
@@ -48,7 +48,8 @@ ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, 
     const wikiConfig: WikiConfig = new WikiConfig();
     let namespaceIcon: string;
     if (wikiConfig.hasNamespace(wikiLink.namespace)) {
-        namespaceIcon = wikiConfig.iconPathOf(wikiLink.namespace);
+        const config: MergedNamespaceConfig = wikiConfig.getNamespaceConfig(wikiLink.namespace);
+        namespaceIcon = config.iconPath;
     } else {
         namespaceIcon = MergedNamespaceConfig.notFoundIconPath;
     }
@@ -194,8 +195,15 @@ ipcMain.handle('exists-namespace', async (event, namespace: string): Promise<boo
     return config.hasNamespace(namespace);
 });
 
-ipcMain.handle('used-as-an-external-namespace', async (event, rootDir: string): Promise<boolean> => {
-    return WikiConfig.usedAsAnExternalNamespace(rootDir);
+ipcMain.handle('used-as-an-external-namespace', async (event, rootDir: string): Promise<null|{name: string, iconPath: string}> => {
+    if (!usedAsAnExternalNamespace(rootDir)) {
+        return null;
+    }
+    try {
+        return parseNamespaceConfig(rootDir);
+    } catch (e) {
+        return null;
+    }
 });
 
 // 名前空間の作成
@@ -215,5 +223,13 @@ ipcMain.handle('create-external-namespace', async (event, name: string, base64Ic
 ipcMain.handle('revert-external-namespace', async (event, rootDir: string): Promise<boolean> => {
     const config: WikiConfig = new WikiConfig();
     config.revertExternalNamespace(rootDir);
+    return true;
+});
+
+// 名前空間を更新
+ipcMain.handle('update-namespace', async (event, id: string, name: string, base64Icon: string): Promise<boolean> => {
+    const config: MergedNamespaceConfig = new WikiConfig().getNamespaceConfig(id, {id: true, name: false});
+    config.name = name;
+    config.updateIcon(base64Icon);
     return true;
 });

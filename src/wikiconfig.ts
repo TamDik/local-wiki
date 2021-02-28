@@ -31,10 +31,6 @@ type NamespaceConfigData = {
     name: string,
 }
 
-// 名前空間に関する全てのデータ
-type NamespaceData = MasterConfigData['namespace'] & NamespaceConfigData;
-
-
 abstract class AbstractConfig<T> {
     private readonly configPath: string;
     public constructor(private readonly rootDir: string, filename: string='config.json') {
@@ -151,8 +147,12 @@ class NamespaceConfig extends AbstractConfig<NamespaceConfigData> {
         return new NamespaceConfig(rootDir);
     }
 
+    public static toConfigPath(rootDir: string): string {
+        return path.join(rootDir, NamespaceConfig.filename);
+    }
+
     public static hasConfig(rootDir: string): boolean {
-        return fs.existsSync(rootDir) && fs.existsSync(path.join(rootDir, NamespaceConfig.filename));
+        return fs.existsSync(rootDir) && fs.existsSync(NamespaceConfig.toConfigPath(rootDir));
     }
 
     public static createNewInternal(id: string, name: string): NamespaceConfig {
@@ -233,8 +233,19 @@ class MergedNamespaceConfig {
         return this.masterData.type;
     }
 
+    public static toIconPath(rootDir: string): string {
+        return path.join(rootDir, 'icon.png');
+    }
+
     public get iconPath(): string {
-        return path.join(this.rootDir, 'icon.png');
+        return MergedNamespaceConfig.toIconPath(this.rootDir);
+    }
+
+    public updateIcon(base64Icon: string): void {
+        const buffer: Buffer = Buffer.from(base64Icon, 'base64');
+        fs.writeFile(this.iconPath, buffer, (e) => {
+            if (e) console.log(e);
+        });
     }
 }
 
@@ -267,7 +278,7 @@ class WikiConfig {
         return mergedConfig;
     }
 
-    private getNamespaceConfig(value: string, target?: SearchNamespaceTarget): MergedNamespaceConfig {
+    public getNamespaceConfig(value: string, target?: SearchNamespaceTarget): MergedNamespaceConfig {
         if (this.checkTarget(target, 'id')) {
             for (const config of this.namespaceConfigs) {
                 if (config.id === value) {
@@ -287,10 +298,6 @@ class WikiConfig {
 
     public getNamespaces(): MergedNamespaceConfig[] {
         return this.namespaceConfigs;
-    }
-
-    public static usedAsAnExternalNamespace(rootDir: string): boolean {
-        return NamespaceConfig.hasConfig(rootDir);
     }
 
     public revertExternalNamespace(rootDir: string): MergedNamespaceConfig {
@@ -353,18 +360,6 @@ class WikiConfig {
         return target === undefined || target[key] === true;
     }
 
-    public iconPathOf(value: string, target?: SearchNamespaceTarget): string {
-        return this.getNamespaceConfig(value, target).iconPath;
-    }
-
-    public typeOf(value: string, target?: SearchNamespaceTarget): NamespaceType {
-        return this.getNamespaceConfig(value, target).type;
-    }
-
-    public rootDirOf(value: string, target?: SearchNamespaceTarget): string {
-        return this.getNamespaceConfig(value, target).rootDir;
-    }
-
     public getSideMenu(): MasterConfigData['sidemenu'] {
         return this.masterConfig.getSideMenu();
     }
@@ -375,4 +370,21 @@ class WikiConfig {
 }
 
 
-export {WikiConfig, MergedNamespaceConfig, setDataDir}
+function usedAsAnExternalNamespace(rootDir: string): boolean {
+    return NamespaceConfig.hasConfig(rootDir);
+}
+
+function parseNamespaceConfig(rootDir: string): {id: string, name: string, type: NamespaceType, rootDir: string, iconPath: string} {
+    const configPath: string = NamespaceConfig.toConfigPath(rootDir);
+    const data: NamespaceConfigData = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    return {
+        id: data.id,
+        name: data.name,
+        type: 'external',
+        rootDir,
+        iconPath: MergedNamespaceConfig.toIconPath(rootDir)
+    };
+}
+
+
+export {WikiConfig, MergedNamespaceConfig, usedAsAnExternalNamespace, parseNamespaceConfig, setDataDir}

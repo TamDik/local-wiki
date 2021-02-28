@@ -46,10 +46,11 @@ interface IIpcApi {
     getSideMenuData(): Promise<{main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]}>;
     updateSideMenu(main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]): Promise<boolean>;
     existsNamespace(namespace: string): Promise<boolean>;
-    usedAsAnExternalNamespace(rootDir: string): Promise<boolean>;
+    usedAsAnExternalNamespace(rootDir: string): Promise<null|{name: string, iconPath: string}>;
     createInternalNamespace(name: string, base64Icon: string): Promise<boolean>;
     createExternalNamespace(name: string, base64Icon: string, rootDir: string): Promise<boolean>;
     revertExternalNamespace(rootDir: string): Promise<boolean>;
+    updateNamespace(namespaceId: string, name: string, base64Icon: string): Promise<boolean>;
 }
 
 

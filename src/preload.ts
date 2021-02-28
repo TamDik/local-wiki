@@ -112,7 +112,7 @@ contextBridge.exposeInMainWorld(
         async existsNamespace(namespace: string): Promise<boolean> {
             return ipcRenderer.invoke('exists-namespace', namespace);
         },
-        async usedAsAnExternalNamespace(rootDir: string): Promise<boolean> {
+        async usedAsAnExternalNamespace(rootDir: string): Promise<null|{name: string, iconPath: string}> {
             return ipcRenderer.invoke('used-as-an-external-namespace', rootDir)
         },
         async createInternalNamespace(name: string, base64Icon: string): Promise<boolean> {
@@ -123,6 +123,9 @@ contextBridge.exposeInMainWorld(
         },
         async revertExternalNamespace(rootDir: string): Promise<boolean> {
             return ipcRenderer.invoke('revert-external-namespace', rootDir);
+        },
+        async updateNamespace(namespaceId: string, name: string, base64Icon: string): Promise<boolean> {
+            return ipcRenderer.invoke('update-namespace', namespaceId, name, base64Icon);
         }
     }
 );

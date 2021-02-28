@@ -1,12 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {WikiConfig} from './wikiconfig';
+import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
 import {BufferPathGenerator, WikiHistory} from './wikihistory';
 
 
 function rootDirOf(namespace: string, wikiType: string): string {
-    const config: WikiConfig = new WikiConfig();
-    return path.join(config.rootDirOf(namespace), wikiType);
+    const config: MergedNamespaceConfig = new WikiConfig().getNamespaceConfig(namespace);
+    return path.join(config.rootDir, wikiType);
 }
 
 
