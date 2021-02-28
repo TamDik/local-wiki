@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {ipcMain, shell} from 'electron'
 import {ContentGenerator, PageReadBody} from './content-generator';
-import {WikiConfig} from './wikiconfig';
+import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
 import {WikiHistory, VersionData} from './wikihistory';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {WikiLink} from './wikilink';
@@ -44,7 +44,14 @@ ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, 
         mainContent = ContentGenerator.mainContent(mode, wikiLink);
     }
     const tabs: TopNavTabData[] = ContentGenerator.menuTabs(mode, wikiLink);
-    const namespaceIcon: string = new WikiConfig().iconPathOf(wikiLink.namespace);
+
+    const wikiConfig: WikiConfig = new WikiConfig();
+    let namespaceIcon: string;
+    if (wikiConfig.hasNamespace(wikiLink.namespace)) {
+        namespaceIcon = wikiConfig.iconPathOf(wikiLink.namespace);
+    } else {
+        namespaceIcon = MergedNamespaceConfig.notFoundIconPath;
+    }
     return {namespaceIcon, title, sideMenu, tabs, ...mainContent};
 });
 

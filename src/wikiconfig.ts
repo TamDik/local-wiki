@@ -3,6 +3,9 @@ import {generateRandomString} from './utils';
 import * as fs from 'fs';
 import * as path from 'path';
 
+
+const DIST_IMAGE_DIR: string = path.join(APP_DIR, 'dist/images')
+
 let dataDir: string = DATA_DIR;
 function setDataDir(dir: string): void {
     dataDir = dir;
@@ -203,7 +206,9 @@ class NamespaceConfig extends AbstractConfig<NamespaceConfigData> {
 
 
 class MergedNamespaceConfig {
+    public static notFoundIconPath: string = path.join(DIST_IMAGE_DIR, 'not-set-icon.png');
     private readonly masterData: MasterConfigData['namespace'][number];
+
     public constructor(masterConfig: MasterConfig, private readonly namespaceConfig: NamespaceConfig) {
         this.masterData = masterConfig.getNamespace(this.id);
     }
@@ -246,8 +251,11 @@ class WikiConfig {
             let config: NamespaceConfig;
             if (data.type === 'internal') {
                 config = NamespaceConfig.createInternal(data.id);
-            } else {
+            } else if (NamespaceConfig.hasConfig(data.rootDir)) {
                 config = NamespaceConfig.createExternal(data.rootDir);
+            } else {
+                this.masterConfig.removeNamespace(data.id);
+                continue;
             }
             this.setNamespace(config);
         }
@@ -274,7 +282,7 @@ class WikiConfig {
                 }
             }
         }
-        throw new Error(`Not found the config: ${name}`);
+        throw new Error(`Not found the config: ${value}`);
     }
 
     public getNamespaces(): MergedNamespaceConfig[] {
@@ -310,7 +318,7 @@ class WikiConfig {
         if (typeof(base64Icon) === 'string') {
             this.saveIcon(mergedConfig, base64Icon);
         } else {
-            fs.copyFile(path.join(APP_DIR, 'dist/images/not-set-icon.png'), mergedConfig.iconPath, (e) => {
+            fs.copyFile(path.join(DIST_IMAGE_DIR, 'not-set-icon.png'), mergedConfig.iconPath, (e) => {
                 if (e) console.log(e);
             });
         }
