@@ -39,8 +39,43 @@
     padding: 0 1em 0 11em;
 }
 
-#go-back-button, #go-forward-button, #access-field {
+#go-back-button, #go-forward-button, #reload-button, #access-field {
     box-shadow: none;
+}
+
+#reload-button {
+    position: relative;
+    padding: 0.25em 0.50em;
+}
+
+#reload-button:after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    right: 8px;
+    border: 4px solid transparent;
+    border-top: 6px solid #6c757d;
+    transform-origin: left top;
+    transform: rotate(-40deg);
+}
+
+#reload-button:before {
+    content: '';
+    display: block;
+    width: 22.2px;
+    height: 22.2px;
+    border: 2px solid #6c757d;
+    border-right-color: transparent;
+    border-radius: 100%;
+}
+
+#reload-button:hover:after {
+    border-top: 6px solid #fff;
+}
+
+#reload-button:hover:before {
+    border: 2px solid #fff;
+    border-right-color: transparent;
 }
 
 #access-field {

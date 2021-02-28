@@ -79,6 +79,9 @@ contextBridge.exposeInMainWorld(
         goForward(): void {
             ipcRenderer.send('go-forward');
         },
+        reload(): void {
+            ipcRenderer.send('reload');
+        },
         async canGoBackOrForward(): Promise<{back: boolean, forward: boolean}> {
             return ipcRenderer.invoke('can-go-back-or-forward');
         },

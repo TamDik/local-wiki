@@ -148,6 +148,7 @@ function initAccessArea(params: Params) {
 
     const goBackButton: HTMLButtonElement = document.getElementById('go-back-button') as HTMLButtonElement;
     const goForwardButton: HTMLButtonElement = document.getElementById('go-forward-button') as HTMLButtonElement;
+    const reloadButton: HTMLButtonElement = document.getElementById('reload-button') as HTMLButtonElement;
     window.ipcApi.canGoBackOrForward()
     .then(({back, forward}) => {
         goBackButton.disabled = !back;
@@ -161,6 +162,10 @@ function initAccessArea(params: Params) {
     goForwardButton.addEventListener('click', () => {
         window.ipcApi.goForward();
     }, false);
+
+    reloadButton.addEventListener('click', () => {
+        window.ipcApi.reload();
+    });
 }
 
 

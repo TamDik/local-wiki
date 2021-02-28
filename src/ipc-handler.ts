@@ -31,6 +31,10 @@ ipcMain.on('go-forward', event => {
     event.sender.goForward();
 });
 
+ipcMain.on('reload', event => {
+    event.sender.reload();
+});
+
 // htmlに展開するコンテンツを返す
 ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, version?: number): Promise<{
     namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[], dependences: {css: string[], js: string[]}}> => {

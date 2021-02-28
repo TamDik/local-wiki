@@ -35,6 +35,7 @@ interface IIpcApi {
                                                                              dependences: {css: string[], js: string[]}}>;
     goBack(): void;
     goForward(): void;
+    reload(): void;
     canGoBackOrForward(): Promise<{back: boolean, forward: boolean}>;
     uploadFile(path: string, name: string, filepath: string, comment: string): Promise<boolean>;
     updatePage(path: string, text: string, comment: string): Promise<boolean>;
