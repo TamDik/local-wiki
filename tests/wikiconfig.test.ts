@@ -11,7 +11,7 @@ function externalNamespace(externalDir: string): {id: string, name: string, root
     const config: WikiConfig = new WikiConfig();
     fs.mkdirSync(rootDir);
     const name: string = 'reverted-external-' + generateRandomString(5);
-    const nsId: string = config.newNamespace(name, 'external', rootDir).id;
+    const nsId: string = config.newNamespace(name, 'external', null, rootDir).id;
     return {id: nsId, name, rootDir};
 }
 
@@ -35,18 +35,18 @@ describe('test WikiConfig', () => {
     const config: WikiConfig = new WikiConfig();
 
     // 内部リンク
-    const ns1 = config.newNamespace('ns1', 'internal');
-    const ns2 = config.newNamespace('ns2', 'internal');
+    const ns1 = config.newNamespace('ns1', 'internal', null);
+    const ns2 = config.newNamespace('ns2', 'internal', null);
     const ns2NameBeforeChanging: string = ns2.name;
     ns2.name = 'changed-ns2';  // changing name
     const ns2NameAfterChanging: string = ns2.name;
-    const removed = config.newNamespace('removed', 'internal');
+    const removed = config.newNamespace('removed', 'internal', null);
     config.removeNamespace(removed.id);
 
     // 外部リンク
     const ns3RootDir: string = path.join(externalDir, generateRandomString(6));
     fs.mkdirSync(ns3RootDir);
-    const ns3 = config.newNamespace('ns3', 'external', ns3RootDir);
+    const ns3 = config.newNamespace('ns3', 'external', null, ns3RootDir);
     const ns4 = config.revertExternalNamespace(exns.rootDir);
 
     test('name after changing', () => {
