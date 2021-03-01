@@ -38,9 +38,9 @@ class WikiMD {
         const renderer: marked.Renderer = new marked.Renderer();
         renderer.link = (href: string, title: string|null, text: string) => this.link(href, title, text, this.isWikiLink);
         renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
-        renderer.text = (text: string) => this.text(text, this.magicHandlers);
         marked.use({renderer});
-        return marked(this.value);
+        const html: string = marked(this.value);
+        return this.expandMagics(html, this.magicHandlers);
     }
 
     private link(href: string, title: string|null, text: string, isWikiLink: IsWikiLink): string {
@@ -63,11 +63,11 @@ class WikiMD {
         return img;
     }
 
-    private text(text: string, magicHandlers: IMagicHandler[]): string {
+    private expandMagics(html: string, magicHandlers: IMagicHandler[]): string {
         const MAGIC_PATTERN: RegExp = /{{[^{}]+}}/g;
-        const magicMatches: RegExpMatchArray|null = text.match(MAGIC_PATTERN);
+        const magicMatches: RegExpMatchArray|null = html.match(MAGIC_PATTERN);
         if (!magicMatches) {
-            return text;
+            return html;
         }
         for (const magic of magicMatches) {
             const innerMagic: string = magic.replace(/(^{{|}}$)/g, '');
@@ -75,10 +75,10 @@ class WikiMD {
                 if (!magicHandler.isTarget(innerMagic)) {
                     continue;
                 }
-                text = text.replace(magic, magicHandler.expand(innerMagic));
+                html = html.replace(magic, magicHandler.expand(innerMagic));
             }
         }
-        return text;
+        return html;
     }
 
     public addMagicHandler(magicHandler: IMagicHandler): void {
@@ -96,19 +96,65 @@ interface IMagicHandler {
 }
 
 
-type ImageFormat = 'none'|'frameless'|'border'|'frame'|'thumb';
-class ImageFileHandler implements IMagicHandler {
-    public constructor(private readonly isWikiLink: IsWikiLink, private readonly toWikiURI: ToWikiURI) {
+class FileHandler implements IMagicHandler {
+    private fileHandlers: AbstractFileHandler[] = [];
+    private notImplementedHandler: AbstractFileHandler = new NotImplementedFileHandler();
+
+    public constructor(private readonly isFile: (path: string) => boolean) {
+    }
+
+    public addHandler(handler: AbstractFileHandler): void {
+        this.fileHandlers.push(handler);
     }
 
     public isTarget(content: string): boolean {
-        const marker: string = content.split('|')[0].toLowerCase();
-        return marker === 'img' || marker === 'image';
+        const path: string = content.split('|')[0];
+        return this.isFile(path);
     }
 
     public expand(content: string): string {
-        const [marker, path, ...options]: string[] = content.split('|');
+        const path: string = content.split('|')[0];
+        for (const handler of this.fileHandlers) {
+            if (handler.isTargetFile(path)) {
+                return handler.expand(content);
+            }
+        }
+        return this.notImplementedHandler.expand(content);
+    }
+}
+
+
+type IsTargetWikiLink = (path: string) => boolean;
+abstract class AbstractFileHandler {
+    public constructor(private readonly isTargetPath: IsTargetWikiLink) {
+    }
+
+    public isTargetFile(path: string): boolean {
+        return this.isTargetPath(path);
+    }
+
+    public expand(content: string): string {
+        const [path, ...options]: string[] = content.split('|');
         return this.createHTML(path, options);
+    }
+
+    protected abstract createHTML(path: string, options: string[]): string;
+}
+
+class NotImplementedFileHandler extends AbstractFileHandler {
+    public constructor() {
+        super((path: string) => true);
+    }
+
+    public createHTML(path: string, options: string[]): string {
+        return '作成リンク';
+    }
+}
+
+type ImageFormat = 'none'|'frameless'|'border'|'frame'|'thumb';
+class ImageFileHandler extends AbstractFileHandler {
+    public constructor(isImage: IsTargetWikiLink, private readonly toWikiURI: ToWikiURI) {
+        super(isImage);
     }
 
     public createHTML(path: string, options: string[]): string {
@@ -135,12 +181,9 @@ class ImageFileHandler implements IMagicHandler {
             html += img;
         } else if (styleResults.link === null) {
             html += `<a href="[:link:]" class="image">` + img + '</a>';
-        } else if (this.isWikiLink(styleResults.link)) {
+        } else {
             const href: string = this.toWikiURI(styleResults.link);
             html += `<a href="${href}">` + img + '</a>';
-        } else {
-            html += `<a href="${styleResults.link}>` + img + '</a>';
-            
         }
         html += styleResults.closeTag;
 
@@ -149,18 +192,13 @@ class ImageFileHandler implements IMagicHandler {
         if (styleResults.link !== null) {
             html = html.replace(LINK_PATTERN, styleResults.link);
         } else {
-            html = html.replace(LINK_PATTERN, this.isWikiLink(path) ? this.toWikiURI(path) : path);
+            html = html.replace(LINK_PATTERN, this.toWikiURI(path));
         }
        return html;
     }
 
     private createImgTag(src: string, alt: string, classNames: string[], props: string[]): string {
-        let img: string;
-        if (this.isWikiLink(src)) {
-            img = `<img alt="${alt}" src="${this.toWikiURI(src)}" decoding="async"`;
-        } else {
-            img = `<img alt="${alt}" src="${src}" decoding="async"`;
-        }
+        let img: string = `<img alt="${alt}" src="${this.toWikiURI(src)}" decoding="async"`;
         classNames = classNames.filter(name => name !== '');
         if (classNames.length !== 0) {
             img += ' class="' + classNames.join(' ') + '"';
@@ -437,20 +475,11 @@ class ImageFileHandler implements IMagicHandler {
 
 
 type PDFFormat = 'preview'|'link';
-class PDFFileHandler implements IMagicHandler {
+class PDFFileHandler extends AbstractFileHandler {
     private readonly defaultSize = {width: '100%', height: 'calc(100vh - 300px)'};
 
-    public constructor(private readonly isWikiLink: IsWikiLink, private readonly toWikiURI: ToWikiURI) {
-    }
-
-    public isTarget(content: string): boolean {
-        const marker: string = content.split('|')[0].toLowerCase();
-        return marker === 'pdf';
-    }
-
-    public expand(content: string): string {
-        const [marker, path, ...options]: string[] = content.split('|');
-        return this.createHTML(path, options);
+    public constructor(isPDF: IsTargetWikiLink, private readonly toWikiURI: ToWikiURI) {
+        super(isPDF);
     }
 
     protected createHTML(path: string, options: string[]): string {
@@ -460,7 +489,7 @@ class PDFFileHandler implements IMagicHandler {
 
         switch (pdfFormat) {
             case 'preview':
-                const data: string = this.isWikiLink(path) ? this.toWikiURI(path) : path;
+                const data: string = this.toWikiURI(path);
                 html = `<object style="${style}" type="application/pdf" data="${data}">` +
                          '<div class="alert alert-warning">' +
                            `<p>${path} could not be displayed. </p>` +
@@ -468,7 +497,7 @@ class PDFFileHandler implements IMagicHandler {
                        '</object>';
                     break;
             case 'link':
-                const href: string = this.isWikiLink(path) ? this.toWikiURI(path) : path;
+                const href: string = this.toWikiURI(path);
                 html = `<a href="${href}">${title}</a>`;
                 break
         }
@@ -562,4 +591,4 @@ class PDFFileHandler implements IMagicHandler {
 }
 
 
-export {WikiMD, ImageFileHandler, PDFFileHandler}
+export {WikiMD, FileHandler, ImageFileHandler, PDFFileHandler}

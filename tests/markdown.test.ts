@@ -1,4 +1,4 @@
-import {WikiMD, ImageFileHandler, PDFFileHandler} from '../src/markdown';
+import {WikiMD, FileHandler, ImageFileHandler, PDFFileHandler} from '../src/markdown';
 
 describe('test ImageFileHandler', function() {
     function testImage(value: string, expected: string): void {
@@ -8,28 +8,30 @@ describe('test ImageFileHandler', function() {
             isWikiLink: (href: string) => true
         });
         wmd.setValue(value);
-        const isWikiLink = (href: string) => true;
-        wmd.addMagicHandler(new ImageFileHandler(isWikiLink, href => href));
+
+        const fileHandler: FileHandler = new FileHandler(path => true);
+        fileHandler.addHandler(new ImageFileHandler(path => true, href => href));
+        wmd.addMagicHandler(fileHandler);
         element.innerHTML = wmd.toHTML();
         test(`'${value}'`, () => expect(element.innerHTML.replace(/(\n|<\/?p>)/g, '')).toBe(expected));
     }
 
     testImage(
-        '{{Image|File:example.jpg|border|caption}}',
+        '{{File:example.jpg|border|caption}}',
         '<a href="File:example.jpg" class="image">' +
           '<img alt="caption" src="File:example.jpg" decoding="async" class="thumbborder">' +
         '</a>'
     );
 
     testImage(
-        '{{Img|File:example.jpg|frameless|caption}}',
+        '{{File:example.jpg|frameless|caption}}',
         '<a href="File:example.jpg" class="image">' +
             '<img alt="caption" src="File:example.jpg" decoding="async">' +
         '</a>'
     );
 
     testImage(
-        '{{IMG|File:example.jpg|frame|caption}}',
+        '{{File:example.jpg|frame|caption}}',
         '<div class="thumb tright">' +
           '<div class="thumbinner">' +
             '<a href="File:example.jpg" class="image">' +
@@ -41,7 +43,7 @@ describe('test ImageFileHandler', function() {
     );
 
     testImage(
-        '{{IMG|File:example.jpg|thumb|caption}}',
+        '{{File:example.jpg|thumb|caption}}',
         '<div class="thumb tright">' +
           '<div class="thumbinner">' +
             '<a href="File:example.jpg" class="image">' +
@@ -58,21 +60,21 @@ describe('test ImageFileHandler', function() {
     );
 
     testImage(
-        '{{IMG|File:example.jpg|50px}}',
+        '{{File:example.jpg|50px}}',
         '<a href="File:example.jpg" class="image">' +
           '<img alt="File:example.jpg" src="File:example.jpg" decoding="async" width="50">' +
         '</a>'
     );
 
     testImage(
-        '{{IMG|File:example.jpg|border|50px}}',
+        '{{File:example.jpg|border|50px}}',
         '<a href="File:example.jpg" class="image">' +
           '<img alt="File:example.jpg" src="File:example.jpg" decoding="async" class="thumbborder" width="50">' +
         '</a>'
     );
 
     testImage(
-        '{{IMG|File:example.jpg|frame|50px}}',
+        '{{File:example.jpg|frame|50px}}',
         '<div class="thumb tright">' +
           '<div class="thumbinner">' +
             '<a href="File:example.jpg" class="image">' +
@@ -85,7 +87,7 @@ describe('test ImageFileHandler', function() {
     );
 
     testImage(
-        '{{IMG|File:example.jpg|thumb|50px}}',
+        '{{File:example.jpg|thumb|50px}}',
         '<div class="thumb tright">' +
           '<div class="thumbinner">' +
             '<a href="File:example.jpg" class="image">' +
@@ -101,14 +103,14 @@ describe('test ImageFileHandler', function() {
     );
 
     testImage(
-        '{{IMG|File:example.jpg|frameless|50px}}',
+        '{{File:example.jpg|frameless|50px}}',
         '<a href="File:example.jpg" class="image">' +
           '<img alt="File:example.jpg" src="File:example.jpg" decoding="async" width="50">' +
         '</a>'
     );
 
     testImage(
-        '{{IMG|File:example.jpg|none|100px|caption}}',
+        '{{File:example.jpg|none|100px|caption}}',
         '<div class="floatnone">' +
           '<a href="File:example.jpg" class="image">' +
             '<img alt="caption" src="File:example.jpg" decoding="async" width="100">' +
@@ -117,7 +119,7 @@ describe('test ImageFileHandler', function() {
     );
 
     testImage(
-        '{{IMG|File:example.jpg|center|100px|caption}}',
+        '{{File:example.jpg|center|100px|caption}}',
         '<div class="center">' +
           '<div class="floatnone">' +
             '<a href="File:example.jpg" class="image">' +
@@ -128,7 +130,7 @@ describe('test ImageFileHandler', function() {
     );
 
     testImage(
-        '{{IMG|File:example.jpg|left|100px|caption}}',
+        '{{File:example.jpg|left|100px|caption}}',
         '<div class="floatleft">' +
           '<a href="File:example.jpg" class="image">' +
             '<img alt="caption" src="File:example.jpg" decoding="async" width="100">' +
@@ -137,7 +139,7 @@ describe('test ImageFileHandler', function() {
     );
 
     testImage(
-        '{{IMG|File:example.jpg|right|100px|caption}}',
+        '{{File:example.jpg|right|100px|caption}}',
         '<div class="floatright">' +
           '<a href="File:example.jpg" class="image">' +
             '<img alt="caption" src="File:example.jpg" decoding="async" width="100">' +
@@ -146,7 +148,7 @@ describe('test ImageFileHandler', function() {
     );
 
     testImage(
-        '{{IMG|File:example.jpg|link=MainPage|caption}}',
+        '{{File:example.jpg|link=MainPage|caption}}',
         '<a href="MainPage">' +
           '<img alt="caption" src="File:example.jpg" decoding="async">' +
         '</a>'
@@ -154,14 +156,14 @@ describe('test ImageFileHandler', function() {
 
     test.todo('external links (link=https://...) are improperly expanded by Marked.');
     /* testImage( */
-    /*     '{{IMG|File:example.jpg|link=http:\/\/example.com|caption}}', */
+    /*     '{{File:example.jpg|link=http:\/\/example.com|caption}}', */
     /*     '<a href="http:\/\/example.com">' + */
     /*       '<img alt="caption" src="File:example.jpg" decoding="async">' + */
     /*     '</a>' */
     /* ); */
 
     testImage(
-        '{{IMG|File:example.jpg|link=|caption}}',
+        '{{File:example.jpg|link=|caption}}',
         '<img alt="caption" src="File:example.jpg" decoding="async">'
     );
 });
@@ -174,47 +176,49 @@ describe('test PDFFileHandler', function() {
             isWikiLink: (href: string) => true
         });
         wmd.setValue(value);
-        const isWikiLink = (href: string) => true;
-        wmd.addMagicHandler(new PDFFileHandler(isWikiLink, href => href));
+
+        const fileHandler: FileHandler = new FileHandler(path => true);
+        fileHandler.addHandler(new PDFFileHandler(path => true, href => href));
+        wmd.addMagicHandler(fileHandler);
         element.innerHTML = wmd.toHTML();
         test(`'${value}'`, () => expect(element.innerHTML.replace(/(\n|<\/?p>)/g, '')).toBe(expected));
     }
 
     testPDF(
-        '{{Pdf|File:example.pdf}}',
+        '{{File:example.pdf}}',
         '<object style="width: 100%; height: calc(100vh - 300px);" type="application/pdf" data="File:example.pdf">' +
             '<div class="alert alert-warning">File:example.pdf could not be displayed. </div>' +
         '</object>'
     );
 
     testPDF(
-        '{{PDF|File:example.pdf|x100px}}',
+        '{{File:example.pdf|x100px}}',
         '<object style="width: 100%; height: 100px;" type="application/pdf" data="File:example.pdf">' +
             '<div class="alert alert-warning">File:example.pdf could not be displayed. </div>' +
         '</object>'
     );
 
     testPDF(
-        '{{PDF|File:example.pdf|100x100px}}',
+        '{{File:example.pdf|100x100px}}',
         '<object style="width: 100px; height: 100px;" type="application/pdf" data="File:example.pdf">' +
             '<div class="alert alert-warning">File:example.pdf could not be displayed. </div>' +
         '</object>'
     );
 
     testPDF(
-        '{{PDF|File:example.pdf|preview}}',
+        '{{File:example.pdf|preview}}',
         '<object style="width: 100%; height: calc(100vh - 300px);" type="application/pdf" data="File:example.pdf">' +
             '<div class="alert alert-warning">File:example.pdf could not be displayed. </div>' +
         '</object>'
     );
 
     testPDF(
-        '{{PDF|File:example.pdf|link}}',
+        '{{File:example.pdf|link}}',
         '<a href="File:example.pdf">File:example.pdf</a>'
     );
 
     testPDF(
-        '{{PDF|File:example.pdf|link|title}}',
+        '{{File:example.pdf|link|title}}',
         '<a href="File:example.pdf">title</a>'
     );
 });

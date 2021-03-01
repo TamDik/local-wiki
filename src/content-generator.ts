@@ -5,7 +5,7 @@ import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
 import {WikiLink, WikiLocation, DEFAULT_NAMESPACE} from './wikilink';
-import {WikiMD, ImageFileHandler, PDFFileHandler} from './markdown';
+import {WikiMD, FileHandler, ImageFileHandler, PDFFileHandler} from './markdown';
 
 
 function toFullPath(wikiLink: WikiLink, version?: number): string|null {
@@ -382,11 +382,39 @@ class PageReadBody extends ContentBody {
             const location: WikiLocation = new WikiLocation(wikiLink);
             return location.toURI();
         }
-        const wmd: WikiMD = new WikiMD({toWikiURI, isWikiLink: WikiLink.isWikiLink});
-        wmd.addMagicHandler(new ImageFileHandler(WikiLink.isWikiLink, toWikiURI));
-        wmd.addMagicHandler(new PDFFileHandler(WikiLink.isWikiLink, toWikiURI));
-        wmd.setValue(markdown);
-        let htmlText: string = wmd.toHTML();
+
+        const wikiMD: WikiMD = new WikiMD({toWikiURI, isWikiLink: WikiLink.isWikiLink});
+
+        // file
+        const fileHandler: FileHandler = new FileHandler((path: string) => new WikiLink(path, baseNamespace).type === 'File');
+        wikiMD.addMagicHandler(fileHandler);
+
+        // image
+        fileHandler.addHandler(new ImageFileHandler(
+            (path: string) => {
+                const fullPath: string|null = toFullPath(new WikiLink(path, baseNamespace));
+                if (fullPath === null) {
+                    return false;
+                }
+                return ['png', 'jpg', 'jpeg', 'gif'].includes(extensionOf(fullPath).toLowerCase())
+            },
+            toWikiURI
+        ));
+
+        // pdf
+        fileHandler.addHandler(new PDFFileHandler(
+            (path: string) => {
+                const fullPath: string|null = toFullPath(new WikiLink(path, baseNamespace));
+                if (fullPath === null) {
+                    return false;
+                }
+                return ['pdf'].includes(extensionOf(fullPath).toLowerCase())
+            },
+            toWikiURI
+        ));
+
+        wikiMD.setValue(markdown);
+        let htmlText: string = wikiMD.toHTML();
         return PageReadBody.expandWikiLink(htmlText, baseNamespace);
     }
 
