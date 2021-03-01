@@ -72,7 +72,7 @@
                 p.innerHTML = `There is a page named "<a href="${href}">${searchValue}</a>" on this wiki.`;
             } else {
                 const href: string = window.localWiki.toURI(wikiLink, {mode: 'edit'});
-                p.innerHTML = `Create the page "<a href="${href}">${searchValue}</a>" on this wiki!`;
+                p.innerHTML = `Create the page "<a href="${href}" class="new">${searchValue}</a>" on this wiki!`;
             }
         });
         window.ipcApi.searchPageByKeywords(params.path, keywords);
