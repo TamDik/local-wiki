@@ -50,8 +50,7 @@
                 return;
             }
             const iconpath: string = filePaths[0];
-            const extension: string = window.utils.extensionOf(iconpath).toLowerCase();
-            if (!['png', 'jpg', 'jpeg'].includes(extension)) {
+            if (window.localWiki.fileTypeOf(iconpath) !== 'image') {
                 alert('Invalid file extension');
                 return;
             }

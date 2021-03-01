@@ -1,6 +1,7 @@
 export declare global {
     type WikiType = 'Page'|'File'|'Special';
     type PageMode = 'read'|'edit'|'history';
+    type FileType = 'pdf'|'image'|'other';
     interface IWikiLink {
         namespace: string;
         type: WikiType;
@@ -65,6 +66,8 @@ interface IDialog {
 type IncompleteWikiLink = {namespace?: string, type?: WikiType, name?: string};
 interface ILocalWiki {
     isMode: (arg: any) => arg is PageMode;
+    getSupportedFileExtensions: () => string[];
+    fileTypeOf: (filename: string) => FileType;
     parsePath: (path: string) => IWikiLink;
     toPath: (path: IncompleteWikiLink|string) => string;
     parseURI: (uri: string) => {wikiLink: IWikiLink, params: {[key: string]: string}};

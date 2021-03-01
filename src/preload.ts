@@ -1,6 +1,7 @@
 import {contextBridge, ipcRenderer, remote} from "electron";
 import * as utils from './utils';
 import {WikiLink, WikiLocation} from './wikilink';
+import {fileTypeOf, supportedImage, supportedPDF} from './wikifile';
 
 
 contextBridge.exposeInMainWorld(
@@ -16,6 +17,12 @@ contextBridge.exposeInMainWorld(
                 return false
             }
             return ['read', 'edit', 'history'].includes(arg);
+        },
+        getSupportedFileExtensions: (): string[] => {
+            return [...supportedImage, ...supportedPDF];
+        },
+        fileTypeOf: (filename: string): FileType => {
+            return fileTypeOf(filename);
         },
         parsePath: (path: string): IWikiLink => {
             const wikiLink: WikiLink = new WikiLink(path);

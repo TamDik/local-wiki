@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {extensionOf, dateToStr, bytesToStr, zeroPadding} from './utils';
+import {fileTypeOf} from './wikifile';
 import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
@@ -393,10 +394,7 @@ class PageReadBody extends ContentBody {
         fileHandler.addHandler(new ImageFileHandler(
             (path: string) => {
                 const fullPath: string|null = toFullPath(new WikiLink(path, baseNamespace));
-                if (fullPath === null) {
-                    return false;
-                }
-                return ['png', 'jpg', 'jpeg', 'gif'].includes(extensionOf(fullPath).toLowerCase())
+                return typeof(fullPath) === 'string' && fileTypeOf(fullPath) === 'image';
             },
             toWikiURI
         ));
@@ -405,10 +403,7 @@ class PageReadBody extends ContentBody {
         fileHandler.addHandler(new PDFFileHandler(
             (path: string) => {
                 const fullPath: string|null = toFullPath(new WikiLink(path, baseNamespace));
-                if (fullPath === null) {
-                    return false;
-                }
-                return ['pdf'].includes(extensionOf(fullPath).toLowerCase())
+                return typeof(fullPath) === 'string' && fileTypeOf(fullPath) === 'pdf';
             },
             toWikiURI
         ));
@@ -680,8 +675,6 @@ class NotFoundFileBody extends ContentBody {
 
 class FileReadBody extends ContentBody {
     private readonly bufferPathGenerator: BufferPathGenerator;
-    private readonly imgExtentions: string[] = ['png', 'jpg', 'jpeg', 'gif'];
-    private readonly pdfExtentions: string[] = ['pdf'];
 
     public constructor(wikiLink: WikiLink) {
         super(wikiLink);
@@ -712,7 +705,7 @@ class FileReadBody extends ContentBody {
 
     private mainView(version: number|undefined): string {
         const filepath: string = toFullPath(this.wikiLink, version) as string;
-        switch (this.fileTypeOf(filepath)) {
+        switch (fileTypeOf(filepath)) {
             case 'image':
                 return `<img src="${filepath}" alt="preview" decoding="async">`
             case 'pdf':
@@ -789,7 +782,7 @@ class FileReadBody extends ContentBody {
 
     private thumbTd(filepath: string, version: number): string {
         let content: string = '';
-        switch (this.fileTypeOf(filepath)) {
+        switch (fileTypeOf(filepath)) {
             case 'image':
                 content = `<img src="${filepath}" alt="version ${version}" decoding="async">`;
                 break;
@@ -803,17 +796,6 @@ class FileReadBody extends ContentBody {
         const location: WikiLocation = new WikiLocation(this.wikiLink);
         location.addParam('version', String(version));
         return `<a href="${location.toURI()}">${content}</a>`
-    }
-
-    private fileTypeOf(filepath: string): 'image'|'pdf'|'other' {
-        const extention: string = extensionOf(filepath).toLowerCase();
-        if (this.imgExtentions.includes(extention)) {
-            return 'image';
-        }
-        if (this.pdfExtentions.includes(extention)) {
-            return 'pdf';
-        }
-        return 'other';
     }
 }
 

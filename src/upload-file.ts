@@ -1,7 +1,7 @@
 (() => {
     const NO_FILE_CHOSEN: string = 'No file chosen';
 
-    const extensions: string[] = ['png', 'jpg', 'jpeg', 'gif', 'pdf'];
+    const extensions: string[] = window.localWiki.getSupportedFileExtensions();
     const permittedExtensions: HTMLSpanElement = document.getElementById('permitted-extensions') as HTMLSpanElement;
     permittedExtensions.innerText = extensions.join(', ');
 
