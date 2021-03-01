@@ -10,7 +10,7 @@ describe('test ImageFileHandler', function() {
         wmd.setValue(value);
 
         const fileHandler: FileHandler = new FileHandler(path => true);
-        fileHandler.addHandler(new ImageFileHandler(path => true, href => href));
+        fileHandler.addHandler(new ImageFileHandler(path => true));
         wmd.addMagicHandler(fileHandler);
         element.innerHTML = wmd.toHTML();
         test(`'${value}'`, () => expect(element.innerHTML.replace(/(\n|<\/?p>)/g, '')).toBe(expected));
@@ -178,7 +178,7 @@ describe('test PDFFileHandler', function() {
         wmd.setValue(value);
 
         const fileHandler: FileHandler = new FileHandler(path => true);
-        fileHandler.addHandler(new PDFFileHandler(path => true, href => href));
+        fileHandler.addHandler(new PDFFileHandler(path => true));
         wmd.addMagicHandler(fileHandler);
         element.innerHTML = wmd.toHTML();
         test(`'${value}'`, () => expect(element.innerHTML.replace(/(\n|<\/?p>)/g, '')).toBe(expected));

@@ -6,7 +6,7 @@ import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
 import {WikiLink, WikiLocation, DEFAULT_NAMESPACE} from './wikilink';
-import {WikiMD, FileHandler, ImageFileHandler, PDFFileHandler} from './markdown';
+import {WikiMD, FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler} from './markdown';
 
 
 function toFullPath(wikiLink: WikiLink, version?: number): string|null {
@@ -378,13 +378,14 @@ class PageReadBody extends ContentBody {
     }
 
     public static markdownToHtml(markdown: string, baseNamespace: string): string {
-        function toWikiURI(href: string): string {
-            const wikiLink: WikiLink = new WikiLink(href, baseNamespace);
-            const location: WikiLocation = new WikiLocation(wikiLink);
-            return location.toURI();
-        }
-
-        const wikiMD: WikiMD = new WikiMD({toWikiURI, isWikiLink: WikiLink.isWikiLink});
+        const wikiMD: WikiMD = new WikiMD({
+            isWikiLink: WikiLink.isWikiLink,
+            toWikiURI: (href: string) => {
+                const wikiLink: WikiLink = new WikiLink(href, baseNamespace);
+                const location: WikiLocation = new WikiLocation(wikiLink);
+                return location.toURI();
+            }
+        });
 
         // file
         const fileHandler: FileHandler = new FileHandler((path: string) => new WikiLink(path, baseNamespace).type === 'File');
@@ -395,8 +396,7 @@ class PageReadBody extends ContentBody {
             (path: string) => {
                 const fullPath: string|null = toFullPath(new WikiLink(path, baseNamespace));
                 return typeof(fullPath) === 'string' && fileTypeOf(fullPath) === 'image';
-            },
-            toWikiURI
+            }
         ));
 
         // pdf
@@ -404,9 +404,16 @@ class PageReadBody extends ContentBody {
             (path: string) => {
                 const fullPath: string|null = toFullPath(new WikiLink(path, baseNamespace));
                 return typeof(fullPath) === 'string' && fileTypeOf(fullPath) === 'pdf';
-            },
-            toWikiURI
+            }
         ));
+
+        // not found
+        fileHandler.addHandler(new NotFoundFileHandler(
+            (path: string) => {
+                const fullPath: string|null = toFullPath(new WikiLink(path, baseNamespace));
+                return fullPath === null;
+            }
+        ))
 
         wikiMD.setValue(markdown);
         let htmlText: string = wikiMD.toHTML();

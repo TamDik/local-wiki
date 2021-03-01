@@ -75,7 +75,7 @@ class WikiMD {
                 if (!magicHandler.isTarget(innerMagic)) {
                     continue;
                 }
-                html = html.replace(magic, magicHandler.expand(innerMagic));
+                html = html.replace(magic, magicHandler.expand(innerMagic, this.toWikiURI));
             }
         }
         return html;
@@ -92,7 +92,7 @@ interface IMagicHandler {
     isTarget(content: string): boolean;
 
     // 中身を展開
-    expand(content: string): string;
+    expand(content: string, toWikiURI: ToWikiURI): string;
 }
 
 
@@ -112,14 +112,14 @@ class FileHandler implements IMagicHandler {
         return this.isFile(path);
     }
 
-    public expand(content: string): string {
+    public expand(content: string, toWikiURI: ToWikiURI): string {
         const path: string = content.split('|')[0];
         for (const handler of this.fileHandlers) {
             if (handler.isTargetFile(path)) {
-                return handler.expand(content);
+                return handler.expand(content, toWikiURI);
             }
         }
-        return this.notImplementedHandler.expand(content);
+        return this.notImplementedHandler.expand(content, toWikiURI);
     }
 }
 
@@ -133,31 +133,44 @@ abstract class AbstractFileHandler {
         return this.isTargetPath(path);
     }
 
-    public expand(content: string): string {
+    public expand(content: string, toWikiURI: ToWikiURI): string {
         const [path, ...options]: string[] = content.split('|');
-        return this.createHTML(path, options);
+        return this.createHTML(path, options, toWikiURI);
     }
 
-    protected abstract createHTML(path: string, options: string[]): string;
+    protected abstract createHTML(path: string, options: string[], toWikiURI: ToWikiURI): string;
 }
+
 
 class NotImplementedFileHandler extends AbstractFileHandler {
     public constructor() {
         super((path: string) => true);
     }
 
-    public createHTML(path: string, options: string[]): string {
-        return '作成リンク';
+    public createHTML(path: string, options: string[], toWikiURI: ToWikiURI): string {
+        return `ERROR(${path})`;
     }
 }
 
+
+class NotFoundFileHandler extends AbstractFileHandler {
+    public constructor(notFound: IsTargetWikiLink) {
+        super(notFound);
+    }
+
+    public createHTML(path: string, options: string[], toWikiURI: ToWikiURI): string {
+        return `<a href="${toWikiURI(path)}">${path}</a>`;
+    }
+}
+
+
 type ImageFormat = 'none'|'frameless'|'border'|'frame'|'thumb';
 class ImageFileHandler extends AbstractFileHandler {
-    public constructor(isImage: IsTargetWikiLink, private readonly toWikiURI: ToWikiURI) {
+    public constructor(isImage: IsTargetWikiLink) {
         super(isImage);
     }
 
-    public createHTML(path: string, options: string[]): string {
+    public createHTML(path: string, options: string[], toWikiURI: ToWikiURI): string {
         const styleResults = this.styleOptions(options);
 
         let replaceCaption: string;
@@ -174,7 +187,7 @@ class ImageFileHandler extends AbstractFileHandler {
         const alt: string = styleResults.alt !== '' ? styleResults.alt : caption;  // FIXME: captionのスタイルを除去
 
         const classNames: string[] = [...styleResults.classNames];
-        const img: string = this.createImgTag(path, alt, classNames, styleResults.props);
+        const img: string = this.createImgTag(toWikiURI, path, alt, classNames, styleResults.props);
 
         let html: string = styleResults.openTag;
         if (styleResults.link === '') {
@@ -182,7 +195,7 @@ class ImageFileHandler extends AbstractFileHandler {
         } else if (styleResults.link === null) {
             html += `<a href="[:link:]" class="image">` + img + '</a>';
         } else {
-            const href: string = this.toWikiURI(styleResults.link);
+            const href: string = toWikiURI(styleResults.link);
             html += `<a href="${href}">` + img + '</a>';
         }
         html += styleResults.closeTag;
@@ -192,13 +205,13 @@ class ImageFileHandler extends AbstractFileHandler {
         if (styleResults.link !== null) {
             html = html.replace(LINK_PATTERN, styleResults.link);
         } else {
-            html = html.replace(LINK_PATTERN, this.toWikiURI(path));
+            html = html.replace(LINK_PATTERN, toWikiURI(path));
         }
        return html;
     }
 
-    private createImgTag(src: string, alt: string, classNames: string[], props: string[]): string {
-        let img: string = `<img alt="${alt}" src="${this.toWikiURI(src)}" decoding="async"`;
+    private createImgTag(toWikiURI: ToWikiURI, src: string, alt: string, classNames: string[], props: string[]): string {
+        let img: string = `<img alt="${alt}" src="${toWikiURI(src)}" decoding="async"`;
         classNames = classNames.filter(name => name !== '');
         if (classNames.length !== 0) {
             img += ' class="' + classNames.join(' ') + '"';
@@ -478,18 +491,18 @@ type PDFFormat = 'preview'|'link';
 class PDFFileHandler extends AbstractFileHandler {
     private readonly defaultSize = {width: '100%', height: 'calc(100vh - 300px)'};
 
-    public constructor(isPDF: IsTargetWikiLink, private readonly toWikiURI: ToWikiURI) {
+    public constructor(isPDF: IsTargetWikiLink) {
         super(isPDF);
     }
 
-    protected createHTML(path: string, options: string[]): string {
+    protected createHTML(path: string, options: string[], toWikiURI: ToWikiURI): string {
         const {style, pdfFormat, remains} = this.styleOptions(options);
         const title: string = remains.length === 0 ? path : remains.slice(-1)[0];
         let html: string;
 
         switch (pdfFormat) {
             case 'preview':
-                const data: string = this.toWikiURI(path);
+                const data: string = toWikiURI(path);
                 html = `<object style="${style}" type="application/pdf" data="${data}">` +
                          '<div class="alert alert-warning">' +
                            `<p>${path} could not be displayed. </p>` +
@@ -497,7 +510,7 @@ class PDFFileHandler extends AbstractFileHandler {
                        '</object>';
                     break;
             case 'link':
-                const href: string = this.toWikiURI(path);
+                const href: string = toWikiURI(path);
                 html = `<a href="${href}">${title}</a>`;
                 break
         }
@@ -591,4 +604,4 @@ class PDFFileHandler extends AbstractFileHandler {
 }
 
 
-export {WikiMD, FileHandler, ImageFileHandler, PDFFileHandler}
+export {WikiMD, FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler}
