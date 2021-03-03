@@ -116,6 +116,7 @@ class ContentGenerator {
             specialPages,
             new AllPagesBody(wikiLink),
             new SearchBody(wikiLink),
+            new CategoriesBody(wikiLink),
             new AllFilesBody(wikiLink),
             new UploadFileBody(wikiLink),
             new PageDiffBody(wikiLink),
@@ -1011,7 +1012,7 @@ class NotFoundCategoryReadBody extends ContentBody {
 
         const lines: string[] = [];
         lines.push('<div>');
-        lines.push(  'There is currently no text in this category.');
+        lines.push(  '<p>There is currently no text in this category.</p>');
         lines.push('</div>');
 
         lines.push('<div class="pt-3">');
@@ -1325,6 +1326,32 @@ class SearchBody extends SpecialContentBody {
               '</div>',
             '</div>'
         ]
+        return lines.join('');
+    }
+}
+
+class CategoriesBody extends SpecialContentBody {
+    public static wikiName: string = 'Categories';
+    public name: string = CategoriesBody.wikiName;
+    public title: string = 'Categories';
+    public type: SpecialContentType = 'pages';
+
+    public get html(): string {
+        const lines: string[] = [
+            '<p>The following category exists.</p>'
+        ];
+        const categories: Category[] = Category.allUnder(this.wikiLink.namespace);
+
+        if (categories.length !== 0) {
+            lines.push('<ul>');
+            const namespace: string = this.wikiLink.namespace;
+            for (const category of categories) {
+                const wikiLink: WikiLink = category.toWikiLink();
+                const location: WikiLocation = new WikiLocation(wikiLink);
+                lines.push(`<li><a href="${location.toURI()}">${wikiLink.name}</a></li>`);
+            }
+            lines.push('</ul>');
+        }
         return lines.join('');
     }
 }

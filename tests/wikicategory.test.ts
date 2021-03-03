@@ -25,9 +25,20 @@ function testWikiLinks(received: WikiLink[], expected: WikiLink[]): void {
     }
     const receivedStr: string[] = received.map(wikiLinkToStr)
     const expectedStr: string[] = expected.map(wikiLinkToStr)
-    expect(receivedStr).toEqual(expectedStr);
+    expect(receivedStr).toEqual(expect.arrayContaining(expectedStr));
+    expect(receivedStr.length).toBe(expectedStr.length);
 }
 
+function testCategories(received: Category[], expected: Category[]): void {
+    function categoryToStr(category: Category): string {
+        const wikiLink: WikiLink = category.toWikiLink();
+        return `${wikiLink.namespace}:${wikiLink.type}:${wikiLink.name}`;
+    }
+    const receivedStr: string[] = received.map(categoryToStr)
+    const expectedStr: string[] = expected.map(categoryToStr)
+    expect(receivedStr).toEqual(expect.arrayContaining(expectedStr));
+    expect(receivedStr.length).toBe(expectedStr.length);
+}
 
 const [testDataDir, ns1] = testNamespace();
 
@@ -77,6 +88,16 @@ describe('test updateCategories()', () => {
     updateCategories(p2, [new Category(n1)]);
     updateCategories(p3, [new Category(n1)]);
     updateCategories(p4, [new Category(unknown)]);  // 不明な名前空間
+
+    test('all categories under the namespace', () => {
+        const c1: Category = new Category(n1);
+        const c2: Category = new Category(n2);
+        const c3: Category = new Category(n3);
+        const cu: Category = new Category(unknown);
+
+        testCategories(Category.allUnder(ns1.id), [c1, c2, c3]);
+        testCategories(Category.allUnder(unknown.namespace), [cu]);
+    });
 
     test('refered', () => {
         const c1: Category = new Category(n1);

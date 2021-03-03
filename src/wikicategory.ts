@@ -111,6 +111,14 @@ class CategoriesUnderNamespace {
         }
         this.save();
     }
+
+    public getAllReferedCategories(): Category[] {
+        const categories: Category[] = [];
+        for (const categoryData of this.data) {
+            categories.push(new Category(categoryData.category));
+        }
+        return categories;
+    }
 }
 
 
@@ -143,6 +151,33 @@ class Category {
 
     public toWikiLink(): WikiLink {
         return new WikiLink({namespace: this.namespace, type: 'Category', name: this.name});
+    }
+
+    public static allUnder(namespace: string): Category[] {
+        const categories: Category[] = [];
+        const config: WikiConfig = new WikiConfig();
+        for (const {id} of config.getNamespaces()) {
+            const cun: CategoriesUnderNamespace = new CategoriesUnderNamespace(id);
+            for (const category of cun.getAllReferedCategories()) {
+                if (category.namespace !== namespace) {
+                    continue;
+                }
+
+                const categoryWikiLink: WikiLink = category.toWikiLink();
+                let flag: boolean = true;
+                for (const c of categories) {
+                    if (c.toWikiLink().equals(categoryWikiLink)) {
+                        flag = false;
+                        break;
+                    }
+                }
+                if (!flag) {
+                    continue;
+                }
+                categories.push(category);
+            }
+        }
+        return categories.sort((a, b) => a.name > b.name ? 1 : -1);
     }
 }
 
