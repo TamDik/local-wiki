@@ -7,6 +7,7 @@ import {WikiHistory, VersionData} from './wikihistory';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {WikiLink} from './wikilink';
 import {escapeRegex, extensionOf, generateRandomString} from './utils';
+import {extractCategories, updateCategories} from './wikicategory';
 
 
 function toFullPath(filename: string, namespace: string, wikiType: WikiType): string {
@@ -121,6 +122,8 @@ ipcMain.handle('update-page', async (event, path: string, text: string, comment:
     const filepath: string = toFullPath(filename, namespace, wikiType);
     fs.writeFileSync(filepath, text);
     history.add({name: wikiLink.name, comment, filename});
+
+    updateCategories(wikiLink, extractCategories(namespace, text));
     return true;
 });
 

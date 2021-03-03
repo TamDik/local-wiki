@@ -17,6 +17,10 @@
     margin-top: -1px;
 }
 
+#content h1, #content h2, #content h3, #content h4, #content h5, #content h6 {
+    margin-bottom: 0.4em;
+}
+
 #wiki-head {
     position: absolute;
     top: 0;
@@ -211,4 +215,30 @@ a[href^="http"] {
 
 a.new {
     color: #ba0000;
+}
+
+.category-links {
+    padding: 5px;
+    border: 1px solid #a2a9b1;
+    background-color: #f8f9fa;
+}
+
+.category-links ul {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    list-style: none none;
+}
+
+.category-links li {
+    display: inline-block;
+    line-height: 1.25em;
+    border-left: 1px solid #a2a9b1;
+    margin: 0.125em 0;
+    padding: 0 0.5em;
+}
+
+.category-links li:first-child {
+    padding-left: 0.25em;
+    border-left: 0;
 }

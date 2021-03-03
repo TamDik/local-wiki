@@ -3,7 +3,11 @@ import hljs from 'highlight.js';
 
 
 type ToWikiURI = (href: string) => string;
+
 type IsWikiLink = (href: string) => boolean;
+
+type IsTargetWikiLink = (path: string) => boolean;
+
 type WikiMDOption = {
     toWikiURI: ToWikiURI,
     isWikiLink?: IsWikiLink,
@@ -39,7 +43,7 @@ class WikiMD {
         renderer.link = (href: string, title: string|null, text: string) => this.link(href, title, text, this.isWikiLink);
         renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
         marked.use({renderer});
-        const html: string = marked(this.value);
+        let html: string = marked(this.value);
         return this.expandMagics(html, this.magicHandlers);
     }
 
@@ -124,7 +128,6 @@ class FileHandler implements IMagicHandler {
 }
 
 
-type IsTargetWikiLink = (path: string) => boolean;
 abstract class AbstractFileHandler {
     public constructor(private readonly isTargetPath: IsTargetWikiLink) {
     }
@@ -604,4 +607,26 @@ class PDFFileHandler extends AbstractFileHandler {
 }
 
 
-export {WikiMD, FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler}
+class CategoryHandler implements IMagicHandler {
+    private categories: string[] = [];
+    public constructor(private readonly isCategory: IsTargetWikiLink) {
+    }
+
+    public isTarget(content: string): boolean {
+        return this.isCategory(content);
+    }
+
+    public expand(content: string, toWikiURI: ToWikiURI): string {
+        if (!this.categories.includes(content)) {
+            this.categories.push(content);
+        }
+        return '';
+    }
+
+    public getCategories(): string[] {
+        return this.categories;
+    }
+}
+
+
+export {WikiMD, FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler}

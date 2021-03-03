@@ -5,6 +5,7 @@ function isWikiType(arg: any): arg is WikiType {
     switch (arg) {
         case 'Page':
         case 'File':
+        case 'Category':
         case 'Special':
             return true;
         default:
@@ -50,6 +51,13 @@ class WikiLink implements IWikiLink {
             path = this.namespace + WikiLink.SEPARATOR + path;
         }
         return path;
+    }
+
+    public equals(other: WikiLink): boolean {
+        const isSameNamespace: boolean = other.namespace === this.namespace;
+        const isSameType: boolean = other.type === this.type;
+        const isSameName: boolean = other.name === this.name;
+        return isSameNamespace && isSameType && isSameName;
     }
 
     private parse(href: string): IWikiLink {

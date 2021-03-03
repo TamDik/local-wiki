@@ -6,7 +6,8 @@ import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
 import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
 import {WikiLink, WikiLocation, DEFAULT_NAMESPACE} from './wikilink';
-import {WikiMD, FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler} from './markdown';
+import {WikiMD, FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler} from './markdown';
+import {Category} from './wikicategory';
 
 
 function toFullPath(wikiLink: WikiLink, version?: number): string|null {
@@ -76,6 +77,7 @@ class ContentGenerator {
                     {title: 'History', href: histLoc.toURI(), selected: mode === 'history'},
                 ];
             case 'File':
+            case 'Category':
             case 'Special':
                 return [];
         }
@@ -98,45 +100,13 @@ class ContentGenerator {
         // typeごと
         switch (wikiLink.type) {
             case 'Page':
-                return ContentGenerator.createPageContentBody(wikiLink, mode, version);
+                return new PageContentBodyDispatcher(wikiLink, mode, version).execute();
             case 'File':
-                return ContentGenerator.createFileContentBody(wikiLink, version);
+                return new FileContentBodyDispatcher(wikiLink, mode, version).execute();
+            case 'Category':
+                return new CategoryContentBodyDispatcher(wikiLink, mode, version).execute();
             case 'Special':
                 return ContentGenerator.createSpecialContentBody(wikiLink);
-        }
-    }
-
-    private static createPageContentBody(wikiLink: WikiLink, mode: PageMode, version: number|undefined): ContentBody {
-        const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
-        if (!history.hasName(wikiLink.name)) {
-            return new NotFoundPageContentBodyDispatcher(wikiLink).execute(mode);
-        }
-
-        if (typeof(version) === 'undefined') {
-            return new PageContentBodyDispatcher(wikiLink).execute(mode);
-        }
-
-        if (existsVersion(wikiLink, version)) {
-            return new PageWithVersionReadBody(wikiLink, version);
-        } else {
-            return new NotFoundPageWithVersionReadBody(wikiLink, version);
-        }
-    }
-
-    private static createFileContentBody(wikiLink: WikiLink, version: number|undefined): ContentBody {
-        const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
-        if (!history.hasName(wikiLink.name)) {
-            return new NotFoundFileBody(wikiLink);
-        }
-
-        if (typeof(version) === 'undefined') {
-            return new FileReadBody(wikiLink);
-        }
-
-        if (existsVersion(wikiLink, version)) {
-            return new FileWithVersionReadBody(wikiLink, version);
-        } else {
-            return new NotFoundFileWithVersionReadBody(wikiLink, version);
         }
     }
 
@@ -241,49 +211,126 @@ class SideMenuGenerator {
 // ContentBodyDispatcher
 // -----------------------------------------------------------------------------
 abstract class ContentBodyDispatcher {
-    public constructor(private readonly wikiLink: WikiLink) {
+    public constructor(private readonly wikiLink: WikiLink, private readonly mode: PageMode, private readonly version: number|undefined) {
     }
 
-    public execute(mode: PageMode): ContentBody {
-        switch (mode) {
-            case 'read':
-                return this.createReadContentBody(this.wikiLink);
-            case 'edit':
-                return this.createEditContentBody(this.wikiLink);
-            case 'history':
-                return this.createHistoryContentBody(this.wikiLink);
+    public execute(): ContentBody {
+        const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, this.wikiLink.type);
+        if (!history.hasName(this.wikiLink.name)) {
+            return this.dispatchNotFoundContentBody();
+        }
+
+        if (typeof(this.version) === 'undefined') {
+            return this.dispatchContentBody();
+        }
+
+        if (existsVersion(this.wikiLink, this.version)) {
+            return this.contentWithVersionBody(this.wikiLink, this.version);
+
+        } else {
+            return this.notFoundContentWithVersionBody(this.wikiLink, this.version);
         }
     }
-    protected abstract createReadContentBody(wikiLink: WikiLink): ContentBody;
-    protected abstract createEditContentBody(wikiLink: WikiLink): ContentBody;
-    protected abstract createHistoryContentBody(wikiLink: WikiLink): ContentBody;
+
+    private dispatchContentBody(): ContentBody {
+        switch (this.mode) {
+            case 'read':
+                return this.readContentBody(this.wikiLink);
+            case 'edit':
+                return this.editContentBody(this.wikiLink);
+            case 'history':
+                return this.historyContentBody(this.wikiLink);
+        }
+    }
+
+    private dispatchNotFoundContentBody(): ContentBody {
+        switch (this.mode) {
+            case 'read':
+                return this.notFoundReadContentBody(this.wikiLink);
+            case 'edit':
+                return this.notFoundEditContentBody(this.wikiLink);
+            case 'history':
+                return this.notFoundHistoryContentBody(this.wikiLink);
+        }
+    }
+
+    protected abstract readContentBody(wikiLink: WikiLink): ContentBody;
+
+    protected editContentBody(wikiLink: WikiLink): ContentBody {
+        return this.readContentBody(wikiLink);
+    }
+    protected historyContentBody(wikiLink: WikiLink): ContentBody {
+        return this.readContentBody(wikiLink);
+    }
+    protected contentWithVersionBody(wikiLink: WikiLink, version: number): ContentBody {
+        return this.readContentBody(wikiLink);
+    }
+
+    protected abstract notFoundReadContentBody(wikiLink: WikiLink): ContentBody;
+
+    protected notFoundEditContentBody(wikiLink: WikiLink): ContentBody {
+        return this.notFoundReadContentBody(wikiLink);
+    }
+    protected notFoundHistoryContentBody(wikiLink: WikiLink): ContentBody {
+        return this.notFoundReadContentBody(wikiLink);
+    }
+    protected notFoundContentWithVersionBody(wikiLink: WikiLink, version: number): ContentBody {
+        return this.notFoundReadContentBody(wikiLink);
+    }
 }
 
 
 class PageContentBodyDispatcher extends ContentBodyDispatcher {
-    protected createReadContentBody(wikiLink: WikiLink): ContentBody {
+    protected readContentBody(wikiLink: WikiLink): ContentBody {
         return new PageReadBody(wikiLink);
     }
 
-    protected createEditContentBody(wikiLink: WikiLink): ContentBody {
+    protected editContentBody(wikiLink: WikiLink): ContentBody {
         return new PageEditBody(wikiLink);
     }
 
-    protected createHistoryContentBody(wikiLink: WikiLink): ContentBody {
+    protected historyContentBody(wikiLink: WikiLink): ContentBody {
         return new PageHistoryBody(wikiLink);
+    }
+
+    protected contentWithVersionBody(wikiLink: WikiLink, version: number): ContentBody {
+        return new PageWithVersionReadBody(wikiLink, version);
+    }
+
+    protected notFoundReadContentBody(wikiLink: WikiLink): ContentBody {
+        return new NotFoundPageBody(wikiLink);
+    }
+
+    protected notFoundEditContentBody(wikiLink: WikiLink): ContentBody {
+        return new PageEditBody(wikiLink);
+    }
+
+    protected notFoundHistoryContentBody(wikiLink: WikiLink): ContentBody {
+        return new NotFoundPageBody(wikiLink);
+    }
+
+    protected notFoundContentWithVersionBody(wikiLink: WikiLink, version: number): ContentBody {
+        return new NotFoundPageWithVersionReadBody(wikiLink, version);
     }
 }
 
+class FileContentBodyDispatcher extends ContentBodyDispatcher {
+    protected readContentBody(wikiLink: WikiLink): ContentBody {
+        return new FileReadBody(wikiLink);
+    }
 
-class NotFoundPageContentBodyDispatcher extends ContentBodyDispatcher {
-    protected createReadContentBody(wikiLink: WikiLink): ContentBody {
-        return new NotFoundPageBody(wikiLink);
+    protected notFoundReadContentBody(wikiLink: WikiLink): ContentBody {
+        return new NotFoundFileBody(wikiLink);
     }
-    protected createEditContentBody(wikiLink: WikiLink): ContentBody {
-        return new PageEditBody(wikiLink);
+}
+
+class CategoryContentBodyDispatcher extends ContentBodyDispatcher {
+    protected readContentBody(wikiLink: WikiLink): ContentBody {
+        return new CategoryReadBody(wikiLink);
     }
-    protected createHistoryContentBody(wikiLink: WikiLink): ContentBody {
-        return new NotFoundPageBody(wikiLink);
+
+    protected notFoundReadContentBody(wikiLink: WikiLink): ContentBody {
+        return new NotFoundCategoryReadBody(wikiLink);
     }
 }
 
@@ -341,7 +388,7 @@ class PageEditBody extends ContentBody {
                 '<div class="row">',
                   '<div id="preview-wrapper" class="col-12"></div>',
                 '</div>',
-                '<div class="row mb-2">',
+                '<div class="row mb-2 mt-3">',
                   '<div class="col-12">',
                     `<textarea id="${mainEditAreaId}" class="form-control"></textarea>`,
                   '</div>',
@@ -415,9 +462,16 @@ class PageReadBody extends ContentBody {
             }
         ))
 
+        // category
+        const categoryHandler: CategoryHandler = new CategoryHandler((path: string) => new WikiLink(path, baseNamespace).type === 'Category');
+        wikiMD.addMagicHandler(categoryHandler);
+
         wikiMD.setValue(markdown);
         let htmlText: string = wikiMD.toHTML();
-        return PageReadBody.expandWikiLink(htmlText, baseNamespace);
+
+        htmlText = PageReadBody.expandWikiLink(htmlText, baseNamespace);
+        htmlText += PageReadBody.categoryList(categoryHandler, baseNamespace);
+        return htmlText;
     }
 
     private static expandWikiLink(html: string, baseNamespace: string): string {
@@ -441,6 +495,32 @@ class PageReadBody extends ContentBody {
             return fullPath;
         });
         return html;
+    }
+
+    private static categoryList(handler: CategoryHandler, baseNamespace: string): string {
+        const categories: string[] = handler.getCategories();
+        if (categories.length === 0) {
+            return '';
+        }
+        const lines: string[] = [
+            '<div class="category-links">',
+              '<a href="#">Categories</a>: ',  // TODO: カテゴリ一覧表示へのリンク
+              '<ul>',
+        ];
+        for (const category of categories) {
+            const wikiLink: WikiLink = new WikiLink(category, baseNamespace);
+            const location: WikiLocation = new WikiLocation(wikiLink);
+            let text: string = wikiLink.name;
+            if (wikiLink.namespace !== baseNamespace) {
+                text += ` (${wikiLink.namespace})`;
+            }
+            lines.push(`<li><a href="${location.toURI()}">${text}</a></li>`);
+        }
+        lines.push(
+              '</ul>',
+            '</div>'
+        );
+        return lines.join('');
     }
 }
 
@@ -893,6 +973,57 @@ class NotFoundFileWithVersionReadBody extends ContentBody {
               `The revision #${this.version} of the file named "${this.wikiLink.toPath()}" does not exist.`,
             '</div>'
         ];
+        return lines.join('');
+    }
+}
+
+
+// Category
+class CategoryReadBody extends ContentBody {
+    public get html(): string {
+        const category: Category = new Category(this.wikiLink);
+        const referedLinks: WikiLink[] = category.refered;
+
+        const lines: string[] = [];
+        lines.push('<div>');
+        /* lines.push(  'There is currently no text in this category.'); */
+        lines.push('</div>');
+
+        lines.push('<div class="pt-3">');
+        lines.push(  `<h2>Pages in category "${this.wikiLink.name}"</h2>`);
+        lines.push(  `The following ${referedLinks.length} pages are in this category.`);
+        lines.push(  '<ul>');
+        for (const refered of referedLinks) {
+            const location: WikiLocation = new WikiLocation(refered);
+            lines.push(`<li><a href="${location.toURI()}">${refered.toPath()}</a></li>`);
+        }
+        lines.push(  '</ul>');
+        lines.push('<div>');
+        return lines.join('');
+    }
+}
+
+
+class NotFoundCategoryReadBody extends ContentBody {
+    public get html(): string {
+        const category: Category = new Category(this.wikiLink);
+        const referedLinks: WikiLink[] = category.refered;
+
+        const lines: string[] = [];
+        lines.push('<div>');
+        lines.push(  'There is currently no text in this category.');
+        lines.push('</div>');
+
+        lines.push('<div class="pt-3">');
+        lines.push(  `<h2>Pages in category "${this.wikiLink.name}"</h2>`);
+        lines.push(  `The following ${referedLinks.length} pages are in this category.`);
+        lines.push(  '<ul>');
+        for (const refered of referedLinks) {
+            const location: WikiLocation = new WikiLocation(refered);
+            lines.push(`<li><a href="${location.toURI()}">${refered.toPath()}</a></li>`);
+        }
+        lines.push(  '</ul>');
+        lines.push('<div>');
         return lines.join('');
     }
 }

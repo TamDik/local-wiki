@@ -9,8 +9,10 @@
     background-color: rgba(0,0,0,.2);
 }
 
-.pointable {
-    cursor: pointer;
+h1, h2, h3, h4, h5, h6 {
+    font-weight: normal;
+    overflow: hidden;
+    border-bottom: 1px solid #a2a9b1;
 }
 
 blockquote, details, dl, ol, p, pre, table, ul {
