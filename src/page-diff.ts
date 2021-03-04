@@ -30,7 +30,8 @@
             return false;
         }
         const wikiLink = window.localWiki.parsePath(path);
-        if (wikiLink.type !== 'Page') {
+        const comparableTypes: WikiType[] = ['Page', 'Category'];
+        if (!comparableTypes.includes(wikiLink.type)) {
             return false;
         }
         return window.ipcApi.existsLink(wikiLink);
