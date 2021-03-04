@@ -939,7 +939,13 @@ class CategoryWithVersionReadBody extends WithVersionBody {
     protected mainContent(version: number): string {
         const filepath: string = toFullPath(this.wikiLink, version) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
-        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
+        let html = PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
+        html += new class extends CategoryReadBody {
+            protected pageHtml(): string {
+                return '';
+            }
+        }(this.wikiLink).html;
+        return html;
     }
 }
 
