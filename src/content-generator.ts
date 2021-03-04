@@ -338,6 +338,10 @@ class CategoryContentBodyDispatcher extends ContentBodyDispatcher {
         return new MarkdownHistoryBody(wikiLink);
     }
 
+    protected contentWithVersionBody(wikiLink: WikiLink, version: number): ContentBody {
+        return new CategoryWithVersionReadBody(wikiLink, version);
+    }
+
     protected notFoundReadContentBody(wikiLink: WikiLink): ContentBody {
         return new NotFoundCategoryReadBody(wikiLink);
     }
@@ -554,16 +558,17 @@ class NotFoundPageWithVersionReadBody extends ContentBody {
     }
 }
 
-class PageWithVersionReadBody extends PageReadBody {
+
+abstract class WithVersionBody extends ContentBody {
     public constructor(wikiLink: WikiLink, private readonly version: number) {
         super(wikiLink);
     }
 
     public get html(): string {
-        const filepath: string = toFullPath(this.wikiLink, this.version) as string;
-        const markdown: string = fs.readFileSync(filepath, 'utf-8');
-        return this.versionAlert() + PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
+        return this.versionAlert() + this.mainContent(this.version);
     }
+
+    protected abstract mainContent(version: number): string;
 
     private versionAlert(): string {
         const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, this.wikiLink.type);
@@ -649,6 +654,14 @@ class PageWithVersionReadBody extends PageReadBody {
     private diffLink(old: number, diff: number, text: string): string {
         const href: string = PageDiffBody.createURI(this.wikiLink, old, diff);
         return `<a href="${href}">${text}</a>`;
+    }
+}
+
+class PageWithVersionReadBody extends WithVersionBody {
+    protected mainContent(version: number): string {
+        const filepath: string = toFullPath(this.wikiLink, version) as string;
+        const markdown: string = fs.readFileSync(filepath, 'utf-8');
+        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
     }
 }
 
@@ -772,25 +785,20 @@ class NotFoundFileBody extends ContentBody {
     }
 }
 
-
 class FileReadBody extends ContentBody {
     private readonly bufferPathGenerator: BufferPathGenerator;
 
-    public constructor(wikiLink: WikiLink) {
+    public constructor(wikiLink: WikiLink, private readonly version?: number) {
         super(wikiLink);
         this.bufferPathGenerator = BufferPathGeneratorFactory.create(wikiLink.namespace, wikiLink.type);
     }
 
     public get html(): string {
-        return this.createHtml();
-    }
-
-    protected createHtml(version?: number): string {
         const href: string = UploadFileBody.createURI(this.wikiLink);
         const lines: string[] = [
             '<div class="row">',
               '<div class="col-12">',
-                this.mainView(version),
+                this.mainView(this.version),
               '</div>',
             '</div>',
             this.historyHtml(),
@@ -864,12 +872,10 @@ class FileReadBody extends ContentBody {
         const filepath: string = this.bufferPathGenerator.execute(data.filename);
         const size: string = bytesToStr(fs.statSync(filepath).size);
 
-        const location: WikiLocation = new WikiLocation(this.wikiLink);
-        location.addParam('version', String(data.version));
         const lines: string[] = [
             '<tr>',
               `<td>${status}</td>`,
-              `<td><a href="${location.toURI()}">${created}</a></td>`,
+              `<td>${created}</td>`,
               '<td>',
                 this.thumbTd(filepath, data.version),
               '</td>',
@@ -881,112 +887,14 @@ class FileReadBody extends ContentBody {
     }
 
     private thumbTd(filepath: string, version: number): string {
-        let content: string = '';
         switch (fileTypeOf(filepath)) {
             case 'image':
-                content = `<img src="${filepath}" alt="version ${version}" decoding="async">`;
-                break;
+                return `<img src="${filepath}" alt="version ${version}" decoding="async">`;
             case 'pdf':
-                content = `PDF (version ${version})`;
-                break;
+                return `PDF (version ${version})`;
             case 'other':
-                content = `version ${version}`;
-                break;
+                return `version ${version}`;
         }
-        const location: WikiLocation = new WikiLocation(this.wikiLink);
-        location.addParam('version', String(version));
-        return `<a href="${location.toURI()}">${content}</a>`
-    }
-}
-
-
-class FileWithVersionReadBody extends FileReadBody {
-    public constructor(wikiLink: WikiLink, private readonly version: number) {
-        super(wikiLink);
-    }
-
-    public get html(): string {
-        return this.versionAlert() + super.createHtml(this.version);
-    }
-
-    private versionAlert(): string {
-        const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, this.wikiLink.type);
-        const data: VersionData = history.getByVersion(this.wikiLink.name, this.version);
-        const latestVersion: number = history.getByName(this.wikiLink.name).version;
-        const lines: string[] = [
-            '<div class="alert alert-warning" role="alert">',
-              'Revision as of ' + dateToStr(data.created),
-              '<br>',
-              this.revisionLine(data, latestVersion),
-            '</div>',
-        ];
-        return lines.join('');
-    }
-
-    private revisionLine(data: VersionData, latestVersion: number): string {
-        const SEPARATOR: string = ' | ';
-        const lines: string[] = []
-        lines.push(this.oldRevisionLine(data));
-        lines.push(SEPARATOR);
-        lines.push(this.latestRevisionLine(data, latestVersion));
-        lines.push(SEPARATOR);
-        lines.push(this.newRevisionLine(data));
-        return lines.join('');
-    }
-
-    private oldRevisionLine(data: VersionData): string {
-        const OLD_VERSION: string = '← Older revision';
-        const lines: string[] = [];
-        if (data.prev !== null) {
-            lines.push(this.versionLink(data.version - 1, OLD_VERSION));
-        } else {
-            lines.push(OLD_VERSION);
-        }
-        return lines.join('');
-    }
-
-    private latestRevisionLine(data: VersionData, latestVersion: number): string {
-        const LATEST_VERSION: string = 'Latest revision';
-        const lines: string[] = [];
-        if (data.next !== null) {
-            lines.push(this.versionLink(latestVersion, LATEST_VERSION));
-        } else {
-            lines.push(LATEST_VERSION);
-        }
-        return lines.join('');
-    }
-
-    private newRevisionLine(data: VersionData): string {
-        const lines: string[] = [];
-        const NEW_VERSION: string = 'Newer revision →';
-        if (data.next !== null) {
-            lines.push(this.versionLink(data.version + 1, NEW_VERSION));
-        } else {
-            lines.push(NEW_VERSION);
-        }
-        return lines.join('');
-    }
-
-    private versionLink(version: number, text: string): string {
-        const location: WikiLocation = new WikiLocation(this.wikiLink);
-        location.addParam('version', String(version));
-        return `<a href="${location.toURI()}">${text}</a>`;
-    }
-}
-
-
-class NotFoundFileWithVersionReadBody extends ContentBody {
-    public constructor(wikiLink: WikiLink, private readonly version: number) {
-        super(wikiLink);
-    }
-
-    public get html(): string {
-        const lines: string[] = [
-            '<div class="alert alert-danger" role="alert">',
-              `The revision #${this.version} of the file named "${this.wikiLink.toPath()}" does not exist.`,
-            '</div>'
-        ];
-        return lines.join('');
     }
 }
 
@@ -1027,6 +935,13 @@ class CategoryReadBody extends ContentBody {
     }
 }
 
+class CategoryWithVersionReadBody extends WithVersionBody {
+    protected mainContent(version: number): string {
+        const filepath: string = toFullPath(this.wikiLink, version) as string;
+        const markdown: string = fs.readFileSync(filepath, 'utf-8');
+        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
+    }
+}
 
 class NotFoundCategoryReadBody extends CategoryReadBody {
     protected pageHtml(): string {
