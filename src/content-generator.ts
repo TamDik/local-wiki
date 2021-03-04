@@ -287,7 +287,7 @@ class PageContentBodyDispatcher extends ContentBodyDispatcher {
     }
 
     protected editContentBody(wikiLink: WikiLink): ContentBody {
-        return new PageEditBody(wikiLink);
+        return new MarkdownEditorBody(wikiLink);
     }
 
     protected historyContentBody(wikiLink: WikiLink): ContentBody {
@@ -303,7 +303,7 @@ class PageContentBodyDispatcher extends ContentBodyDispatcher {
     }
 
     protected notFoundEditContentBody(wikiLink: WikiLink): ContentBody {
-        return new PageEditBody(wikiLink);
+        return this.editContentBody(wikiLink);
     }
 
     protected notFoundHistoryContentBody(wikiLink: WikiLink): ContentBody {
@@ -330,8 +330,16 @@ class CategoryContentBodyDispatcher extends ContentBodyDispatcher {
         return new CategoryReadBody(wikiLink);
     }
 
+    protected editContentBody(wikiLink: WikiLink): ContentBody {
+        return new MarkdownEditorBody(wikiLink);
+    }
+
     protected notFoundReadContentBody(wikiLink: WikiLink): ContentBody {
         return new NotFoundCategoryReadBody(wikiLink);
+    }
+
+    protected notFoundEditContentBody(wikiLink: WikiLink): ContentBody {
+        return this.editContentBody(wikiLink);
     }
 }
 
@@ -370,7 +378,7 @@ class NotFoundPageBody extends ContentBody {
     }
 }
 
-class PageEditBody extends ContentBody {
+class MarkdownEditorBody extends ContentBody {
     public css: string[] = [
         './css/editor.css',
         '../node_modules/highlight.js/styles/github-gist.css',
