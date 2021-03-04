@@ -653,9 +653,7 @@ class PageHistoryBody extends ContentBody {
         lines.push(    '<button type="button" id="compare-versions-button" class="btn btn-outline-secondary btn-block">Compare selected versions</button>');
         lines.push(  '</div>');
         lines.push('</div>');
-        /* lines.push('<div class="row">'); */
         lines.push(this.historyList());
-        /* lines.push('</div>'); */
         return lines.join('');
     }
 
@@ -982,50 +980,45 @@ class NotFoundFileWithVersionReadBody extends ContentBody {
 // Category
 class CategoryReadBody extends ContentBody {
     public get html(): string {
+        const lines: string[] = [
+            this.pageHtml(),
+            this.listHtml(),
+        ];
+        return lines.join('');
+    }
+
+    protected pageHtml(): string {
+        const filepath: string = toFullPath(this.wikiLink) as string;
+        const markdown: string = fs.readFileSync(filepath, 'utf-8');
+        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
+    }
+
+    private listHtml(): string {
+        const lines: string[] = [];
         const category: Category = new Category(this.wikiLink);
         const referedLinks: WikiLink[] = category.refered;
-
-        const lines: string[] = [];
-        lines.push('<div>');
-        /* lines.push(  'There is currently no text in this category.'); */
-        lines.push('</div>');
-
-        lines.push('<div class="pt-3">');
-        lines.push(  `<h2>Pages in category "${this.wikiLink.name}"</h2>`);
-        lines.push(  `The following ${referedLinks.length} pages are in this category.`);
-        lines.push(  '<ul>');
-        for (const refered of referedLinks) {
-            const location: WikiLocation = new WikiLocation(refered);
-            lines.push(`<li><a href="${location.toURI()}">${refered.toPath()}</a></li>`);
+        if (referedLinks.length === 0) {
+            lines.push('This category currently contains no pages or media.');
+        } else {
+            lines.push(`<h2 class="pt-3">Pages in category "${this.wikiLink.name}"</h2>`);
+            lines.push(`The following ${referedLinks.length} pages are in this category.`);
+            lines.push('<ul>');
+            for (const refered of referedLinks) {
+                const location: WikiLocation = new WikiLocation(refered);
+                lines.push(`<li><a href="${location.toURI()}">${refered.toPath()}</a></li>`);
+            }
+            lines.push('</ul>');
         }
-        lines.push(  '</ul>');
-        lines.push('<div>');
         return lines.join('');
     }
 }
 
 
-class NotFoundCategoryReadBody extends ContentBody {
-    public get html(): string {
-        const category: Category = new Category(this.wikiLink);
-        const referedLinks: WikiLink[] = category.refered;
-
-        const lines: string[] = [];
-        lines.push('<div>');
-        lines.push(  '<p>There is currently no text in this category.</p>');
-        lines.push('</div>');
-
-        lines.push('<div class="pt-3">');
-        lines.push(  `<h2>Pages in category "${this.wikiLink.name}"</h2>`);
-        lines.push(  `The following ${referedLinks.length} pages are in this category.`);
-        lines.push(  '<ul>');
-        for (const refered of referedLinks) {
-            const location: WikiLocation = new WikiLocation(refered);
-            lines.push(`<li><a href="${location.toURI()}">${refered.toPath()}</a></li>`);
-        }
-        lines.push(  '</ul>');
-        lines.push('<div>');
-        return lines.join('');
+class NotFoundCategoryReadBody extends CategoryReadBody {
+    protected pageHtml(): string {
+        const location: WikiLocation = new WikiLocation(this.wikiLink);
+        location.addParam('mode', 'edit');
+        return `<p>There is currently no text in this page. You can <a href="${location.toURI()}">create this page</a>.</p>`;
     }
 }
 
