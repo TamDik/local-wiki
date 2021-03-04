@@ -65,6 +65,7 @@ class ContentGenerator {
     public static menuTabs(mode: PageMode, wikiLink: WikiLink): TopNavTabData[] {
         switch (wikiLink.type) {
             case 'Page':
+            case 'Category':
                 const readLoc: WikiLocation = new WikiLocation(wikiLink);
                 const editLoc: WikiLocation = new WikiLocation(wikiLink);
                 const histLoc: WikiLocation = new WikiLocation(wikiLink);
@@ -77,7 +78,6 @@ class ContentGenerator {
                     {title: 'History', href: histLoc.toURI(), selected: mode === 'history'},
                 ];
             case 'File':
-            case 'Category':
             case 'Special':
                 return [];
         }
@@ -291,7 +291,7 @@ class PageContentBodyDispatcher extends ContentBodyDispatcher {
     }
 
     protected historyContentBody(wikiLink: WikiLink): ContentBody {
-        return new PageHistoryBody(wikiLink);
+        return new MarkdownHistoryBody(wikiLink);
     }
 
     protected contentWithVersionBody(wikiLink: WikiLink, version: number): ContentBody {
@@ -332,6 +332,10 @@ class CategoryContentBodyDispatcher extends ContentBodyDispatcher {
 
     protected editContentBody(wikiLink: WikiLink): ContentBody {
         return new MarkdownEditorBody(wikiLink);
+    }
+
+    protected historyContentBody(wikiLink: WikiLink): ContentBody {
+        return new MarkdownHistoryBody(wikiLink);
     }
 
     protected notFoundReadContentBody(wikiLink: WikiLink): ContentBody {
@@ -646,7 +650,7 @@ class PageWithVersionReadBody extends PageReadBody {
     }
 }
 
-class PageHistoryBody extends ContentBody {
+class MarkdownHistoryBody extends ContentBody {
     public css: string[] = ['./css/page-history.css'];
     public js: string[] = ['./js/page-history.js'];
 
