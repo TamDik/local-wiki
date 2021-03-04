@@ -515,9 +515,11 @@ class PageReadBody extends ContentBody {
         if (categories.length === 0) {
             return '';
         }
+        const wikiLink: WikiLink = new WikiLink({namespace: baseNamespace, type: 'Special', name: CategoriesBody.wikiName});
+        const location: WikiLocation = new WikiLocation(wikiLink);
         const lines: string[] = [
             '<div class="category-links">',
-              '<a href="#">Categories</a>: ',  // TODO: カテゴリ一覧表示へのリンク
+              `<a href="${location.toURI()}">Categories</a>: `,
               '<ul>',
         ];
         for (const category of categories) {
