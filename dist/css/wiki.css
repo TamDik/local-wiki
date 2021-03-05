@@ -21,6 +21,10 @@
     margin-bottom: 0.4em;
 }
 
+#content h1 {
+    border-bottom: 1px solid #a2a9b1;
+}
+
 #wiki-head {
     position: absolute;
     top: 0;
