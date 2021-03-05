@@ -688,16 +688,16 @@ class MarkdownHistoryBody extends ContentBody {
 
     public get html(): string {
         const lines: string[] = [];
-        lines.push('Diff selection: Mark the radio boxes of the revisions to compare and click the button at the bottom.');
-        lines.push('<div>');
-        lines.push(  'Legend: (cur) = difference with latest revision, (prev) = difference with preceding revision.');
-        lines.push('</div>');
-        lines.push('<div class="row pb-2 pt-2">');
-        lines.push(  '<div class="col-3">');
-        lines.push(    '<button type="button" id="compare-versions-button" class="btn btn-outline-secondary btn-block">Compare selected versions</button>');
-        lines.push(  '</div>');
-        lines.push('</div>');
-        lines.push(this.historyList());
+        lines.push(this.header());
+        const history: WikiHistory = this.createHistory();
+        if (history.hasName(this.wikiLink.name)) {
+            const currentData: VersionData = history.getByName(this.wikiLink.name);
+            const historyData: VersionData[] = history.getPrevOf(currentData.id);
+            lines.push(this.diffButton(historyData.length < 2));
+            lines.push(this.historyList(currentData, historyData));
+        } else {
+            lines.push(this.diffButton(true));
+        }
         return lines.join('');
     }
 
@@ -705,10 +705,16 @@ class MarkdownHistoryBody extends ContentBody {
         return createHistory(this.wikiLink.namespace, this.wikiLink.type, true);
     }
 
-    private historyList(): string {
-        const history: WikiHistory = this.createHistory();
-        const currentData: VersionData = history.getByName(this.wikiLink.name);
-        const historyData: VersionData[] = history.getPrevOf(currentData.id);
+    private header(): string {
+        const lines: string[] = [];
+        lines.push('Diff selection: Mark the radio boxes of the revisions to compare and click the button at the bottom.');
+        lines.push('<div>');
+        lines.push(  'Legend: (cur) = difference with latest revision, (prev) = difference with preceding revision.');
+        lines.push('</div>');
+        return lines.join('');
+    }
+
+    private historyList(currentData: VersionData, historyData: VersionData[]): string {
         const lines: string[] = [];
         lines.push('<div class="page-history">');
         lines.push('<ol>');
@@ -717,6 +723,20 @@ class MarkdownHistoryBody extends ContentBody {
             lines.push(this.li(data, i, currentData.version));
         }
         lines.push('</ol>');
+        lines.push('</div>');
+        return lines.join('');
+    }
+
+    private diffButton(disabled: boolean): string {
+        const lines: string[] = [];
+        lines.push('<div class="row pb-2 pt-2">');
+        lines.push(  '<div class="col-3">');
+        if (disabled) {
+            lines.push('<button type="button" id="compare-versions-button" class="btn btn-outline-secondary btn-block" disabled>Compare selected versions</button>');
+        } else {
+            lines.push('<button type="button" id="compare-versions-button" class="btn btn-outline-secondary btn-block">Compare selected versions</button>');
+        }
+        lines.push(  '</div>');
         lines.push('</div>');
         return lines.join('');
     }
