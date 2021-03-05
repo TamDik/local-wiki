@@ -3,7 +3,7 @@ import * as path from 'path';
 import {extensionOf, dateToStr, bytesToStr, zeroPadding} from './utils';
 import {fileTypeOf} from './wikifile';
 import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
-import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
+import {WikiHistory, VersionData} from './wikihistory';
 import {WikiLink, WikiLocation, DEFAULT_NAMESPACE} from './wikilink';
 import {WikiMD, FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler} from './markdown';
 import {Category} from './wikicategory';
@@ -22,7 +22,7 @@ function toFullPath(wikiLink: WikiLink, version?: number, markdown: boolean=fals
         }
         data = history.getByVersion(name, version);
     }
-    return new BufferPathGenerator(history.rootDir).execute(data.filename);
+    return data.filepath;
 }
 
 function rootDirOf(namespace: string, wikiType: WikiType, markdown: boolean=false): string {
@@ -807,12 +807,9 @@ class NotFoundFileBody extends ContentBody {
 }
 
 class FileReadBody extends ContentBody {
-    private readonly bufferPathGenerator: BufferPathGenerator;
-
     public constructor(wikiLink: WikiLink, private readonly version?: number) {
         super(wikiLink);
         const rootDir: string = rootDirOf(wikiLink.namespace, wikiLink.type);
-        this.bufferPathGenerator = new BufferPathGenerator(rootDir)
     }
 
     public get html(): string {
@@ -832,9 +829,7 @@ class FileReadBody extends ContentBody {
             return '';
         }
         let data: VersionData = history.getByName(this.wikiLink.name);
-
-        const filepath: string = new BufferPathGenerator(history.rootDir).execute(data.filename);
-        const markdown: string = fs.readFileSync(filepath, 'utf-8');
+        const markdown: string = fs.readFileSync(data.filepath, 'utf-8');
         return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
     }
 
@@ -892,7 +887,7 @@ class FileReadBody extends ContentBody {
     private tr(data: VersionData): string {
         const status: string = data.next === null ? 'current' : 'revert';
         const created: string = dateToStr(data.created);
-        const filepath: string = this.bufferPathGenerator.execute(data.filename);
+        const filepath: string = data.filepath;
         const size: string = bytesToStr(fs.statSync(filepath).size);
 
         const lines: string[] = [

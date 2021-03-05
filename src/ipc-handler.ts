@@ -3,15 +3,11 @@ import * as path from 'path';
 import {ipcMain, shell} from 'electron'
 import {ContentGenerator, PageReadBody} from './content-generator';
 import {WikiConfig, MergedNamespaceConfig, usedAsAnExternalNamespace, parseNamespaceConfig} from './wikiconfig';
-import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
+import {WikiHistory, VersionData} from './wikihistory';
 import {WikiLink} from './wikilink';
 import {escapeRegex, extensionOf, generateRandomString} from './utils';
 import {extractCategories, updateCategories} from './wikicategory';
 
-
-function toFullPath(rootDir: string, filename: string): string {
-    return new BufferPathGenerator(rootDir).execute(filename);
-}
 
 function createHistory(namespace: string, wikiType: WikiType): WikiHistory {
     const config: MergedNamespaceConfig = new WikiConfig().getNamespaceConfig(namespace);
@@ -96,8 +92,7 @@ ipcMain.handle('get-raw-page-text', async (event, path: string, version?: number
     } else {
         data = history.getByName(wikiLink.name);
     }
-    const filepath: string = toFullPath(history.rootDir, data.filename);
-    return fs.readFileSync(filepath, 'utf-8'); 
+    return fs.readFileSync(data.filepath, 'utf-8');
 });
 
 // 最新バージョンの取得
@@ -141,9 +136,8 @@ ipcMain.handle('update-page', async (event, path: string, text: string, comment:
     const wikiType: WikiType = wikiLink.type;
     const history: WikiHistory = createMarkdownHistory(wikiLink.namespace, wikiLink.type);
     const filename: string = generateRandomString(16) + '.md';
-    const filepath: string = toFullPath(history.rootDir, filename);
-    fs.writeFileSync(filepath, text);
-    history.add({name: wikiLink.name, comment, filename});
+    const data: VersionData = history.add({name: wikiLink.name, comment, filename});
+    fs.writeFileSync(data.filepath, text);
 
     updateCategories(wikiLink, extractCategories(namespace, text));
     return true;
@@ -156,9 +150,8 @@ ipcMain.handle('upload-file', async (event, path: string, destName: string, sour
     const fileLink: WikiLink = new WikiLink({namespace, name: destName, type: wikiType});
     const history: WikiHistory = createHistory(namespace, wikiType);
     const filename: string = generateRandomString(16) + '.' + extensionOf(sourcePath);
-    const filepath: string = toFullPath(history.rootDir, filename);
-    fs.copyFileSync(sourcePath, filepath);
-    history.add({name: fileLink.name, comment, filename});
+    const data: VersionData = history.add({name: fileLink.name, comment, filename});
+    fs.copyFileSync(sourcePath, data.filepath);
     return true;
 });
 
@@ -178,8 +171,7 @@ ipcMain.on('search-page-by-keyword', (event, path: string, keywords: string[]) =
     }
 
     for (const data of currentData) {
-        const filepath: string = toFullPath(history.rootDir, data.filename);
-        const text: string = fs.readFileSync(filepath, 'utf-8');
+        const text: string = fs.readFileSync(data.filepath, 'utf-8');
         const lowerText: string = text.toLowerCase();
         let matched: boolean = true;
         for (const keyword of keywords) {

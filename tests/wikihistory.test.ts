@@ -1,4 +1,4 @@
-import {BufferPathGenerator, WikiHistory, CurrentVersionManager, PreviousVersionManager, VersionData} from '../src/wikihistory';
+import {WikiHistory, CurrentVersionManager, PreviousVersionManager, VersionData} from '../src/wikihistory';
 import {DATA_DIR} from '../src/data-dir';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -23,19 +23,6 @@ function initRootDir(): string {
     }
     return rootDir;
 }
-
-
-describe('test BufferPathGenerator', () => {
-    const rootDir: string = initRootDir();
-    const bpg: BufferPathGenerator = new BufferPathGenerator(rootDir);
-    bpg.setBufferSetp(2);
-    bpg.setBufferDepth(3);
-    const filename: string = 'abcdefg';
-    test(`filename: ${filename}`, () => {
-        const expected: string = path.join(rootDir, 'ab', 'cd', 'ef', 'abcdefg')
-        expect(bpg.execute(filename, false)).toBe(expected);
-    });
-});
 
 
 describe('test CurrentVersionManager', () => {
@@ -71,9 +58,9 @@ describe('test CurrentVersionManager', () => {
 
 
 describe('test PreviousVersionManager', () => {
+    const rootDir: string = initRootDir();
     function testVersionManager(message: string, f: (pvm: PreviousVersionManager) => void): void {
         test(message, () => {
-            const rootDir: string = initRootDir();
             const pvm: PreviousVersionManager = new PreviousVersionManager(rootDir);
             f(pvm);
         });
@@ -84,11 +71,12 @@ describe('test PreviousVersionManager', () => {
         const created: Date = new Date();
         const comment: string = 'comment';
         const filename: string = 'filename';
+        const filepath: string = 'filepath';
         const next: null = null;
         const name: string = `p${version}`;
         return [
-            {id, name, next, prev, version, created, comment, filename},
-            {id, name, next, prev, version, created, comment, filename}
+            {id, name, next, prev, version, created, comment, filename, filepath},
+            {id, name, next, prev, version, created, comment, filename, filepath}
         ];
     }
 

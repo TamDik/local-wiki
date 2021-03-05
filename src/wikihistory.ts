@@ -2,8 +2,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {generateRandomString, zeroPadding} from './utils';
 
-// TODO: 名前空間からパスを解決するクラス
-
 
 interface VersionData {
     id: string;
@@ -14,6 +12,7 @@ interface VersionData {
     created: Date;
     comment: string;
     filename: string;
+    filepath: string;
 }
 
 
@@ -109,6 +108,7 @@ class WikiHistory {
 
     public add(data: {name: string, comment: string, filename: string, created?: Date}): VersionData {
         const {name, comment, filename, created} = data;
+        const filepath: string = new BufferPathGenerator(this.rootDir).execute(filename);
         let prev: string|null = null;
         let version: number = 1;
         if (this.hasName(name)) {
@@ -117,7 +117,7 @@ class WikiHistory {
             version = prevData.version + 1;
         }
         const newData: VersionData = {
-            name, comment, filename, version, prev,
+            name, comment, filename, version, prev, filepath,
             id: generateRandomString(16),
             next: null,
             created: created || new Date()
@@ -265,7 +265,10 @@ class PreviousVersionManager {
         }
         const text: string = fs.readFileSync(filepath, 'utf-8');
         const dataList: PreviousVersionData[] = JSON.parse(text);
-        const dataMap: Map<string, VersionData> = new Map(dataList.map(data => [data.id, {...data, created: this.strToDate(data.created)}]));
+        const bpg: BufferPathGenerator = new BufferPathGenerator(this.rootDir);
+        const dataMap: Map<string, VersionData> = new Map(dataList.map(
+            data => [data.id, {...data, filepath: bpg.execute(data.filename), created: this.strToDate(data.created)}]
+        ));
         this.__dataMap = dataMap;
         return dataMap;
     }
@@ -362,4 +365,4 @@ class PreviousVersionManager {
 }
 
 
-export{BufferPathGenerator, WikiHistory, CurrentVersionManager, PreviousVersionManager, VersionData};
+export{WikiHistory, CurrentVersionManager, PreviousVersionManager, VersionData};
