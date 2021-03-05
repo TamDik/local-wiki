@@ -66,7 +66,7 @@ class BufferPathGenerator {
 class WikiHistory {
     private readonly current: CurrentVersionManager;
     private readonly version: PreviousVersionManager;
-    public constructor(private readonly rootDir: string) {
+    public constructor(public readonly rootDir: string) {
         this.current = new CurrentVersionManager(this.rootDir);
         this.version = new PreviousVersionManager(this.rootDir);
     }

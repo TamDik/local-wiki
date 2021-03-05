@@ -3,15 +3,37 @@ import * as path from 'path';
 import {ipcMain, shell} from 'electron'
 import {ContentGenerator, PageReadBody} from './content-generator';
 import {WikiConfig, MergedNamespaceConfig, usedAsAnExternalNamespace, parseNamespaceConfig} from './wikiconfig';
-import {WikiHistory, VersionData} from './wikihistory';
-import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
+import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
 import {WikiLink} from './wikilink';
 import {escapeRegex, extensionOf, generateRandomString} from './utils';
 import {extractCategories, updateCategories} from './wikicategory';
 
 
-function toFullPath(filename: string, namespace: string, wikiType: WikiType): string {
-    return BufferPathGeneratorFactory.create(namespace, wikiType).execute(filename);
+function toFullPath(rootDir: string, filename: string): string {
+    return new BufferPathGenerator(rootDir).execute(filename);
+}
+
+function createHistory(namespace: string, wikiType: WikiType): WikiHistory {
+    const config: MergedNamespaceConfig = new WikiConfig().getNamespaceConfig(namespace);
+    const rootDir: string = path.join(config.rootDir, wikiType);
+    if (!fs.existsSync(rootDir)) {
+        fs.mkdirSync(rootDir);
+    }
+    return new WikiHistory(rootDir);
+}
+
+function createMarkdownHistory(namespace: string, wikiType: WikiType): WikiHistory {
+    const config: MergedNamespaceConfig = new WikiConfig().getNamespaceConfig(namespace);
+    let rootDir: string;
+    if (wikiType === 'File') {
+        rootDir = path.join(config.rootDir, 'FileDescritption');
+    } else {
+        rootDir = path.join(config.rootDir, wikiType);
+    }
+    if (!fs.existsSync(rootDir)) {
+        fs.mkdirSync(rootDir);
+    }
+    return new WikiHistory(rootDir);
 }
 
 ipcMain.handle('open-external-link', async (event, path: string): Promise<void> => {
@@ -64,7 +86,7 @@ ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, 
 // 生のPageデータを返す
 ipcMain.handle('get-raw-page-text', async (event, path: string, version?: number): Promise<string> => {
     const wikiLink: WikiLink = new WikiLink(path);
-    const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
+    const history: WikiHistory = createMarkdownHistory(wikiLink.namespace, wikiLink.type);
     if (!history.hasName(wikiLink.name)) {
         return '';
     }
@@ -74,14 +96,14 @@ ipcMain.handle('get-raw-page-text', async (event, path: string, version?: number
     } else {
         data = history.getByName(wikiLink.name);
     }
-    const filepath: string = toFullPath(data.filename, wikiLink.namespace, wikiLink.type);
+    const filepath: string = toFullPath(history.rootDir, data.filename);
     return fs.readFileSync(filepath, 'utf-8'); 
 });
 
 // 最新バージョンの取得
 ipcMain.handle('current-version', async (event, path: string): Promise<number> => {
     const wikiLink: WikiLink = new WikiLink(path);
-    const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
+    const history: WikiHistory = createMarkdownHistory(wikiLink.namespace, wikiLink.type);
     return history.getByName(wikiLink.name).version;
 });
 
@@ -101,7 +123,7 @@ ipcMain.handle('exists-link', async (event, wikiLink: IWikiLink, version?: numbe
         return false;
     }
 
-    const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
+    const history: WikiHistory = createHistory(wikiLink.namespace, wikiLink.type);
     if (!history.hasName(wikiLink.name)) {
         return false;
     }
@@ -117,9 +139,9 @@ ipcMain.handle('update-page', async (event, path: string, text: string, comment:
     const wikiLink: WikiLink = new WikiLink(path);
     const namespace: string = wikiLink.namespace;
     const wikiType: WikiType = wikiLink.type;
-    const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
+    const history: WikiHistory = createMarkdownHistory(wikiLink.namespace, wikiLink.type);
     const filename: string = generateRandomString(16) + '.md';
-    const filepath: string = toFullPath(filename, namespace, wikiType);
+    const filepath: string = toFullPath(history.rootDir, filename);
     fs.writeFileSync(filepath, text);
     history.add({name: wikiLink.name, comment, filename});
 
@@ -132,9 +154,9 @@ ipcMain.handle('upload-file', async (event, path: string, destName: string, sour
     const namespace: string = new WikiLink(path).namespace;
     const wikiType: WikiType = 'File';
     const fileLink: WikiLink = new WikiLink({namespace, name: destName, type: wikiType});
-    const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
+    const history: WikiHistory = createHistory(namespace, wikiType);
     const filename: string = generateRandomString(16) + '.' + extensionOf(sourcePath);
-    const filepath: string = toFullPath(filename, namespace, wikiType);
+    const filepath: string = toFullPath(history.rootDir, filename);
     fs.copyFileSync(sourcePath, filepath);
     history.add({name: fileLink.name, comment, filename});
     return true;
@@ -149,14 +171,14 @@ ipcMain.handle('markdown-to-html', async (event, markdown: string, baseNamespace
 ipcMain.on('search-page-by-keyword', (event, path: string, keywords: string[]) => {
     const namespace: string = new WikiLink(path).namespace;
     const wikiType: WikiType = 'Page';
-    const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
+    const history: WikiHistory = createMarkdownHistory(namespace, wikiType);
     const currentData: VersionData[] = history.getCurrentList();
     if (keywords.length === 0) {
         return;
     }
 
     for (const data of currentData) {
-        const filepath: string = toFullPath(data.filename, namespace, wikiType);
+        const filepath: string = toFullPath(history.rootDir, data.filename);
         const text: string = fs.readFileSync(filepath, 'utf-8');
         const lowerText: string = text.toLowerCase();
         let matched: boolean = true;
@@ -177,7 +199,7 @@ ipcMain.on('search-page-by-keyword', (event, path: string, keywords: string[]) =
 ipcMain.handle('search-page-by-name', async (event, path: string, name: string): Promise<{exists: boolean, wikiLink: IWikiLink}> => {
     const namespace: string = new WikiLink(path).namespace;
     const wikiType: WikiType = 'Page';
-    const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
+    const history: WikiHistory = createHistory(namespace, wikiType);
     const wikiLink: IWikiLink = new WikiLink({namespace, name, type: wikiType});
     const exists: boolean = history.hasName(name);
     return {exists, wikiLink};

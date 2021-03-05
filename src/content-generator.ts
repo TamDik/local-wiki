@@ -3,24 +3,15 @@ import * as path from 'path';
 import {extensionOf, dateToStr, bytesToStr, zeroPadding} from './utils';
 import {fileTypeOf} from './wikifile';
 import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
-import {WikiHistoryFactory, BufferPathGeneratorFactory} from './wikihistory-factory';
 import {BufferPathGenerator, WikiHistory, VersionData} from './wikihistory';
 import {WikiLink, WikiLocation, DEFAULT_NAMESPACE} from './wikilink';
 import {WikiMD, FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler} from './markdown';
 import {Category} from './wikicategory';
 
 
-function toFullPath(wikiLink: WikiLink, version?: number): string|null {
-    const namespace: string = wikiLink.namespace;
-    const wikiType: WikiType = wikiLink.type;
+function toFullPath(wikiLink: WikiLink, version?: number, markdown: boolean=false): string|null {
+    const history: WikiHistory = createHistory(wikiLink.namespace, wikiLink.type, markdown);
     const name: string = wikiLink.name;
-
-    const config: WikiConfig = new WikiConfig();
-    if (!config.hasNamespace(namespace)) {
-        return null;
-    }
-
-    const history: WikiHistory = WikiHistoryFactory.create(namespace, wikiType);
     if (!history.hasName(name)) {
         return null;
     }
@@ -31,17 +22,26 @@ function toFullPath(wikiLink: WikiLink, version?: number): string|null {
         }
         data = history.getByVersion(name, version);
     }
-    return BufferPathGeneratorFactory.create(namespace, wikiType).execute(data.filename);
-};
+    return new BufferPathGenerator(history.rootDir).execute(data.filename);
+}
 
-
-function existsVersion(wikiLink: WikiLink, version: number): boolean {
-    const history: WikiHistory = WikiHistoryFactory.create(wikiLink.namespace, wikiLink.type);
-    const name: string = wikiLink.name;
-    if (!history.hasName(name)) {
-        return false;
+function rootDirOf(namespace: string, wikiType: WikiType, markdown: boolean=false): string {
+    const config: MergedNamespaceConfig = new WikiConfig().getNamespaceConfig(namespace);
+    let rootDir: string;
+    if (markdown && wikiType === 'File') {
+        rootDir = path.join(config.rootDir, 'FileDescritption');
+    } else {
+        rootDir = path.join(config.rootDir, wikiType);
     }
-    return version > 0 && version <= history.getByName(name).version;
+    if (!fs.existsSync(rootDir)) {
+        fs.mkdirSync(rootDir);
+    }
+    return rootDir;
+}
+
+function createHistory(namespace: string, wikiType: WikiType, markdown: boolean=false): WikiHistory {
+    const rootDir: string = rootDirOf(namespace, wikiType, markdown);
+    return new WikiHistory(rootDir);
 }
 
 
@@ -65,6 +65,7 @@ class ContentGenerator {
     public static menuTabs(mode: PageMode, wikiLink: WikiLink): TopNavTabData[] {
         switch (wikiLink.type) {
             case 'Page':
+            case 'File':
             case 'Category':
                 const readLoc: WikiLocation = new WikiLocation(wikiLink);
                 const editLoc: WikiLocation = new WikiLocation(wikiLink);
@@ -77,7 +78,6 @@ class ContentGenerator {
                     {title: 'Edit'   , href: editLoc.toURI(), selected: mode === 'edit'},
                     {title: 'History', href: histLoc.toURI(), selected: mode === 'history'},
                 ];
-            case 'File':
             case 'Special':
                 return [];
         }
@@ -216,7 +216,7 @@ abstract class ContentBodyDispatcher {
     }
 
     public execute(): ContentBody {
-        const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, this.wikiLink.type);
+        const history: WikiHistory = createHistory(this.wikiLink.namespace, this.wikiLink.type);
         if (!history.hasName(this.wikiLink.name)) {
             return this.dispatchNotFoundContentBody();
         }
@@ -225,7 +225,7 @@ abstract class ContentBodyDispatcher {
             return this.dispatchContentBody();
         }
 
-        if (existsVersion(this.wikiLink, this.version)) {
+        if (this.existsVersion(this.version)) {
             return this.contentWithVersionBody(this.wikiLink, this.version);
 
         } else {
@@ -255,6 +255,15 @@ abstract class ContentBodyDispatcher {
         }
     }
 
+    protected existsVersion(version: number): boolean {
+        const history: WikiHistory = createHistory(this.wikiLink.namespace, this.wikiLink.type, true);
+        const name: string = this.wikiLink.name;
+        if (!history.hasName(name)) {
+            return false;
+        }
+        return version > 0 && version <= history.getByName(name).version;
+    }
+
     protected abstract readContentBody(wikiLink: WikiLink): ContentBody;
 
     protected editContentBody(wikiLink: WikiLink): ContentBody {
@@ -276,7 +285,7 @@ abstract class ContentBodyDispatcher {
         return this.notFoundReadContentBody(wikiLink);
     }
     protected notFoundContentWithVersionBody(wikiLink: WikiLink, version: number): ContentBody {
-        return this.notFoundReadContentBody(wikiLink);
+        return new NotFoundVersionBody(wikiLink, version);
     }
 }
 
@@ -309,15 +318,23 @@ class PageContentBodyDispatcher extends ContentBodyDispatcher {
     protected notFoundHistoryContentBody(wikiLink: WikiLink): ContentBody {
         return new NotFoundPageBody(wikiLink);
     }
-
-    protected notFoundContentWithVersionBody(wikiLink: WikiLink, version: number): ContentBody {
-        return new NotFoundPageWithVersionReadBody(wikiLink, version);
-    }
 }
 
 class FileContentBodyDispatcher extends ContentBodyDispatcher {
     protected readContentBody(wikiLink: WikiLink): ContentBody {
         return new FileReadBody(wikiLink);
+    }
+
+    protected editContentBody(wikiLink: WikiLink): ContentBody {
+        return new MarkdownEditorBody(wikiLink);
+    }
+
+    protected historyContentBody(wikiLink: WikiLink): ContentBody {
+        return new MarkdownHistoryBody(wikiLink);
+    }
+
+    protected contentWithVersionBody(wikiLink: WikiLink, version: number): ContentBody {
+        return new FileWithVersionReadBody(wikiLink, version);
     }
 
     protected notFoundReadContentBody(wikiLink: WikiLink): ContentBody {
@@ -372,6 +389,21 @@ class NotFoundNamespaceBody extends ContentBody {
               'The namespace you are looking for doesn\'t exist or an other error occurred.<br>',
               `Choose a new direction, or you can <a href="${href}">create this namespace.</a>`,
             '</div>',
+        ];
+        return lines.join('');
+    }
+}
+
+class NotFoundVersionBody extends ContentBody {
+    public constructor(wikiLink: WikiLink, private readonly version: number) {
+        super(wikiLink);
+    }
+
+    public get html(): string {
+        const lines: string[] = [
+            '<div class="alert alert-danger" role="alert">',
+              `The revision #${this.version} of the page named "${this.wikiLink.toPath()}" does not exist.`,
+            '</div>'
         ];
         return lines.join('');
     }
@@ -543,21 +575,6 @@ class PageReadBody extends ContentBody {
     }
 }
 
-class NotFoundPageWithVersionReadBody extends ContentBody {
-    public constructor(wikiLink: WikiLink, private readonly version: number) {
-        super(wikiLink);
-    }
-
-    public get html(): string {
-        const lines: string[] = [
-            '<div class="alert alert-danger" role="alert">',
-              `The revision #${this.version} of the page named "${this.wikiLink.toPath()}" does not exist.`,
-            '</div>'
-        ];
-        return lines.join('');
-    }
-}
-
 
 abstract class WithVersionBody extends ContentBody {
     public constructor(wikiLink: WikiLink, private readonly version: number) {
@@ -571,7 +588,7 @@ abstract class WithVersionBody extends ContentBody {
     protected abstract mainContent(version: number): string;
 
     private versionAlert(): string {
-        const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, this.wikiLink.type);
+        const history: WikiHistory = createHistory(this.wikiLink.namespace, this.wikiLink.type, true);
         const data: VersionData = history.getByVersion(this.wikiLink.name, this.version);
         const latestVersion: number = history.getByName(this.wikiLink.name).version;
         const lines: string[] = [
@@ -684,8 +701,12 @@ class MarkdownHistoryBody extends ContentBody {
         return lines.join('');
     }
 
+    protected createHistory(): WikiHistory {
+        return createHistory(this.wikiLink.namespace, this.wikiLink.type, true);
+    }
+
     private historyList(): string {
-        const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, this.wikiLink.type);
+        const history: WikiHistory = this.createHistory();
         const currentData: VersionData = history.getByName(this.wikiLink.name);
         const historyData: VersionData[] = history.getPrevOf(currentData.id);
         const lines: string[] = [];
@@ -790,25 +811,31 @@ class FileReadBody extends ContentBody {
 
     public constructor(wikiLink: WikiLink, private readonly version?: number) {
         super(wikiLink);
-        this.bufferPathGenerator = BufferPathGeneratorFactory.create(wikiLink.namespace, wikiLink.type);
+        const rootDir: string = rootDirOf(wikiLink.namespace, wikiLink.type);
+        this.bufferPathGenerator = new BufferPathGenerator(rootDir)
     }
 
     public get html(): string {
         const href: string = UploadFileBody.createURI(this.wikiLink);
         const lines: string[] = [
-            '<div class="row">',
-              '<div class="col-12">',
-                this.mainView(this.version),
-              '</div>',
-            '</div>',
+            this.mainView(this.version),
+            this.pageHtml(),
             this.historyHtml(),
-            '<div class="row">',
-              '<div class="col-12 pb-4">',
-                `<a href="${href}">Upload a new version of this file</a>`,
-              '</div>',
-            '</div>',
+            `<a href="${href}">Upload a new version of this file</a>`,
         ]
         return lines.join('');
+    }
+
+    protected pageHtml(): string {
+        const history: WikiHistory = createHistory(this.wikiLink.namespace, this.wikiLink.type, true);
+        if (!history.hasName(this.wikiLink.name)) {
+            return '';
+        }
+        let data: VersionData = history.getByName(this.wikiLink.name);
+
+        const filepath: string = new BufferPathGenerator(history.rootDir).execute(data.filename);
+        const markdown: string = fs.readFileSync(filepath, 'utf-8');
+        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
     }
 
     private mainView(version: number|undefined): string {
@@ -831,15 +858,11 @@ class FileReadBody extends ContentBody {
 
     private historyHtml(): string {
         const lines = [
-            '<div class="row">',
-              '<div class="col-12">',
-                '<h2>history</h2>',
-                '<table class="w-100">',
-                  this.thead(),
-                  this.tbody(),
-                '</table>',
-              '</div>',
-            '</div>',
+            '<h2>history</h2>',
+            '<table class="w-100">',
+              this.thead(),
+              this.tbody(),
+            '</table>',
         ]
         return lines.join('');
     }
@@ -860,7 +883,7 @@ class FileReadBody extends ContentBody {
     }
 
     private tbody(): string {
-        const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, this.wikiLink.type);
+        const history: WikiHistory = createHistory(this.wikiLink.namespace, this.wikiLink.type);
         const currentData: VersionData = history.getByName(this.wikiLink.name);
         const historyData: VersionData[] = history.getPrevOf(currentData.id);
         return '<tbody>' + historyData.reduce((value, data) => value + this.tr(data), '') + '</tbody>';
@@ -895,6 +918,14 @@ class FileReadBody extends ContentBody {
             case 'other':
                 return `version ${version}`;
         }
+    }
+}
+
+class FileWithVersionReadBody extends WithVersionBody {
+    protected mainContent(version: number): string {
+        const filepath: string = toFullPath(this.wikiLink, version, true) as string;
+        const markdown: string = fs.readFileSync(filepath, 'utf-8');
+        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
     }
 }
 
@@ -1044,7 +1075,7 @@ class AllPagesBody extends SpecialContentBody {
     public type: SpecialContentType = 'pages';
 
     public get html(): string {
-        const history: WikiHistory = WikiHistoryFactory.create(this.wikiLink.namespace, 'Page');
+        const history: WikiHistory = createHistory(this.wikiLink.namespace, 'Page');
         const currentData: VersionData[] = history.getCurrentList();
 
         const lines: string[] = [
@@ -1073,8 +1104,7 @@ class AllFilesBody extends SpecialContentBody {
     public type: SpecialContentType = 'media';
 
     public get html(): string {
-        const wl: WikiLink = new WikiLink(this.wikiLink)
-        const history: WikiHistory = WikiHistoryFactory.create(wl.namespace, 'File');
+        const history: WikiHistory = createHistory(this.wikiLink.namespace, 'File');
         const currentData: VersionData[] = history.getCurrentList();
 
         const lines: string[] = [
