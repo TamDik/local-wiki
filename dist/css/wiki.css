@@ -21,8 +21,20 @@
     margin-bottom: 0.4em;
 }
 
-#content h1 {
+#content h1, #content h2 {
     border-bottom: 1px solid #a2a9b1;
+}
+
+#content h1 {
+    font-size: 1.8em;
+}
+
+#content h2 {
+    font-size: 1.5em;
+}
+
+#content h3, #content h4, #content h5, #content h6 {
+    font-size: 1.2em;
 }
 
 #wiki-head {
@@ -245,4 +257,17 @@ a.new {
 .category-links li:first-child {
     padding-left: 0.25em;
     border-left: 0;
+}
+
+.edit-section {
+    font-size: small;
+    line-height: 1em;
+    margin-left: 1em;
+}
+
+.edit-section:before {
+    content: '[';
+}
+.edit-section:after {
+    content: ']';
 }

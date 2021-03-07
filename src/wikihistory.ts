@@ -189,7 +189,7 @@ class CurrentVersionManager {
     }
 
     private save(): void {
-        const text: string = JSON.stringify(this.dataList, null, '  ');
+        const text: string = JSON.stringify(this.dataList, null, 2);
         fs.writeFileSync(this.filepath, text);
     }
 
@@ -277,7 +277,6 @@ class PreviousVersionManager {
         const dataMap: Map<string, VersionData> = this.dataMap;
         dataMap.set(data.id, data);
         if (data.prev !== null) {
-            // NOTE: prev が設定されていた場合，prev の next を更新
             const prev: VersionData = this.getData(data.prev);
             prev.next = data.id;
         }
@@ -320,7 +319,7 @@ class PreviousVersionManager {
     private save(): void {
         const data: PreviousVersionData[] = Array.from(this.dataMap.values())
                                                  .map((data) => this.previousVersionDataOf(data));
-        const text: string = JSON.stringify(data, null, '  ');
+        const text: string = JSON.stringify(data, null, 2);
         fs.writeFileSync(this.filepath, text);
     }
 

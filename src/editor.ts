@@ -1,20 +1,22 @@
 (() => {
     const mdTextArea: HTMLTextAreaElement = document.getElementById('markdown-edit-area') as HTMLTextAreaElement;
     const commentArea: HTMLInputElement = document.getElementById('comment-edit-area') as HTMLInputElement;
-
-
     const params: Params = new Params();
-    window.ipcApi.getRawPageText(params.path)
-    .then(text => {
-        mdTextArea.value = text;
-    });
 
+    async function updatePage(): Promise<boolean> {
+        const text: string = mdTextArea.value;
+        const comment: string = commentArea.value;
+        const section: string = params.getValueOf('section');
+        if (window.utils.isNonNegativeNumber(section)) {
+            return window.ipcApi.updatePage(params.path, text, comment, Number(section))
+        } else {
+            return window.ipcApi.updatePage(params.path, text, comment)
+        }
+    }
 
     const saveButton: HTMLButtonElement = document.getElementById('page-edit-save-button') as HTMLButtonElement;
     saveButton.addEventListener('click', () => {
-        const text: string = mdTextArea.value;
-        const comment: string = commentArea.value;
-        window.ipcApi.updatePage(params.path, text, comment)
+        updatePage()
         .then(result => {
             location.href = window.localWiki.toURI(params.path);
         })

@@ -191,10 +191,14 @@ function importJS(src: string): void{
 async function getMainContent(params: Params): Promise<{namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
                                                         dependences: {css: string[], js: string[]}}> {
     const version: string = params.getValueOf('version');
-    if (version.match(/^\d+$/)) {
-        return window.ipcApi.getMainContent(params.mode, params.path, Number(version));
+    const optionals: {[key: string]: string} = {};
+    for (const key of params.optionalKeys) {
+        optionals[key] = params.getValueOf(key);
+    }
+    if (window.utils.isNaturalNumber(version)) {
+        return window.ipcApi.getMainContent(params.mode, params.path, optionals, Number(version));
     } else {
-        return window.ipcApi.getMainContent(params.mode, params.path);
+        return window.ipcApi.getMainContent(params.mode, params.path, optionals);
     }
 }
 

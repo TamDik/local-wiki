@@ -76,9 +76,9 @@ contextBridge.exposeInMainWorld(
         async currentVersion(path: string): Promise<number> {
             return ipcRenderer.invoke('current-version', path);
         },
-        async getMainContent(mode: PageMode, path: string, version?: number): Promise<{namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
-                                                                                       dependences: {css: string[], js: string[]}}> {
-            return ipcRenderer.invoke('get-html-contents', mode, path, version);
+        async getMainContent(mode: PageMode, path: string, params: {[key: string]: string}, version?: number):
+            Promise<{namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[], dependences: {css: string[], js: string[]}}> {
+            return ipcRenderer.invoke('get-html-contents', mode, path, params, version);
         },
         goBack(): void {
             ipcRenderer.send('go-back');
@@ -95,8 +95,8 @@ contextBridge.exposeInMainWorld(
         async uploadFile(path: string, name: string, filepath: string, comment: string): Promise<boolean> {
             return ipcRenderer.invoke('upload-file', path, name, filepath, comment);
         },
-        async updatePage(path: string, text: string, comment: string): Promise<boolean> {
-            return ipcRenderer.invoke('update-page', path, text, comment);
+        async updatePage(path: string, text: string, comment: string, section?: number): Promise<boolean> {
+            return ipcRenderer.invoke('update-page', path, text, comment, section);
         },
         async getRawPageText(path: string, version?: number): Promise<string> {
             return ipcRenderer.invoke('get-raw-page-text', path, version);

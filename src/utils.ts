@@ -3,7 +3,40 @@ function escapeRegex(str: string) {
 }
 
 
+function escapeHtml(str: string): string {
+    return str.replace(/[&'`"<>]/g, (match: string) => {
+        switch (match) {
+            case '&': return '&amp;';
+            case "'": return '&#x27;';
+            case '`': return '&#x60;';
+            case '"': return '&quot;';
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            default: return match;
+        }
+    });
+}
+
+
+function isInteger(str: string): boolean {
+    return str.match(/^-?(\d|[1-9]\d+)$/) !== null;
+}
+
+
+function isNaturalNumber(str: string): boolean {
+    return str.match(/^[1-9]\d*$/) !== null;
+}
+
+
+function isNonNegativeNumber(str: string): boolean {
+    return str.match(/^(\d|[1-9]\d*)$/) !== null;
+}
+
+
 function extensionOf(filename: string): string {
+    if (!filename.includes('.')) {
+        return '';
+    }
     return filename.replace(/^.*\./, '');
 }
 
@@ -74,4 +107,4 @@ function trim(s: string): string {
 }
 
 
-export {escapeRegex, extensionOf, generateRandomString, zeroPadding, dateToStr, bytesToStr, trim};
+export {escapeRegex, escapeHtml, isInteger, isNaturalNumber, isNonNegativeNumber, extensionOf, generateRandomString, zeroPadding, dateToStr, bytesToStr, trim};

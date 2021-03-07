@@ -54,7 +54,7 @@ abstract class AbstractConfig<T> {
 
     protected setData(data: T) {
         this.__data = data;
-        const text: string = JSON.stringify(this.__data, null, '  ');
+        const text: string = JSON.stringify(this.__data, null, 2);
         fs.writeFileSync(this.configPath, text);
     }
 }

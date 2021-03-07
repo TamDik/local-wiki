@@ -25,6 +25,8 @@ interface IUtils {
     trim(s: string): string;
     dateToStr(date: Date): string;
     escapeRegex(str: string): string;
+    isNaturalNumber(str: string): boolean;
+    isNonNegativeNumber(str: string): boolean;
 }
 
 
@@ -32,14 +34,14 @@ interface IIpcApi {
     openExternalLink(path: string): Promise<void>;
     existsLink(wikiLink: IWikiLink): Promise<boolean>;
     currentVersion(path: string): Promise<number>;
-    getMainContent(mode: PageMode, path: string, version?: number): Promise<{namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
-                                                                             dependences: {css: string[], js: string[]}}>;
+    getMainContent(mode: PageMode, path: string, params: {[key: string]: string}, version?: number):
+        Promise<{namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[], dependences: {css: string[], js: string[]}}>;
     goBack(): void;
     goForward(): void;
     reload(): void;
     canGoBackOrForward(): Promise<{back: boolean, forward: boolean}>;
     uploadFile(path: string, name: string, filepath: string, comment: string): Promise<boolean>;
-    updatePage(path: string, text: string, comment: string): Promise<boolean>;
+    updatePage(path: string, text: string, comment: string, section?: number): Promise<boolean>;
     getRawPageText(path: string, version?: number): Promise<string>;
     markdownToHtml(markdown: string, baseNamespace: string): Promise<string>;
     searchPageByKeywords(path: string, keywords: string[]): void;

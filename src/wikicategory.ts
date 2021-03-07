@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {WikiLink} from './wikilink';
-import {WikiMD, CategoryHandler} from './markdown';
+import {WikiMD} from './markdown';
+import {CategoryHandler} from './markdown-magic-handler';
 import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
 
 
@@ -53,7 +54,7 @@ class CategoriesUnderNamespace {
                 )
             })
         );
-        fs.writeFileSync(this.filepath, JSON.stringify(jsonData, null, '  '));
+        fs.writeFileSync(this.filepath, JSON.stringify(jsonData, null, 2));
     }
 
     public refered(category: Category): WikiLink[] {

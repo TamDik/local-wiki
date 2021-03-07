@@ -1,4 +1,5 @@
-import {WikiMD, FileHandler, ImageFileHandler, PDFFileHandler} from '../src/markdown';
+import {WikiMD} from '../src/markdown';
+import {FileHandler, ImageFileHandler, PDFFileHandler} from '../src/markdown-magic-handler';
 
 describe('test ImageFileHandler', function() {
     function testImage(value: string, expected: string): void {

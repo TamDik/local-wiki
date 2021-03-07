@@ -1,48 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {extensionOf, dateToStr, bytesToStr, zeroPadding} from './utils';
+import {isInteger, escapeHtml, extensionOf, dateToStr, bytesToStr, zeroPadding} from './utils';
 import {fileTypeOf} from './wikifile';
 import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
-import {WikiHistory, VersionData} from './wikihistory';
 import {WikiLink, WikiLocation, DEFAULT_NAMESPACE} from './wikilink';
-import {WikiMD, FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler} from './markdown';
+import {WikiMarkdown} from './wikimarkdown';
 import {Category} from './wikicategory';
-
-
-function toFullPath(wikiLink: WikiLink, version?: number, markdown: boolean=false): string|null {
-    const history: WikiHistory = createHistory(wikiLink.namespace, wikiLink.type, markdown);
-    const name: string = wikiLink.name;
-    if (!history.hasName(name)) {
-        return null;
-    }
-    let data: VersionData = history.getByName(name);
-    if (typeof(version) === 'number') {
-        if (version > data.version || version < 1) {
-            return null;
-        }
-        data = history.getByVersion(name, version);
-    }
-    return data.filepath;
-}
-
-function rootDirOf(namespace: string, wikiType: WikiType, markdown: boolean=false): string {
-    const config: MergedNamespaceConfig = new WikiConfig().getNamespaceConfig(namespace);
-    let rootDir: string;
-    if (markdown && wikiType === 'File') {
-        rootDir = path.join(config.rootDir, 'FileDescritption');
-    } else {
-        rootDir = path.join(config.rootDir, wikiType);
-    }
-    if (!fs.existsSync(rootDir)) {
-        fs.mkdirSync(rootDir);
-    }
-    return rootDir;
-}
-
-function createHistory(namespace: string, wikiType: WikiType, markdown: boolean=false): WikiHistory {
-    const rootDir: string = rootDirOf(namespace, wikiType, markdown);
-    return new WikiHistory(rootDir);
-}
+import {createHistory, toFullPath, WikiHistory, VersionData} from './wikihistory-builder';
 
 
 class ContentGenerator {
@@ -83,12 +47,7 @@ class ContentGenerator {
         }
     }
 
-    public static mainContent(mode: PageMode, wikiLink: WikiLink, version?: number): {body: string, dependences: {js: string[], css: string[]}} {
-        const contentBody: ContentBody = ContentGenerator.dispatchContentBody(mode, wikiLink, version);
-        return {body: contentBody.html, dependences: {js: contentBody.js, css: contentBody.css}};
-    }
-
-    private static dispatchContentBody(mode: PageMode, wikiLink: WikiLink, version: number|undefined): ContentBody {
+    public static mainContent(mode: PageMode, wikiLink: WikiLink, version?: number, params: {[key: string]: string}={}): ContentBody {
         const config: WikiConfig = new WikiConfig();
 
         // 名前空間なし
@@ -379,6 +338,9 @@ abstract class ContentBody {
 
     public constructor(protected readonly wikiLink: WikiLink) {
     }
+
+    public applyParamerters(parameters: {[key: string]: string}): void {
+    }
 }
 
 class NotFoundNamespaceBody extends ContentBody {
@@ -424,8 +386,50 @@ class MarkdownEditorBody extends ContentBody {
         '../node_modules/highlight.js/styles/github-gist.css',
     ];
     public js: string[] = ['./js/editor.js'];
+    private section: string = '';
 
     public get html(): string {
+        const filepath: string|null = toFullPath(this.wikiLink, null, true);
+        if (filepath === null) {
+            return this.textArea();
+        }
+        const markdown: string|null = this.escapedMarkdown(filepath);
+        if (markdown === null) {
+            return this.errorMessage();
+        } else {
+            return this.textArea(markdown);
+        }
+    }
+
+    private escapedMarkdown(filepath: string): string|null {
+        const markdown: WikiMarkdown = new WikiMarkdown(fs.readFileSync(filepath, 'utf-8'));
+        if (this.section === '') {
+            return escapeHtml(markdown.getRawText());
+        }
+        if (!isInteger(this.section)) {
+            return null;
+        }
+        const section: number = Number(this.section);
+        if (section < 0 || section > markdown.getMaxSection()) {
+            return null;
+        }
+        return escapeHtml(markdown.getSection(section));
+    }
+
+
+    public applyParamerters(parameters: {[key: string]: string}): void {
+        if ('section' in parameters) {
+            this.section = parameters['section'];
+        }
+    }
+
+    private errorMessage(): string {
+        const location: WikiLocation = new WikiLocation(this.wikiLink);
+        return '<p>You tried to edit a section that does not exist.' +
+                `Return to <a href="${location.toURI()}">${this.wikiLink.name}.</a></p>`;
+    }
+
+    private textArea(markdown: string=''): string {
         const mainEditAreaId: string = 'markdown-edit-area';
         const lines: string[] = [
             '<div class="row">',
@@ -439,7 +443,7 @@ class MarkdownEditorBody extends ContentBody {
                 '</div>',
                 '<div class="row mb-2 mt-3">',
                   '<div class="col-12">',
-                    `<textarea id="${mainEditAreaId}" class="form-control"></textarea>`,
+                    `<textarea id="${mainEditAreaId}" class="form-control">${markdown}</textarea>`,
                   '</div>',
                 '</div>',
                 '<div class="row mb-2">',
@@ -470,84 +474,18 @@ class PageReadBody extends ContentBody {
     public get html(): string {
         const filepath: string = toFullPath(this.wikiLink) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
-        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
+        return PageReadBody.markdownToHtml(markdown, this.wikiLink)
     }
 
-    public static markdownToHtml(markdown: string, baseNamespace: string): string {
-        const wikiMD: WikiMD = new WikiMD({
-            isWikiLink: WikiLink.isWikiLink,
-            toWikiURI: (href: string) => {
-                const wikiLink: WikiLink = new WikiLink(href, baseNamespace);
-                const location: WikiLocation = new WikiLocation(wikiLink);
-                return location.toURI();
-            }
-        });
-
-        // file
-        const fileHandler: FileHandler = new FileHandler((path: string) => new WikiLink(path, baseNamespace).type === 'File');
-        wikiMD.addMagicHandler(fileHandler);
-
-        // image
-        fileHandler.addHandler(new ImageFileHandler(
-            (path: string) => {
-                const fullPath: string|null = toFullPath(new WikiLink(path, baseNamespace));
-                return typeof(fullPath) === 'string' && fileTypeOf(fullPath) === 'image';
-            }
-        ));
-
-        // pdf
-        fileHandler.addHandler(new PDFFileHandler(
-            (path: string) => {
-                const fullPath: string|null = toFullPath(new WikiLink(path, baseNamespace));
-                return typeof(fullPath) === 'string' && fileTypeOf(fullPath) === 'pdf';
-            }
-        ));
-
-        // not found
-        fileHandler.addHandler(new NotFoundFileHandler(
-            (path: string) => {
-                const fullPath: string|null = toFullPath(new WikiLink(path, baseNamespace));
-                return fullPath === null;
-            }
-        ))
-
-        // category
-        const categoryHandler: CategoryHandler = new CategoryHandler((path: string) => new WikiLink(path, baseNamespace).type === 'Category');
-        wikiMD.addMagicHandler(categoryHandler);
-
-        wikiMD.setValue(markdown);
-        let htmlText: string = wikiMD.toHTML();
-
-        htmlText = PageReadBody.expandWikiLink(htmlText, baseNamespace);
-        htmlText += PageReadBody.categoryList(categoryHandler, baseNamespace);
-        return htmlText;
-    }
-
-    private static expandWikiLink(html: string, baseNamespace: string): string {
-        html = PageReadBody.expandInternalFileLink(html, 'img', 'src', 'error', baseNamespace);
-        html = PageReadBody.expandInternalFileLink(html, 'object', 'data', 'error', baseNamespace);
+    public static markdownToHtml(markdown: string, wikiLink: WikiLink): string {
+        const wikiMarkdown: WikiMarkdown = new WikiMarkdown(markdown, wikiLink);
+        const baseNamespace: string = wikiLink.namespace;
+        let {html, categories} = wikiMarkdown.parse({baseNamespace, toFullPath, edit: true});
+        html += PageReadBody.categoryList(categories, baseNamespace);
         return html;
     }
 
-    private static expandInternalFileLink(html: string, tagName: string, prop: string, replace: string|null, baseNamespace: string): string {
-        const PATTERN: RegExp = new RegExp(`(?<=<${tagName} [^>]*${prop}=")\\?path=[^"]+(?=")`, 'g');
-        html = html.replace(PATTERN, s => {
-            const wikiPath: string = s.slice(6);
-            const wikiLink: WikiLink = new WikiLink(wikiPath, baseNamespace);
-            if (wikiLink.type !== 'File') {
-                return replace === null ? s : replace;
-            }
-            const fullPath: string|null = toFullPath(wikiLink);
-            if (fullPath === null) {
-                return replace === null ? s : replace;
-            }
-            return fullPath;
-        });
-        return html;
-    }
-
-    private static categoryList(handler: CategoryHandler, baseNamespace: string): string {
-        const categories: string[] = handler.getCategories();
+    private static categoryList(categories: string[], baseNamespace: string): string {
         if (categories.length === 0) {
             return '';
         }
@@ -678,7 +616,7 @@ class PageWithVersionReadBody extends WithVersionBody {
     protected mainContent(version: number): string {
         const filepath: string = toFullPath(this.wikiLink, version) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
-        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
+        return PageReadBody.markdownToHtml(markdown, this.wikiLink);
     }
 }
 
@@ -829,7 +767,6 @@ class NotFoundFileBody extends ContentBody {
 class FileReadBody extends ContentBody {
     public constructor(wikiLink: WikiLink, private readonly version?: number) {
         super(wikiLink);
-        const rootDir: string = rootDirOf(wikiLink.namespace, wikiLink.type);
     }
 
     public get html(): string {
@@ -850,7 +787,7 @@ class FileReadBody extends ContentBody {
         }
         let data: VersionData = history.getByName(this.wikiLink.name);
         const markdown: string = fs.readFileSync(data.filepath, 'utf-8');
-        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
+        return PageReadBody.markdownToHtml(markdown, this.wikiLink);
     }
 
     private mainView(version: number|undefined): string {
@@ -940,7 +877,7 @@ class FileWithVersionReadBody extends WithVersionBody {
     protected mainContent(version: number): string {
         const filepath: string = toFullPath(this.wikiLink, version, true) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
-        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
+        return PageReadBody.markdownToHtml(markdown, this.wikiLink);
     }
 }
 
@@ -958,7 +895,7 @@ class CategoryReadBody extends ContentBody {
     protected pageHtml(): string {
         const filepath: string = toFullPath(this.wikiLink) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
-        return PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
+        return PageReadBody.markdownToHtml(markdown, this.wikiLink);
     }
 
     private listHtml(): string {
@@ -985,7 +922,7 @@ class CategoryWithVersionReadBody extends WithVersionBody {
     protected mainContent(version: number): string {
         const filepath: string = toFullPath(this.wikiLink, version) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
-        let html = PageReadBody.markdownToHtml(markdown, this.wikiLink.namespace);
+        let html = PageReadBody.markdownToHtml(markdown, this.wikiLink);
         html += new class extends CategoryReadBody {
             protected pageHtml(): string {
                 return '';
@@ -1615,4 +1552,4 @@ class NewNamespaceBody extends SpecialContentBody {
 }
 
 
-export {ContentGenerator, PageReadBody};
+export {ContentGenerator, ContentBody};
