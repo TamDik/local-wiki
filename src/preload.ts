@@ -104,14 +104,14 @@ contextBridge.exposeInMainWorld(
         async markdownToHtml(markdown: string, baseNamespace: string): Promise<string> {
             return ipcRenderer.invoke('markdown-to-html', markdown, baseNamespace);
         },
-        searchPageByKeywords(path: string, keywords: string[]): void {
-            ipcRenderer.send('search-page-by-keyword', path, keywords);
-        },
         async searchPageByName(path: string, name: string): Promise<{exists: boolean, path: string}> {
             return ipcRenderer.invoke('search-page-by-name', path, name);
         },
+        searchPageByKeywords(path: string, keywords: string[]): void {
+            ipcRenderer.send('search-page-by-keyword', path, keywords);
+        },
         searchPageResult(lister: (path: string, body: string, created: Date, keywords: string[]) => void): void {
-            ipcRenderer.on('search-page-result', (event, p: string, b: string, c: Date, k: string[]) => lister(p, b, c, k));
+            ipcRenderer.on('result-of-page-search-by-keyword', (event, p: string, b: string, c: Date, k: string[]) => lister(p, b, c, k));
         },
         async getSideMenuData(): Promise<{main: SideMenuSectionData, sub: {title: string, data: SideMenuSectionData}[]}> {
             return ipcRenderer.invoke('get-side-menu-data');

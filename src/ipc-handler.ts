@@ -165,7 +165,7 @@ ipcMain.on('search-page-by-keyword', (event, path: string, keywords: string[]) =
         }
         if (matched) {
             const pageLink: WikiLink = new WikiLink({namespace, name: data.name, type: wikiType});
-            event.sender.send('search-page-result', pageLink, text, data.created, keywords);
+            event.sender.send('result-of-page-search-by-keyword', pageLink, text, data.created, keywords);
         }
     }
 });

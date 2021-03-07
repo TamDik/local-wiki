@@ -54,10 +54,6 @@
         return keywords.filter(keyword => keyword !== '');
     }
 
-    window.ipcApi.searchPageResult((wikiLink: IWikiLink, body: string, created: Date, keywords: string[]) => {
-        addResult(wikiLink, body, created, keywords);
-    });
-
     function searchPage(): void {
         const searchValue: string = searchField.value;
         const keywords: string[] = splitSeachKeyword(searchValue);
@@ -77,6 +73,10 @@
         });
         window.ipcApi.searchPageByKeywords(params.path, keywords);
     }
+
+    window.ipcApi.searchPageResult((wikiLink: IWikiLink, body: string, created: Date, keywords: string[]) => {
+        addResult(wikiLink, body, created, keywords);
+    });
 
     searchButton.addEventListener('click', () => {
         searchPage();
