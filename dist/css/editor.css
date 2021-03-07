@@ -1,4 +1,5 @@
-#markdown-edit-area {
-    font-family: SFMono-Regular;
+#markdown-edit-area, .CodeMirror {
     height: 280px;
+    resize: vertical;
+    font-family: SFMono-Regular;
 }

@@ -382,10 +382,14 @@ class NotFoundPageBody extends ContentBody {
 
 class MarkdownEditorBody extends ContentBody {
     public css: string[] = [
-        './css/editor.css',
         '../node_modules/highlight.js/styles/github-gist.css',
+        '../node_modules/simplemde/dist/simplemde.min.css',
+        './css/editor.css',
     ];
-    public js: string[] = ['./js/editor.js'];
+    public js: string[] = [
+        '../node_modules/simplemde/dist/simplemde.min.js',
+        './js/editor.js'
+    ];
     private section: string = '';
 
     public get html(): string {
@@ -436,7 +440,7 @@ class MarkdownEditorBody extends ContentBody {
               '<div class="col-12">',
                 '<div id="preview-alert" class="alert alert-warning d-none" role="alert">',
                   '<strong>Remember that this is only a preview.</strong>',
-                  `Your changes have not yet been saved! <a href="#${mainEditAreaId}"> → Go to editing area</a>`,
+                  `Your changes have not yet been saved! <a id="go-to-edit-area" href="#${mainEditAreaId}"> → Go to editing area</a>`,
                 '</div>',
                 '<div class="row">',
                   '<div id="preview-wrapper" class="col-12"></div>',
