@@ -1,7 +1,8 @@
 import {WikiLink, WikiLocation} from './wikilink';
 import {fileTypeOf} from './wikifile';
 import {WikiMD} from './markdown';
-import {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler} from './markdown-magic-handler';
+import {Category} from './wikicategory';
+import {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, CategoryTreeHandler} from './markdown-magic-handler';
 
 
 type ToFullPath = (wikiLink: WikiLink) => string|null;
@@ -25,14 +26,14 @@ class HTMLOptionsComplementer implements HTMLOptions {
     public constructor(private readonly options: HTMLOptions) {
     }
 
-    private complement<T>(key: keyof HTMLOptions): T { if (this.options[key] === undefined) {
-        if (this.defaultValues[key] === undefined) {
-            throw new Error(`this.defaultValues[${key}] is not set`);
+    private complement<T>(key: keyof HTMLOptions): T {
+        if (this.options[key] === undefined) {
+            if (this.defaultValues[key] === undefined) {
+                throw new Error(`this.defaultValues[${key}] is not set`);
+            }
+            return this.defaultValues[key] as any;
         }
-        return this.defaultValues[key] as any;
-    }
-
-    return this.options[key] as any;
+        return this.options[key] as any;
     }
 
     public get baseNamespace(): string {
@@ -101,6 +102,22 @@ class MarkdownParser {
         // category
         this.categoryHandler = new CategoryHandler((path: string) => new WikiLink(path, baseNamespace).type === 'Category');
         this.wikiMD.addMagicHandler(this.categoryHandler);
+
+        // Category tree
+        const treeHandler: CategoryTreeHandler = new CategoryTreeHandler(
+            (path: string) => new WikiLink(path, baseNamespace).type === 'Category',
+            (parentPath: string|null) => {
+                let categories: Category[];
+                if (parentPath === null) {
+                    categories = Category.allUnder(baseNamespace).filter(category => category.parents.length === 0);
+                } else {
+                    categories = new Category(new WikiLink(parentPath, baseNamespace)).children;
+                }
+                return categories.map(category => category.toWikiLink().toFullPath());
+            },
+        );
+        this.wikiMD.addMagicHandler(treeHandler);
+
     }
 
     public get baseNamespace(): string {
@@ -148,6 +165,9 @@ class MarkdownParser {
 
 
 class WikiMarkdown {
+    public static readonly js: string[] = [
+        './js/category-tree.js'
+    ];
     private static SECTION_PATTERN: RegExp = /^(?=(?: {1,3})?#{1,6}\s)/;
     private sections: string[];
 
@@ -252,7 +272,6 @@ class WikiMarkdown {
                                  `<a href="${location.toURI()}">edit</a>` +
                                '</span>';
         return [heading + button, ...lines].join('\n');
-
     }
 }
 

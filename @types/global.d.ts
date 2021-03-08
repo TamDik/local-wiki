@@ -55,6 +55,7 @@ interface IIpcApi {
     createExternalNamespace(name: string, base64Icon: string, rootDir: string): Promise<boolean>;
     revertExternalNamespace(rootDir: string): Promise<boolean>;
     updateNamespace(namespaceId: string, name: string, base64Icon: string): Promise<boolean>;
+    retrieveChildCategories(path: string|null, baseNamespace: string): Promise<{wikiLink: IWikiLink, hasChildren: boolean}[]>;
 }
 
 
@@ -72,6 +73,7 @@ interface ILocalWiki {
     fileTypeOf: (filename: string) => FileType;
     parsePath: (path: string) => IWikiLink;
     toPath: (path: IncompleteWikiLink|string) => string;
+    toFullPath: (path: IncompleteWikiLink|string) => string;
     parseURI: (uri: string) => {wikiLink: IWikiLink, params: {[key: string]: string}};
     toURI: (path: IncompleteWikiLink|string, params: {[key: string]: string}={}) => string;
 }

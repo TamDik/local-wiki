@@ -388,7 +388,8 @@ class MarkdownEditorBody extends ContentBody {
     ];
     public js: string[] = [
         '../node_modules/simplemde/dist/simplemde.min.js',
-        './js/editor.js'
+        './js/editor.js',
+        ...WikiMarkdown.js,
     ];
     private section: string = '';
 
@@ -475,6 +476,11 @@ class PageReadBody extends ContentBody {
     public css: string[] = [
         '../node_modules/highlight.js/styles/github-gist.css',
     ];
+
+    public js: string[] = [
+        ...WikiMarkdown.js,
+    ];
+
     public get html(): string {
         const filepath: string = toFullPath(this.wikiLink) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
@@ -769,6 +775,10 @@ class NotFoundFileBody extends ContentBody {
 }
 
 class FileReadBody extends ContentBody {
+    public js: string[] = [
+        ...WikiMarkdown.js,
+    ];
+
     public constructor(wikiLink: WikiLink, private readonly version?: number) {
         super(wikiLink);
     }
@@ -878,6 +888,10 @@ class FileReadBody extends ContentBody {
 }
 
 class FileWithVersionReadBody extends WithVersionBody {
+    public js: string[] = [
+        ...WikiMarkdown.js,
+    ];
+
     protected mainContent(version: number): string {
         const filepath: string = toFullPath(this.wikiLink, version, true) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');
@@ -888,6 +902,9 @@ class FileWithVersionReadBody extends WithVersionBody {
 
 // Category
 class CategoryReadBody extends ContentBody {
+    public js: string[] = [
+        ...WikiMarkdown.js,
+    ];
     public get html(): string {
         const lines: string[] = [
             this.pageHtml(),
@@ -923,6 +940,9 @@ class CategoryReadBody extends ContentBody {
 }
 
 class CategoryWithVersionReadBody extends WithVersionBody {
+    public js: string[] = [
+        ...WikiMarkdown.js,
+    ];
     protected mainContent(version: number): string {
         const filepath: string = toFullPath(this.wikiLink, version) as string;
         const markdown: string = fs.readFileSync(filepath, 'utf-8');

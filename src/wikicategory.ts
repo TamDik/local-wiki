@@ -142,13 +142,14 @@ class Category {
         return links;
     }
 
-    /* public get parents(): Category[] { */
-    /*     return []; */
-    /* } */
+    public get parents(): Category[] {
+        return this.refered.filter(wikiLink => wikiLink.type === 'Category').map(wikiLink => new Category(wikiLink));
+    }
 
-    /* public get children(): Category[] { */
-    /*     return []; */
-    /* } */
+    public get children(): Category[] {
+        const cun: CategoriesUnderNamespace = new CategoriesUnderNamespace(this.namespace);
+        return cun.refering(this.toWikiLink());
+    }
 
     public toWikiLink(): WikiLink {
         return new WikiLink({namespace: this.namespace, type: 'Category', name: this.name});

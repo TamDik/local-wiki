@@ -221,23 +221,31 @@ function markInvalidInternalLinks(elment: HTMLElement): void {
     }
 }
 
-window.addEventListener('load', () => {
-    const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
-    document.body.addEventListener('click', function(event) {
+function addDnamicEventLister(type: string, tagName: string, listener: (event: Event, element: HTMLElement) => boolean, options: boolean=false): void {
+    const upperTageName: string = tagName.toUpperCase();
+    document.body.addEventListener(type, (event: Event) => {
         let element: HTMLElement|null = event.target as HTMLElement;
         while (element && element !== document.body) {
-            if (element.nodeName === 'A') {
-                const anchor: HTMLAnchorElement = element as HTMLAnchorElement;
-                if (isExternalLink(anchor.href)) {
-                    window.ipcApi.openExternalLink(anchor.href);
-                    event.preventDefault();
+            if (element.nodeName === upperTageName) {
+                if (listener(event, element)) {
+                    break;
                 }
-                break;
             }
             element = element.parentNode as HTMLElement;
         }
-    }, false);
+    }, options);
+}
 
+window.addEventListener('load', () => {
+    const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
+    addDnamicEventLister('click', 'A', (event: Event, element: HTMLElement) => {
+        const anchor: HTMLAnchorElement = element as HTMLAnchorElement;
+        if (isExternalLink(anchor.href)) {
+            window.ipcApi.openExternalLink(anchor.href);
+            event.preventDefault();
+        }
+        return true;
+    });
 
     const contentHead: HTMLElement = document.getElementById('content-head') as HTMLElement;
     const params: Params = new Params();

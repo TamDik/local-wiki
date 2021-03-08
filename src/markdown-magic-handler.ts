@@ -1,4 +1,6 @@
 import {IMagicHandler, ToWikiURI} from './markdown';
+
+
 type IsTargetWikiLink = (path: string) => boolean;
 
 
@@ -515,7 +517,8 @@ class CategoryHandler implements IMagicHandler {
     }
 
     public isTarget(content: string): boolean {
-        return this.isCategory(content);
+        const path: string = content.split('|')[0];
+        return this.isCategory(path);
     }
 
     public expand(content: string, toWikiURI: ToWikiURI): string {
@@ -530,4 +533,128 @@ class CategoryHandler implements IMagicHandler {
     }
 }
 
-export {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler};
+
+class CategoryTreeHandler implements IMagicHandler {
+    private static KEYWORD: string = 'CategoryTree';
+    private static ROOT: string = 'root';
+
+    public constructor(private readonly isCategory: IsTargetWikiLink,
+                       private readonly childCategories: (parentPath: string|null) => string[]) {
+    }
+
+    public isTarget(content: string): boolean {
+        const [keyword, ...options]: string[] = content.split('|');
+        return keyword === CategoryTreeHandler.KEYWORD;
+    }
+
+    public expand(content: string, toWikiURI: ToWikiURI): string {
+        const [keyword, ...options]: string[] = content.split('|');
+        const remains: string[] = [];
+        const htmlOptions: {depth: number, border: boolean} = {depth: 1, border: false};
+        for (const option of options) {
+            const depth: number|null = this.depth(option);
+            if (depth !== null) {
+                htmlOptions.depth = depth;
+                continue;
+            }
+            const border: boolean|null = this.border(option);
+            if (border !== null) {
+                htmlOptions.border = border;
+                continue;
+            }
+            remains.push(option);
+        }
+        const {root, path} = this.remainOptions(remains);
+        return this.createHTML(root, path, toWikiURI, htmlOptions);
+    }
+
+    private depth(option: string): number|null {
+        const match: RegExpMatchArray|null = option.match(/^depth=(\d+)$/);
+        if (match) {
+            const depth: number = Number(match[1]);
+            if (depth >= 0) {
+                return depth;
+            }
+        }
+        return null;
+    }
+
+    private border(option: string): boolean|null {
+        if (option === 'border') {
+            return true;
+        }
+        if (option === 'noborder') {
+            return false;
+        }
+        return null;
+    }
+
+    private remainOptions(options: string[]): {root: string, path: string|null} {
+        let root: string;
+        let path: string|null;
+        if (options.length !== 0 && this.isCategory(options[0])) {
+            root = options[0];
+            path = options[0]
+        } else {
+            root = CategoryTreeHandler.ROOT;
+            path = null;
+        }
+        return {root, path};
+    }
+
+    private createHTML(root: string, path: string|null, toWikiURI: ToWikiURI, options: {depth: number, border: boolean}): string {
+        const lines: string[] = [];
+        if (options.border) {
+            lines.push('<div class="category-tree-wrapper category-tree-border">');
+        } else {
+            lines.push('<div class="category-tree-wrapper">');
+        }
+        lines.push(this.treeSection(root, this.childCategories(path), toWikiURI, options.depth));
+        lines.push('</div>');
+        return lines.join('');
+    }
+
+    private treeSection(categoryPath: string, children: string[], toWikiURI: ToWikiURI, depth: number): string {
+        if (depth < 0) {
+            return '';
+        }
+        const lines: string[] = [];
+        lines.push('<div class="category-tree-section">');
+        lines.push(  this.treeItem(categoryPath, toWikiURI, children.length !== 0, depth));
+        lines.push(  '<div class="category-tree-children">');
+        for (const child of children) {
+            lines.push(this.treeSection(child, this.childCategories(child), toWikiURI, depth - 1));
+        }
+        lines.push(  '</div>');
+        lines.push('</div>');
+        return lines.join('');
+    }
+
+    private treeItem(categoryPath: string, toWikiURI: ToWikiURI, hasChildren: boolean, depth: number): string {
+        const href: string = toWikiURI(categoryPath);
+        const lines: string[] = [];
+        lines.push('<div class="category-tree-item">');
+        let bullet: string = '';
+        if (!hasChildren) {
+            lines.push(this.bulletSpan(categoryPath, 'none'));
+        } else if (depth === 0) {
+            lines.push(this.bulletSpan(categoryPath, 'collapsed'));
+        } else {
+            lines.push(this.bulletSpan(categoryPath, 'expanded'));
+        }
+        lines.push(  `<a href="${href}">${categoryPath}</a>`);
+        lines.push('</div>');
+        return lines.join('');
+    }
+
+    private bulletSpan(categoryPath: string, status: 'none'|'collapsed'|'expanded'): string {
+        if (categoryPath === CategoryTreeHandler.ROOT) {
+            return `<span class="category-tree-bullet" data-status="${status}"></span>`;
+        } else {
+            return `<span class="category-tree-bullet" data-category="${categoryPath}" data-status="${status}"></span>`;
+        }
+    }
+}
+
+
+export {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, CategoryTreeHandler};

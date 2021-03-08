@@ -32,6 +32,10 @@ contextBridge.exposeInMainWorld(
             const wikiLink: WikiLink = new WikiLink(path);
             return wikiLink.toPath();
         },
+        toFullPath: (path: IncompleteWikiLink|string): string => {
+            const wikiLink: WikiLink = new WikiLink(path);
+            return wikiLink.toFullPath();
+        },
         parseURI: (uri: string): {wikiLink: IWikiLink, params: {[key: string]: string}} => {
             const result = WikiLocation.parseURI(uri);
             const params: {[key: string]: string} = {};
@@ -136,6 +140,9 @@ contextBridge.exposeInMainWorld(
         },
         async updateNamespace(namespaceId: string, name: string, base64Icon: string): Promise<boolean> {
             return ipcRenderer.invoke('update-namespace', namespaceId, name, base64Icon);
-        }
+        },
+        async retrieveChildCategories(path: string|null, baseNamespace: string): Promise<{wikiLink: IWikiLink, hasChildren: boolean}[]> {
+            return ipcRenderer.invoke('retrieve-child-categories', path, baseNamespace);
+        },
     }
 );

@@ -6,7 +6,7 @@ import {WikiConfig, MergedNamespaceConfig, usedAsAnExternalNamespace, parseNames
 import {WikiLink} from './wikilink';
 import {WikiMarkdown} from './wikimarkdown';
 import {escapeRegex, extensionOf, generateRandomString} from './utils';
-import {extractCategories, updateCategories} from './wikicategory';
+import {extractCategories, updateCategories, Category} from './wikicategory';
 import {WikiHistory, createHistory, toFullPath, VersionData} from './wikihistory-builder';
 
 
@@ -236,4 +236,18 @@ ipcMain.handle('update-namespace', async (event, id: string, name: string, base6
     config.name = name;
     config.updateIcon(base64Icon);
     return true;
+});
+
+// 子カテゴリのパスを取得
+ipcMain.handle('retrieve-child-categories', async (event, path: string|null, baseNamespace: string): Promise<{wikiLink: IWikiLink, hasChildren: boolean}[]> => {
+    if (path === null) {
+        return Category.allUnder(baseNamespace).filter(category => category.parents.length === 0).map(category => {
+            const wikiLink: WikiLink = category.toWikiLink()
+            return {wikiLink, hasChildren: category.children.length !== 0};
+        });
+    }
+    return new Category(new WikiLink(path)).children.map(category => {
+        const wikiLink: WikiLink = category.toWikiLink();
+        return {wikiLink, hasChildren: category.children.length !== 0};
+    });
 });

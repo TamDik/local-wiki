@@ -53,6 +53,10 @@ class WikiLink implements IWikiLink {
         return path;
     }
 
+    public toFullPath(): string {
+        return this.namespace + WikiLink.SEPARATOR + this.type + WikiLink.SEPARATOR + this.name;
+    }
+
     public equals(other: WikiLink): boolean {
         const isSameNamespace: boolean = other.namespace === this.namespace;
         const isSameType: boolean = other.type === this.type;

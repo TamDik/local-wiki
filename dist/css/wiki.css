@@ -233,6 +233,8 @@ a.new {
     color: #ba0000;
 }
 
+
+/* カテゴリーリスト */
 .category-links {
     padding: 5px;
     border: 1px solid #a2a9b1;
@@ -259,6 +261,8 @@ a.new {
     border-left: 0;
 }
 
+
+/* 編集リンク */
 .edit-section {
     font-size: small;
     line-height: 1em;
@@ -270,4 +274,36 @@ a.new {
 }
 .edit-section:after {
     content: ']';
+}
+
+
+/* category tree */
+.category-tree-wrapper > div {
+    padding: 0.5em;
+    margin: 0.5em 0;
+    display: inline-block;
+}
+
+.category-tree-border > div {
+    border: solid 1px;
+}
+
+.category-tree-children {
+    margin-left: 1.25em;
+}
+
+.category-tree-bullet:after {
+    content: '';
+    font-family: sans-serif;
+    display: inline-block;
+    width: 1em;
+    cursor: pointer;
+}
+
+.category-tree-bullet[data-status="collapsed"]:after {
+    content: '►';
+}
+
+.category-tree-bullet[data-status="expanded"]:after {
+    content: '▼';
 }
