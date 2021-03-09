@@ -56,6 +56,8 @@ interface IIpcApi {
     revertExternalNamespace(rootDir: string): Promise<boolean>;
     updateNamespace(namespaceId: string, name: string, base64Icon: string): Promise<boolean>;
     retrieveChildCategories(path: string|null, baseNamespace: string): Promise<{wikiLink: IWikiLink, hasChildren: boolean}[]>;
+    tex2svg(tex: string): Promise<{success: true, output: string}|{success: false, message: string}>;
+    tex2chtml(tex: string): Promise<{success: true, output: string}|{success: false, message: string}>;
 }
 
 

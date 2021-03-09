@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {ipcMain, shell} from 'electron'
+import {tex2svg, tex2chtml} from './mathematical-expression';
 import {ContentGenerator, ContentBody} from './content-generator';
 import {WikiConfig, MergedNamespaceConfig, usedAsAnExternalNamespace, parseNamespaceConfig} from './wikiconfig';
 import {WikiLink} from './wikilink';
@@ -8,6 +9,24 @@ import {WikiMarkdown} from './wikimarkdown';
 import {escapeRegex, extensionOf, generateRandomString} from './utils';
 import {extractCategories, updateCategories, Category} from './wikicategory';
 import {WikiHistory, createHistory, toFullPath, VersionData} from './wikihistory-builder';
+
+
+// MathJax
+ipcMain.handle('tex-to-svg', async (event, tex: string): Promise<{success: true, output: string}|{success: false, message: string}> => {
+    try {
+        return {success: true, output: await tex2svg(tex)};
+    } catch (e) {
+        return {success: false, message: e.message};
+    }
+});
+
+ipcMain.handle('tex-to-chtml', async (event, tex: string): Promise<{success: true, output: string}|{success: false, message: string}> => {
+    try {
+        return {success: true, output: await tex2chtml(tex)};
+    } catch (e) {
+        return {success: false, message: e.message};
+    }
+});
 
 
 ipcMain.handle('open-external-link', async (event, path: string): Promise<void> => {

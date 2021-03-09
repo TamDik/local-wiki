@@ -68,9 +68,14 @@ contextBridge.exposeInMainWorld(
 );
 
 
-
 contextBridge.exposeInMainWorld(
     'ipcApi', {
+        async tex2svg(tex: string): Promise<{success: true, output: string}|{success: false, message: string}> {
+            return ipcRenderer.invoke('tex-to-svg', tex);
+        },
+        async tex2chtml(tex: string): Promise<{success: true, output: string}|{success: false, message: string}> {
+            return ipcRenderer.invoke('tex-to-chtml', tex);
+        },
         async openExternalLink(path: string): Promise<void> {
             ipcRenderer.invoke('open-external-link', path);
         },

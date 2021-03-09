@@ -166,6 +166,7 @@ class MarkdownParser {
 
 class WikiMarkdown {
     public static readonly js: string[] = [
+        './js/mathjax.js',
         './js/category-tree.js'
     ];
     private static SECTION_PATTERN: RegExp = /^(?=(?: {1,3})?#{1,6}\s)/;
