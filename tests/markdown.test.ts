@@ -1,7 +1,45 @@
 import {WikiMD} from '../src/markdown';
 import {FileHandler, ImageFileHandler, PDFFileHandler} from '../src/markdown-magic-handler';
 
-describe('test ImageFileHandler', function() {
+describe('test code', () => {
+    function testCode(value: string[], expected: string[]): void {
+        const element: HTMLElement = document.createElement('div');
+        const wmd: WikiMD = new WikiMD({toWikiURI: (href: string) => href});
+        wmd.setValue(value.join('\n'));
+        element.innerHTML = wmd.toHTML();
+        test(`'${value.join('\\n')}'`, () => expect(element.innerHTML).toBe(expected.join('\n')));
+    }
+
+    testCode([
+        '```',
+        'class foo:',
+        '    pass',
+        '```',
+    ], [
+        '<pre><code>class foo:',
+        '    pass</code></pre>',
+    ]);
+
+    testCode([
+        '```python',
+        'class foo:',
+        '    pass',
+        '```',
+    ], [
+        '<pre><code><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">foo</span>:</span>',
+        '    <span class="hljs-keyword">pass</span></code></pre>',
+    ]);
+
+    testCode([
+        '```math',
+        '\\sum_{i} class \\cdot n_i',
+        '```',
+    ], [
+        '<p><math>\\sum_{i} class \\cdot n_i</math></p>'
+    ]);
+});
+
+describe('test ImageFileHandler', () => {
     function testImage(value: string, expected: string): void {
         const element: HTMLElement = document.createElement('div');
         const wmd: WikiMD = new WikiMD({
@@ -169,7 +207,7 @@ describe('test ImageFileHandler', function() {
     );
 });
 
-describe('test PDFFileHandler', function() {
+describe('test PDFFileHandler', () => {
     function testPDF(value: string, expected: string): void {
         const element: HTMLElement = document.createElement('div');
         const wmd: WikiMD = new WikiMD({

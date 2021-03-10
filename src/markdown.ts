@@ -29,21 +29,22 @@ class WikiMD {
     }
 
     public toHTML(): string {
-        marked.setOptions({
-            highlight: (code: string, language: string) => {
-                const validLanguage = hljs.getLanguage(language) ? language : 'plaintext';
-                return hljs.highlight(validLanguage, code).value;
-            },
-            pedantic: false,
-            gfm: true,
-            silent: false
-        });
+        marked.setOptions({pedantic: false, gfm: true, silent: false});
         const renderer: marked.Renderer = new marked.Renderer();
+        renderer.code = this.code;
         renderer.link = (href: string, title: string|null, text: string) => this.link(href, title, text, this.isWikiLink);
         renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
         marked.use({renderer});
         let html: string = marked(this.value);
         return this.expandMagics(html, this.magicHandlers);
+    }
+
+    private code(code: string, infostring: string): string {
+        if (infostring === 'math') {
+            return ['<p><math>', code , '</math></p>'].join('');
+        }
+        const validLanguage = hljs.getLanguage(infostring) ? infostring : 'plaintext';
+        return ['<pre><code>', hljs.highlight(validLanguage, code).value, '</code></pre>'].join('');
     }
 
     private link(href: string, title: string|null, text: string, isWikiLink: IsWikiLink): string {
