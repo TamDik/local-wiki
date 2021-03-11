@@ -281,7 +281,7 @@ class WikiMarkdown {
             sectionMarkdown[0] += this.editButton(section);
         }
         if (options.toc) {
-            sectionMarkdown[0] += this.tocMark(section);
+            sectionMarkdown[0] += this.tocMark();
         }
         sectionMarkdown.push(...lines);
         return sectionMarkdown.join('\n');
@@ -294,8 +294,8 @@ class WikiMarkdown {
         return `<span class="${WikiMarkdown.EDIT_CLASS}"><a href="${location.toURI()}"></a></span>`;
     }
 
-    private tocMark(section: number): string {
-        return `<span class="${WikiMarkdown.TOC_CLASS}" id="toc-${section}"></span>`;
+    private tocMark(): string {
+        return `<span class="${WikiMarkdown.TOC_CLASS}"></span>`;
     }
 }
 
