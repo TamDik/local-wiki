@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {ipcMain, shell} from 'electron'
 import {tex2svg, tex2chtml} from './mathematical-expression';
-import {ContentGenerator, ContentBody} from './content-generator';
+import {ContentGenerator, ContentBody} from './content/generator';
 import {WikiConfig, MergedNamespaceConfig, usedAsAnExternalNamespace, parseNamespaceConfig} from './wikiconfig';
 import {WikiLink} from './wikilink';
 import {WikiMarkdown} from './wikimarkdown';
