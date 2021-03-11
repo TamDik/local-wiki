@@ -153,7 +153,7 @@
         window.ipcApi.markdownToHtml(markdown, new Params().namespace)
         .then(html => {
             previewWrapper.innerHTML = html;
-            markInvalidInternalLinks(previewWrapper);
+            View.update();
         });
     }, false);
 

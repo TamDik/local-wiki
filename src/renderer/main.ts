@@ -79,6 +79,21 @@ class Params {
 }
 
 
+class View {
+    private static actions: (() => void)[] = [];
+
+    public static addUpdateAction(action: () => void): void {
+        View.actions.push(action);
+    }
+
+    public static update(): void {
+        for (const action of View.actions) {
+            action();
+        }
+    }
+}
+
+
 function initMainIcon(src: string, namespace: string): void {
     const mainLogo: HTMLDivElement = document.getElementById('main-logo') as HTMLDivElement;
     const anchor: HTMLAnchorElement = document.createElement('a');
@@ -206,10 +221,17 @@ function isExternalLink(href: string): boolean {
     return href.startsWith('http');
 }
 
-function markInvalidInternalLinks(elment: HTMLElement): void {
-    for (const anchor of elment.getElementsByTagName('a')) {
+function markAnchorTags(): void {
+    const INTERNAL_CLASS = 'internal';
+    const EXTERNAL_CLASS = 'external';
+    const selector: string = `a:not(.${INTERNAL_CLASS}):not(.${EXTERNAL_CLASS})`;
+    const anchors: NodeListOf<HTMLAnchorElement> = document.body.querySelectorAll(selector);
+    for (const anchor of anchors) {
         const href: string = anchor.href;
-        if (!isExternalLink(href)) {
+        if (isExternalLink(href)) {
+            anchor.classList.add(EXTERNAL_CLASS);
+        } else {
+            anchor.classList.add(INTERNAL_CLASS);
             const {wikiLink} = window.localWiki.parseURI(href);
             window.ipcApi.existsLink(wikiLink)
             .then(exists => {
@@ -220,6 +242,8 @@ function markInvalidInternalLinks(elment: HTMLElement): void {
         }
     }
 }
+
+View.addUpdateAction(markAnchorTags);
 
 function addDnamicEventLister(type: string, tagName: string, listener: (event: Event, element: HTMLElement) => boolean, options: boolean=false): void {
     const upperTageName: string = tagName.toUpperCase();
@@ -269,7 +293,7 @@ window.addEventListener('load', () => {
         }
     })
     .then(() => {
-        markInvalidInternalLinks(document.body);
+        View.update();
     })
     .catch(e => {
         contentHead.innerHTML = 'This page is not working...';

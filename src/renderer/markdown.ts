@@ -96,7 +96,7 @@ class TOC {
 function createTOC(): void {
     const targets: HTMLCollectionOf<HTMLSpanElement> = document.getElementsByClassName('toc-target') as HTMLCollectionOf<HTMLSpanElement>;
     const toc: TOC = new TOC();
-    if (targets.length === 0) {
+    if (targets.length < 3) {
         return;
     }
 
@@ -114,4 +114,5 @@ function createTOC(): void {
     (firstHeading.parentElement as HTMLElement).insertBefore(toc.toHTMLElement(), firstHeading);
 }
 
-createTOC();
+
+View.addUpdateAction(createTOC);

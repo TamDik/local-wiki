@@ -18,4 +18,5 @@ function expandMathematicalExpressions(): void {
     }
 }
 
-expandMathematicalExpressions();
+
+View.addUpdateAction(expandMathematicalExpressions);
