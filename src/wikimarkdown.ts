@@ -11,6 +11,7 @@ interface HTMLOptions {
     baseNamespace?: string;  // 基準になる名前空間
     section?: number|null;   // htmlに変換する対象のsection
     edit?: boolean;          // 編集ボタンの表示非表示
+    toc?: boolean;           // 目次の表示非表示
     toFullPath?: ToFullPath;
 };
 
@@ -20,6 +21,7 @@ class HTMLOptionsComplementer implements HTMLOptions {
         baseNamespace: '',
         section: null,
         edit: false,
+        toc: true,
         toFullPath: (wikiLink: WikiLink) => wikiLink.toPath(),
     }
 
@@ -46,6 +48,10 @@ class HTMLOptionsComplementer implements HTMLOptions {
 
     public get edit(): boolean {
         return this.complement<boolean>('edit');
+    }
+
+    public get toc(): boolean {
+        return this.complement<boolean>('toc');
     }
 
     public get toFullPath(): ToFullPath {
@@ -169,7 +175,9 @@ class WikiMarkdown {
         './js/mathjax.js',
         './js/category-tree.js'
     ];
-    private static SECTION_PATTERN: RegExp = /^(?=(?: {1,3})?#{1,6}\s)/;
+    private static readonly SECTION_PATTERN: RegExp = /^(?=(?: {1,3})?#{1,6}\s)/;
+    private static readonly EDIT_CLASS: string = 'edit-section';
+    private static readonly TOC_CLASS: string = 'toc-target';
     private sections: string[];
 
     public constructor(markdown: string, private wikiLink: WikiLink|null=null) {
@@ -178,6 +186,10 @@ class WikiMarkdown {
 
     private splitWithSections(markdown: string): string[] {
         return markdown.split(RegExp(WikiMarkdown.SECTION_PATTERN, 'm'));
+    }
+
+    private startWithHeading(text: string): boolean {
+        return text.match(WikiMarkdown.SECTION_PATTERN) !== null;
     }
 
     private joinSections(sections: string[]): string {
@@ -236,43 +248,52 @@ class WikiMarkdown {
         this.checkSectionNum(complementedOptions.section);
         this.checkEditAndWikiLink(complementedOptions.edit);
 
-        let markdown: string;
-        if (complementedOptions.section === null) {
-            markdown = '';
-            for (let si = 0, len = this.sections.length; si < len; si++) {
-                if (complementedOptions.edit && this.wikiLink !== null) {
-                    markdown += this.addEditLinkIfNeed(this.sections[si], this.wikiLink, si);
-                } else {
-                    markdown += this.sections[si];
-                }
-            }
-        } else {
-            markdown = this.sections[complementedOptions.section];
-            if (complementedOptions.edit && this.wikiLink !== null) {
-                markdown = this.addEditLinkIfNeed(markdown, this.wikiLink, complementedOptions.section);
-            }
-        }
-
+        const markdown: string = this.refineAndDecorateMarkdown(complementedOptions);
         const parser: MarkdownParser = new MarkdownParser(complementedOptions);
         return {html: parser.execute(markdown), categories: parser.getCategories()};
     }
 
-    private startWithHeading(text: string): boolean {
-        return text.match(WikiMarkdown.SECTION_PATTERN) !== null;
+    private refineAndDecorateMarkdown(options: HTMLOptionsComplementer): string {
+        let text: string = '';
+        const section: number|null = options.section;
+        for (let si: number = 0, len = this.sections.length; si < len; si++) {
+            const sectionText: string = this.sections[si];
+            if (section === null) {
+                text += this.decorateSection(sectionText, si, options);
+            }
+            if (section === si) {
+                text = this.decorateSection(sectionText, si, options);
+                break;
+            }
+        }
+        return text;
     }
 
-    private addEditLinkIfNeed(text: string, wikiLink: WikiLink, section: number): string {
+    private decorateSection(text: string, section: number, options: HTMLOptionsComplementer): string {
         const [heading, ...lines]: string[] = text.split('\n');
         if (!this.startWithHeading(text)) {
             return text;
         }
+        const sectionMarkdown: string[] = [heading];
+        if (options.edit) {
+            sectionMarkdown[0] += this.editButton(section);
+        }
+        if (options.toc) {
+            sectionMarkdown[0] += this.tocMark(section);
+        }
+        sectionMarkdown.push(...lines);
+        return sectionMarkdown.join('\n');
+    }
+
+    private editButton(section: number): string {
         const location: WikiLocation = new WikiLocation(this.wikiLink as WikiLink);
         location.addParam('mode', 'edit')
         location.addParam('section', String(section));
-        const button: string = '<span class="edit-section">' +
-                                 `<a href="${location.toURI()}">edit</a>` +
-                               '</span>';
-        return [heading + button, ...lines].join('\n');
+        return `<span class="${WikiMarkdown.EDIT_CLASS}"><a href="${location.toURI()}"></a></span>`;
+    }
+
+    private tocMark(section: number): string {
+        return `<span class="${WikiMarkdown.TOC_CLASS}" data-toc-section="${section}"></span>`;
     }
 }
 
