@@ -172,6 +172,8 @@ class MarkdownParser {
 
 class WikiMarkdown {
     public static readonly js: string[] = [
+        './js/renderer/markdown.js',
+        // NOTE: オプション的な機能を分離しておく
         './js/renderer/mathjax.js',
         './js/renderer/category-tree.js'
     ];
@@ -293,7 +295,7 @@ class WikiMarkdown {
     }
 
     private tocMark(section: number): string {
-        return `<span class="${WikiMarkdown.TOC_CLASS}" data-toc-section="${section}"></span>`;
+        return `<span class="${WikiMarkdown.TOC_CLASS}" id="toc-${section}"></span>`;
     }
 }
 

@@ -163,9 +163,6 @@
     font-size: 0.8em;
     outline: none;
 }
-/* #seach-field { */
-
-/* } */
 
 #main-logo {
     width: 10em;
@@ -231,6 +228,61 @@ a[href^="http"] {
 
 a.new {
     color: #ba0000;
+}
+
+
+/* TOC */
+.toc {
+    display: table;
+    border: 1px solid #a2a9b1;
+    background-color: #f8f9fa;
+    padding: 7px;
+    font-size: 13.5px;
+}
+
+.toc-title {
+    text-align: center;
+}
+
+.toc-heading {
+    display: inline;
+    font-weight: bold;
+    border: none;
+}
+
+.toc-number {
+    padding-right: 0.5em;
+    color: #222;
+}
+
+.toc-toggle, .toc-link {
+    color: var(--primary);
+    cursor: pointer;
+}
+
+.toc-toggle:hover, .toc-link:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.toc-toggle:before {
+    content: '[';
+    color: #212529;
+}
+
+.toc-toggle:after {
+    content: ']';
+    color: #212529;
+}
+
+.toc ul {
+    list-style-type: none;
+    margin: 0.3em 0;
+    padding: 0;
+}
+
+.toc ul ul {
+    margin-left: 2em;
 }
 
 
