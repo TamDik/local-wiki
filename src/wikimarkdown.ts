@@ -172,8 +172,8 @@ class MarkdownParser {
 
 class WikiMarkdown {
     public static readonly js: string[] = [
-        './js/mathjax.js',
-        './js/category-tree.js'
+        './js/renderer/mathjax.js',
+        './js/renderer/category-tree.js'
     ];
     private static readonly SECTION_PATTERN: RegExp = /^(?=(?: {1,3})?#{1,6}\s)/;
     private static readonly EDIT_CLASS: string = 'edit-section';

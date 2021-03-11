@@ -388,7 +388,7 @@ class MarkdownEditorBody extends ContentBody {
     ];
     public js: string[] = [
         '../node_modules/simplemde/dist/simplemde.min.js',
-        './js/editor.js',
+        './js/renderer/editor.js',
         ...WikiMarkdown.js,
     ];
     private section: string = '';
@@ -632,7 +632,7 @@ class PageWithVersionReadBody extends WithVersionBody {
 
 class MarkdownHistoryBody extends ContentBody {
     public css: string[] = ['./css/page-history.css'];
-    public js: string[] = ['./js/page-history.js'];
+    public js: string[] = ['./js/renderer/page-history.js'];
 
     public get html(): string {
         const lines: string[] = [];
@@ -1105,7 +1105,7 @@ class AllFilesBody extends SpecialContentBody {
 class UploadFileBody extends SpecialContentBody {
     private static readonly wikiName: string = 'UploadFile';
     public name: string = UploadFileBody.wikiName;
-    public js: string[] = ['./js/upload-file.js'];
+    public js: string[] = ['./js/renderer/upload-file.js'];
     public title: string = 'Upload file';
     public type: SpecialContentType = 'media';
 
@@ -1157,8 +1157,8 @@ class PageDiffBody extends SpecialContentBody {
     public css: string[] = ['./css/page-diff.css'];
     public js: string[] = [
         '../node_modules/jsdifflib/index.js',
-        './js/code-table.js',
-        './js/page-diff.js'
+        './js/renderer/code-table.js',
+        './js/renderer/page-diff.js'
     ];
 
     public static createURI(wikiLink: WikiLink, old: number, diff: number): string {
@@ -1237,7 +1237,7 @@ class PageDiffBody extends SpecialContentBody {
 
 
 class SearchBody extends SpecialContentBody {
-    public js: string[] = ['./js/search-page.js'];
+    public js: string[] = ['./js/renderer/search-page.js'];
     public css: string[] = ['./css/search-page.css'];
     public name: string = 'Search';
     public title: string = 'Search';
@@ -1295,7 +1295,7 @@ class SideMenuBody extends SpecialContentBody {
     public css: string[] = ['./css/side-menu.css'];
     public js: string[] = [
         '../node_modules/sortablejs/Sortable.min.js',
-        './js/side-menu.js'
+        './js/renderer/side-menu.js'
     ];
     public name: string = 'SideMenu';
     public title: string = 'Side menu';
@@ -1328,7 +1328,7 @@ class NamespacePreferencesBody extends SpecialContentBody {
     public readonly title: string = 'Namespace preferences';
     public readonly type: SpecialContentType = 'namespace';
     public readonly js: string[] = [
-        './js/namespace-preferences.js'
+        './js/renderer/namespace-preferences.js'
     ];
     public readonly css: string[] = [
         './css/namespace-preferences.css'
@@ -1456,7 +1456,7 @@ class NewNamespaceBody extends SpecialContentBody {
     public title: string = 'New namespace';
     public type: SpecialContentType = 'namespace';
     public js: string[] = [
-        './js/new-namespace.js'
+        './js/renderer/new-namespace.js'
     ];
     public css: string[] = [
         './css/new-namespace.css'
