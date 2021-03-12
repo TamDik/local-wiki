@@ -6,6 +6,7 @@ function isWikiType(arg: any): arg is WikiType {
         case 'Page':
         case 'File':
         case 'Category':
+        case 'Template':
         case 'Special':
             return true;
         default:

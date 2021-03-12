@@ -534,6 +534,43 @@ class CategoryHandler implements IMagicHandler {
 }
 
 
+class TemplateHandler implements IMagicHandler {
+    private templates: string[] = [];
+
+    public constructor(private readonly existingTemplate: IsTargetWikiLink) {
+    }
+
+    public isTarget(content: string): boolean {
+        return this.existingTemplate(content);
+    }
+
+    public expand(content: string, toWikiURI: ToWikiURI): string {
+        if (!this.templates.includes(content)) {
+            this.templates.push(content);
+        }
+        return `<div data-template="${content}"></div>`;
+    }
+
+    public getTemplates(): string[] {
+        return this.templates;
+    }
+}
+
+
+class NotFoundTemplateHandler implements IMagicHandler {
+    public constructor(private readonly notExistingTemplate: IsTargetWikiLink) {
+    }
+
+    public isTarget(content: string): boolean {
+        return this.notExistingTemplate(content);
+    }
+
+    public expand(content: string, toWikiURI: ToWikiURI): string {
+        return `<a href="${toWikiURI(content)}">${content}</a>`;
+    }
+}
+
+
 class CategoryTreeHandler implements IMagicHandler {
     private static KEYWORD: string = 'CategoryTree';
     private static ROOT: string = 'root';
@@ -657,4 +694,4 @@ class CategoryTreeHandler implements IMagicHandler {
 }
 
 
-export {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, CategoryTreeHandler};
+export {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, NotFoundTemplateHandler, CategoryTreeHandler};

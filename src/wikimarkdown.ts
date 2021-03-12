@@ -1,8 +1,9 @@
+import * as fs from 'fs';
 import {WikiLink, WikiLocation} from './wikilink';
 import {fileTypeOf} from './wikifile';
 import {WikiMD} from './markdown';
 import {Category} from './wikicategory';
-import {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, CategoryTreeHandler} from './markdown-magic-handler';
+import {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, NotFoundTemplateHandler, CategoryTreeHandler} from './markdown-magic-handler';
 
 
 type ToFullPath = (wikiLink: WikiLink) => string|null;
@@ -62,11 +63,13 @@ class HTMLOptionsComplementer implements HTMLOptions {
 
 class MarkdownParser {
     private wikiMD: WikiMD;
+    private parsers: MarkdownParser[] = [];
     private categoryHandler: CategoryHandler;
 
-    public constructor(private readonly opions: HTMLOptionsComplementer) {
-        const baseNamespace: string = this.opions.baseNamespace;
-        const toFullPath: ToFullPath = this.opions.toFullPath;
+    public constructor(private readonly options: HTMLOptionsComplementer) {
+        this.parsers.push(this);
+        const baseNamespace: string = this.options.baseNamespace;
+        const toFullPath: ToFullPath = this.options.toFullPath;
 
         this.wikiMD = new WikiMD({
             isWikiLink: WikiLink.isWikiLink,
@@ -109,6 +112,18 @@ class MarkdownParser {
         this.categoryHandler = new CategoryHandler((path: string) => new WikiLink(path, baseNamespace).type === 'Category');
         this.wikiMD.addMagicHandler(this.categoryHandler);
 
+        // template
+        function existsTemplate(path: string): boolean {
+            const wikiLink: WikiLink = new WikiLink(path, baseNamespace);
+            if (wikiLink.type !== 'Template') {
+                return false;
+            }
+            const fullPath: string|null = toFullPath(new WikiLink(path, baseNamespace));
+            return typeof(fullPath) === 'string';
+        }
+        this.wikiMD.addMagicHandler(new TemplateHandler(existsTemplate));
+        this.wikiMD.addMagicHandler(new NotFoundTemplateHandler((path: string) => !existsTemplate(path)));
+
         // Category tree
         const treeHandler: CategoryTreeHandler = new CategoryTreeHandler(
             (path: string) => new WikiLink(path, baseNamespace).type === 'Category',
@@ -123,15 +138,14 @@ class MarkdownParser {
             },
         );
         this.wikiMD.addMagicHandler(treeHandler);
-
     }
 
     public get baseNamespace(): string {
-        return this.opions.baseNamespace;
+        return this.options.baseNamespace;
     }
 
     private get toFullPath(): ToFullPath {
-        return this.opions.toFullPath;
+        return this.options.toFullPath;
     }
 
     private expandWikiLink(html: string, baseNamespace: string): string {
@@ -157,15 +171,47 @@ class MarkdownParser {
         return html;
     }
 
+    private expandTemplate(html: string, baseNamespace: string): string {
+        const options: HTMLOptionsComplementer = new HTMLOptionsComplementer({
+            baseNamespace,
+            section: null,
+            edit: false,  // FIXME: editがWikiMarkdownでマークされているので，trueのときに反映されない
+            toc: true,    // FIXME: TOC がWikiMarkdownでマークされているので，trueのときに反映されない
+            toFullPath: this.toFullPath,
+        });
+        const parser: MarkdownParser = new MarkdownParser(options);
+        this.parsers.push(parser);
+
+        const PATTERN: RegExp = /<div data-template="([^"]*)"><\/div>/g;
+        html = html.replace(PATTERN, s => {
+            const wikiPath: string = s.slice(20, -8);
+            const wikiLink: WikiLink = new WikiLink(wikiPath, baseNamespace)
+            const filepath: string = this.toFullPath(wikiLink) as string;
+            const markdown: string = fs.readFileSync(filepath, 'utf-8');
+            return parser.execute(markdown);
+        });
+        return html;
+    }
+
     public execute(markdown: string): string {
         this.wikiMD.setValue(markdown);
         let html: string = this.wikiMD.toHTML();
         html = this.expandWikiLink(html, this.baseNamespace);
+        html = this.expandTemplate(html, this.baseNamespace);
         return html;
     }
 
     public getCategories(): string[] {
-        return this.categoryHandler.getCategories();
+        const categories: string[] = [];
+        for (const parser of this.parsers) {
+            for (const category of parser.categoryHandler.getCategories()) {
+                if (categories.includes(category)) {
+                    continue;
+                }
+                categories.push(category);
+            }
+        }
+        return categories;
     }
 }
 
@@ -176,6 +222,9 @@ class WikiMarkdown {
         // NOTE: オプション的な機能を分離しておく
         './js/renderer/mathjax.js',
         './js/renderer/category-tree.js'
+    ];
+    public static readonly css: string[] = [
+        '../node_modules/highlight.js/styles/github-gist.css',
     ];
     private static readonly SECTION_PATTERN: RegExp = /^(?=(?: {1,3})?#{1,6}\s)/;
     private static readonly EDIT_CLASS: string = 'edit-section';

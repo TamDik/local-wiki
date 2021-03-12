@@ -1,15 +1,15 @@
 import * as fs from 'fs';
-import {WikiLink, WikiLocation} from '../wikilink';
 import {toFullPath} from '../wikihistory-builder';
 import {ContentBody, ContentBodyDispatcher} from './content-body';
-import {MarkdownEditorBody, MarkdownHistoryBody} from './markdown-body';
 import {NotFoundVersionBody, WithVersionBody} from './version-body';
+import {MarkdownEditorBody, MarkdownHistoryBody} from './markdown-body';
+import {WikiLink, WikiLocation} from '../wikilink';
 import * as markdown from './markdown';
 
 
-class PageContentBodyDispatcher extends ContentBodyDispatcher {
+class TemplateContentBodyDispatcher extends ContentBodyDispatcher {
     protected readContentBody(wikiLink: WikiLink): ContentBody {
-        return new PageReadBody(wikiLink);
+        return new TemplateReadBody(wikiLink);
     }
 
     protected editContentBody(wikiLink: WikiLink): ContentBody {
@@ -21,19 +21,15 @@ class PageContentBodyDispatcher extends ContentBodyDispatcher {
     }
 
     protected contentWithVersionBody(wikiLink: WikiLink, version: number): ContentBody {
-        return new PageWithVersionReadBody(wikiLink, version);
+        return new TemplateWithVersionReadBody(wikiLink, version);
     }
 
     protected notFoundReadContentBody(wikiLink: WikiLink): ContentBody {
-        return new NotFoundPageBody(wikiLink);
+        return new NotFoundTemplateBody(wikiLink);
     }
 
     protected notFoundEditContentBody(wikiLink: WikiLink): ContentBody {
         return this.editContentBody(wikiLink);
-    }
-
-    protected notFoundHistoryContentBody(wikiLink: WikiLink): ContentBody {
-        return new NotFoundPageBody(wikiLink);
     }
 
     protected notFoundContentWithVersionBody(wikiLink: WikiLink, version: number): ContentBody {
@@ -42,18 +38,18 @@ class PageContentBodyDispatcher extends ContentBodyDispatcher {
 }
 
 
-class NotFoundPageBody extends ContentBody {
+class NotFoundTemplateBody extends ContentBody {
     public get html(): string {
         const location: WikiLocation = new WikiLocation(this.wikiLink);
         location.addParam('mode', 'edit');
-        return `<p>There is currently no text in this page. You can <a href="${location.toURI()}">create this page</a>.</p>`;
+        return `<p>There is currently no text in this page. You can <a href="${location.toURI()}">create this template</a>.</p>`;
     }
 }
 
 
-class PageReadBody extends ContentBody {
+class TemplateReadBody extends ContentBody {
     public js: string[] = [
-        ...markdown.js,
+        ...markdown.js
     ];
     public css: string[] = [
         ...markdown.css,
@@ -67,7 +63,7 @@ class PageReadBody extends ContentBody {
 }
 
 
-class PageWithVersionReadBody extends WithVersionBody {
+class TemplateWithVersionReadBody extends WithVersionBody {
     protected mainContent(version: number): string {
         const filepath: string = toFullPath(this.wikiLink, version) as string;
         const text: string = fs.readFileSync(filepath, 'utf-8');
@@ -75,5 +71,4 @@ class PageWithVersionReadBody extends WithVersionBody {
     }
 }
 
-
-export {PageContentBodyDispatcher};
+export {TemplateContentBodyDispatcher};

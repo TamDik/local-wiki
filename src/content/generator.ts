@@ -3,6 +3,7 @@ import {WikiLink, WikiLocation} from '../wikilink';
 import {ContentBody} from './content-body';
 import {PageContentBodyDispatcher} from './page-body';
 import {FileContentBodyDispatcher} from './file-body';
+import {TemplateContentBodyDispatcher} from './template-body';
 import {SpecialContentBody, SpecialContentBodyDispatcher, NewNamespaceBody} from './special-body';
 import {CategoryContentBodyDispatcher} from './category-body';
 import {NotFoundNamespaceBody} from './not-found-namespace-body';
@@ -30,6 +31,7 @@ class ContentGenerator {
             case 'Page':
             case 'File':
             case 'Category':
+            case 'Template':
                 const readLoc: WikiLocation = new WikiLocation(wikiLink);
                 const editLoc: WikiLocation = new WikiLocation(wikiLink);
                 const histLoc: WikiLocation = new WikiLocation(wikiLink);
@@ -63,6 +65,8 @@ class ContentGenerator {
                 return new FileContentBodyDispatcher(wikiLink, mode, version).execute();
             case 'Category':
                 return new CategoryContentBodyDispatcher(wikiLink, mode, version).execute();
+            case 'Template':
+                return new TemplateContentBodyDispatcher(wikiLink, mode, version).execute();
             case 'Special':
                 return new SpecialContentBodyDispatcher(wikiLink).execute();
         }

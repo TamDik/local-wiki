@@ -1,5 +1,5 @@
 export declare global {
-    type WikiType = 'Page'|'File'|'Category'|'Special';
+    type WikiType = 'Page'|'File'|'Category'|'Template'|'Special';
     type PageMode = 'read'|'edit'|'history';
     type FileType = 'pdf'|'image'|'other';
     interface IWikiLink {

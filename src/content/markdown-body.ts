@@ -12,6 +12,7 @@ class MarkdownEditorBody extends ContentBody {
         '../node_modules/highlight.js/styles/github-gist.css',
         '../node_modules/simplemde/dist/simplemde.min.css',
         './css/editor.css',
+        ...WikiMarkdown.css,
     ];
     public js: string[] = [
         '../node_modules/simplemde/dist/simplemde.min.js',

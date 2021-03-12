@@ -43,6 +43,10 @@ class CategoryReadBody extends ContentBody {
     public js: string[] = [
         ...markdown.js,
     ];
+    public css: string[] = [
+        ...markdown.css,
+    ];
+
     public get html(): string {
         const lines: string[] = [
             this.pageHtml(),
@@ -82,6 +86,10 @@ class CategoryWithVersionReadBody extends WithVersionBody {
     public js: string[] = [
         ...markdown.js,
     ];
+    public css: string[] = [
+        ...markdown.css,
+    ];
+
     protected mainContent(version: number): string {
         const filepath: string = toFullPath(this.wikiLink, version) as string;
         const text: string = fs.readFileSync(filepath, 'utf-8');

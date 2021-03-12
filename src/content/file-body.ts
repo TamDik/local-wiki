@@ -41,6 +41,9 @@ class FileWithVersionReadBody extends WithVersionBody {
     public js: string[] = [
         ...markdown.js,
     ];
+    public css: string[] = [
+        ...markdown.css,
+    ];
 
     protected mainContent(version: number): string {
         const filepath: string = toFullPath(this.wikiLink, version, true) as string;
@@ -59,6 +62,9 @@ class NotFoundFileBody extends ContentBody {
 class FileReadBody extends ContentBody {
     public js: string[] = [
         ...markdown.js,
+    ];
+    public css: string[] = [
+        ...markdown.css,
     ];
 
     public constructor(wikiLink: WikiLink, private readonly version?: number) {

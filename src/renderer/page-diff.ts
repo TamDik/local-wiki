@@ -30,7 +30,7 @@
             return false;
         }
         const wikiLink = window.localWiki.parsePath(path);
-        const comparableTypes: WikiType[] = ['Page', 'File', 'Category'];
+        const comparableTypes: WikiType[] = ['Page', 'File', 'Category', 'Template'];
         if (!comparableTypes.includes(wikiLink.type)) {
             return false;
         }

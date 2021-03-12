@@ -1,26 +1,29 @@
 import {WikiMarkdown} from '../wikimarkdown';
 import {WikiLink, WikiLocation} from '../wikilink';
 import {toFullPath} from '../wikihistory-builder';
+import {CategoriesBody} from './special-body';
 
 
 const js: string[] = [...WikiMarkdown.js];
+const css: string[] = [...WikiMarkdown.css];
 
 
-function parse(markdown: string, wikiLink: WikiLink, categoriesLocation?: WikiLocation): string {
+function parse(markdown: string, wikiLink: WikiLink, category: boolean=true): string {
     const wikiMarkdown: WikiMarkdown = new WikiMarkdown(markdown, wikiLink);
     const baseNamespace: string = wikiLink.namespace;
     let {html, categories} = wikiMarkdown.parse({baseNamespace, toFullPath, edit: true});
-    if (categoriesLocation) {
-        html += categoryList(categories, baseNamespace, categoriesLocation);
+    if (category) {
+        html += categoryList(categories, baseNamespace);
     }
     return html;
 }
 
 
-function categoryList(categories: string[], baseNamespace: string, categoriesLocation: WikiLocation): string {
+function categoryList(categories: string[], baseNamespace: string): string {
     if (categories.length === 0) {
         return '';
     }
+    const categoriesLocation: WikiLocation = new WikiLocation(new WikiLink({namespace: baseNamespace, type: 'Special', name: CategoriesBody.wikiName}));
     const lines: string[] = [
         '<div class="category-links">',
           `<a href="${categoriesLocation.toURI()}">Categories</a>: `,
@@ -43,4 +46,4 @@ function categoryList(categories: string[], baseNamespace: string, categoriesLoc
 }
 
 
-export {js, parse};
+export {js, css, parse};
