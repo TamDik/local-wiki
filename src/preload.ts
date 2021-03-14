@@ -110,8 +110,8 @@ contextBridge.exposeInMainWorld(
         async getRawPageText(path: string, version?: number): Promise<string> {
             return ipcRenderer.invoke('get-raw-page-text', path, version);
         },
-        async markdownToHtml(markdown: string, baseNamespace: string): Promise<string> {
-            return ipcRenderer.invoke('markdown-to-html', markdown, baseNamespace);
+        async markdownToHtml(path: string, markdown: string): Promise<string> {
+            return ipcRenderer.invoke('markdown-to-html', path, markdown);
         },
         async searchPageByName(path: string, name: string): Promise<{exists: boolean, path: string}> {
             return ipcRenderer.invoke('search-page-by-name', path, name);

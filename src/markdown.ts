@@ -18,7 +18,7 @@ class WikiMD {
     private readonly magicHandlers: IMagicHandler[] = [];
     public static readonly NEW_CLASS_NAME = 'new';
 
-    constructor(options: WikiMDOption) {
+    public constructor(options: WikiMDOption) {
         this.value = '';
         this.toWikiURI = options.toWikiURI;
         this.isWikiLink = options.isWikiLink || (href => false);
@@ -26,6 +26,24 @@ class WikiMD {
 
     public setValue(value: string): void {
         this.value = value;
+    }
+
+    public static expandMagics(html: string, handlers: IMagicHandler[], toWikiURI: ToWikiURI): string {
+        const MAGIC_PATTERN: RegExp = /{{[^{}]+}}/g;
+        const magicMatches: RegExpMatchArray|null = html.match(MAGIC_PATTERN);
+        if (!magicMatches) {
+            return html;
+        }
+        for (const magic of magicMatches) {
+            const innerMagic: string = magic.replace(/(^{{|}}$)/g, '');
+            for (const handler of handlers) {
+                if (!handler.isTarget(innerMagic)) {
+                    continue;
+                }
+                html = html.replace(magic, handler.expand(innerMagic, toWikiURI));
+            }
+        }
+        return html;
     }
 
     public toHTML(): string {
@@ -36,7 +54,7 @@ class WikiMD {
         renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
         marked.use({renderer});
         let html: string = marked(this.value);
-        return this.expandMagics(html, this.magicHandlers);
+        return WikiMD.expandMagics(html, this.magicHandlers, this.toWikiURI);
     }
 
     private code(code: string, infostring: string): string {
@@ -65,24 +83,6 @@ class WikiMD {
             img = `<a href="${this.toWikiURI(href)}" class="image">${img}</a>`;
         }
         return img;
-    }
-
-    private expandMagics(html: string, magicHandlers: IMagicHandler[]): string {
-        const MAGIC_PATTERN: RegExp = /{{[^{}]+}}/g;
-        const magicMatches: RegExpMatchArray|null = html.match(MAGIC_PATTERN);
-        if (!magicMatches) {
-            return html;
-        }
-        for (const magic of magicMatches) {
-            const innerMagic: string = magic.replace(/(^{{|}}$)/g, '');
-            for (const magicHandler of magicHandlers) {
-                if (!magicHandler.isTarget(innerMagic)) {
-                    continue;
-                }
-                html = html.replace(magic, magicHandler.expand(innerMagic, this.toWikiURI));
-            }
-        }
-        return html;
     }
 
     public addMagicHandler(magicHandler: IMagicHandler): void {

@@ -35,7 +35,7 @@ class MarkdownEditorBody extends ContentBody {
     }
 
     private escapedMarkdown(filepath: string): string|null {
-        const markdown: WikiMarkdown = new WikiMarkdown(fs.readFileSync(filepath, 'utf-8'));
+        const markdown: WikiMarkdown = new WikiMarkdown(fs.readFileSync(filepath, 'utf-8'), this.wikiLink);
         if (this.section === '') {
             return escapeHtml(markdown.getRawText());
         }

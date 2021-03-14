@@ -133,7 +133,7 @@ ipcMain.handle('update-page', async (event, path: string, text: string, comment:
         markdown = text;
     } else {
         const data: VersionData = history.getByName(wikiLink.name)
-        const wmd: WikiMarkdown = new WikiMarkdown(fs.readFileSync(data.filepath, 'utf-8'));
+        const wmd: WikiMarkdown = new WikiMarkdown(fs.readFileSync(data.filepath, 'utf-8'), wikiLink);
         wmd.setSection(section, text);
         markdown = wmd.getRawText();
     }
@@ -156,9 +156,10 @@ ipcMain.handle('upload-file', async (event, path: string, destName: string, sour
 });
 
 // マークダウンをHTMLに変換
-ipcMain.handle('markdown-to-html', async (event, markdown: string, baseNamespace: string): Promise<string> => {
-    const wikiMarkdown: WikiMarkdown = new WikiMarkdown(markdown);
-    let {html, categories} = wikiMarkdown.parse({baseNamespace, toFullPath});
+ipcMain.handle('markdown-to-html', async (event, path: string, markdown: string): Promise<string> => {
+    const wikiLink: WikiLink = new WikiLink(path);
+    const wikiMarkdown: WikiMarkdown = new WikiMarkdown(markdown, wikiLink);
+    let html: string = wikiMarkdown.parse({baseNamespace: wikiLink.namespace, toFullPath}).html;
     return html;
 });
 

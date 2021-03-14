@@ -150,7 +150,7 @@
     previewButton.addEventListener('click', () => {
         const markdown: string = getText();
         previewAlert.classList.remove('d-none');
-        window.ipcApi.markdownToHtml(markdown, new Params().namespace)
+        window.ipcApi.markdownToHtml(params.path, markdown)
         .then(html => {
             previewWrapper.innerHTML = html;
             View.update();
