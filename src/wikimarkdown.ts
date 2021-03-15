@@ -3,7 +3,7 @@ import {WikiLink, WikiLocation} from './wikilink';
 import {fileTypeOf} from './wikifile';
 import {WikiMD} from './markdown';
 import {Category} from './wikicategory';
-import {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, NotFoundTemplateHandler, CategoryTreeHandler} from './markdown-magic-handler';
+import {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, TemplateParameterHandler, NotFoundTemplateHandler, CategoryTreeHandler} from './markdown-magic-handler';
 
 
 type ToFullPath = (wikiLink: WikiLink) => string|null;
@@ -62,11 +62,10 @@ class HTMLOptionsComplementer implements HTMLOptions {
 
 
 class TemplateExpander {
-    public constructor(private readonly options: HTMLOptionsComplementer, private readonly loops: WikiLink[]) {
-    }
+    private handler: TemplateHandler;
 
-    public execute(text: string): string {
-        const handler: TemplateHandler = new TemplateHandler((path: string) => {
+    public constructor(private readonly options: HTMLOptionsComplementer, private readonly loops: WikiLink[]) {
+        this.handler = new TemplateHandler((path: string) => {
             const wikiLink: WikiLink = new WikiLink(path, this.baseNamespace);
             if (wikiLink.type !== 'Template') {
                 return false;
@@ -74,40 +73,36 @@ class TemplateExpander {
             const fullPath: string|null = this.toFullPath(new WikiLink(path, this.baseNamespace));
             return typeof(fullPath) === 'string';
         });
-        const expanded: string = WikiMD.expandMagics(text, [handler], (href: string) => {
-            const wikiLink: WikiLink = new WikiLink(href, this.baseNamespace);
-            const location: WikiLocation = new WikiLocation(wikiLink);
-            return location.toURI();
-        });
-        return this.expandTemplates(expanded);
     }
 
-    private get baseNamespace(): string {
-        return this.options.baseNamespace;
-    }
-
-    private get toFullPath(): ToFullPath {
-        return this.options.toFullPath;
-    }
-
-    private expandTemplates(text: string): string {
+    public execute(text: string): string {
         const PATTERN: RegExp = /<div data-template="([^"]*)"><\/div>/g;
-        return text.replace(PATTERN, s => {
-            const wikiPath: string = s.slice(20, -8);
-            return this.expandTemplate(wikiPath);
+        const expanded: string = WikiMD.expandMagics(text, [this.handler], this.toWikiURI);
+        return expanded.replace(PATTERN, s => {
+            const templateId: string = s.slice(20, -8);
+            return this.expandTemplate(templateId);
         });
     }
 
-    private expandTemplate(wikiPath: string): string {
-        const wikiLink: WikiLink = new WikiLink(wikiPath, this.baseNamespace)
+    private expandTemplate(templateId: string): string {
+        const path: string = this.handler.getWikiPath(templateId);
+        const wikiLink: WikiLink = new WikiLink(path, this.baseNamespace)
         if (this.isIgnoredTemplage(wikiLink)) {
             return this.templateLoop(wikiLink);
         }
+
+        const filepath: string = this.toFullPath(wikiLink) as string;
+        let markdown: string = fs.readFileSync(filepath, 'utf-8');
+        markdown = this.expandParameters(templateId, markdown);
         const ignores: WikiLink[] = [...this.loops, wikiLink];
         const expander: TemplateExpander = new TemplateExpander(this.options, ignores);
-        const filepath: string = this.toFullPath(wikiLink) as string;
-        const markdown: string = fs.readFileSync(filepath, 'utf-8');
         return expander.execute(markdown);
+    }
+
+    private expandParameters(templateId: string, text: string): string {
+        const parameters: Map<string, string> = this.handler.getParameter(templateId);
+        const handler: TemplateParameterHandler = new TemplateParameterHandler(parameters);
+        return WikiMD.expandMagics(text, [handler], this.toWikiURI, 3);
     }
 
     private templateLoop(wikiLink: WikiLink): string {
@@ -127,6 +122,20 @@ class TemplateExpander {
             }
         }
         return false;
+    }
+
+    private toWikiURI(href: string): string {
+        const wikiLink: WikiLink = new WikiLink(href, this.baseNamespace);
+        const location: WikiLocation = new WikiLocation(wikiLink);
+        return location.toURI();
+    }
+
+    private get baseNamespace(): string {
+        return this.options.baseNamespace;
+    }
+
+    private get toFullPath(): ToFullPath {
+        return this.options.toFullPath;
     }
 }
 
@@ -223,8 +232,8 @@ class MarkdownParser {
     private expandInternalFileLink(html: string, tagName: string, prop: string, replace: string|null, baseNamespace: string): string {
         const PATTERN: RegExp = new RegExp(`(?<=<${tagName} [^>]*${prop}=")\\?path=[^"]+(?=")`, 'g');
         html = html.replace(PATTERN, s => {
-            const wikiPath: string = s.slice(6);
-            const wikiLink: WikiLink = new WikiLink(wikiPath, baseNamespace);
+            const path: string = s.slice(6);
+            const wikiLink: WikiLink = new WikiLink(path, baseNamespace);
             if (wikiLink.type !== 'File') {
                 return replace === null ? s : replace;
             }

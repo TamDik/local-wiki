@@ -1,4 +1,5 @@
 import {IMagicHandler, ToWikiURI} from './markdown';
+import {generateRandomString} from './utils';
 
 
 type IsTargetWikiLink = (path: string) => boolean;
@@ -534,25 +535,75 @@ class CategoryHandler implements IMagicHandler {
 }
 
 
+type TemplateData = {path: string, parameters: Map<string, string>};
 class TemplateHandler implements IMagicHandler {
-    private templates: string[] = [];
+    private readonly templatesData: Map<string, TemplateData> = new Map();
 
     public constructor(private readonly existingTemplate: IsTargetWikiLink) {
     }
 
     public isTarget(content: string): boolean {
-        return this.existingTemplate(content);
+        const [path, ...params] = content.split('|');
+        return this.existingTemplate(path);
     }
 
     public expand(content: string, toWikiURI: ToWikiURI): string {
-        if (!this.templates.includes(content)) {
-            this.templates.push(content);
-        }
-        return `<div data-template="${content}"></div>`;
+        const [path, ...params] = content.split('|');
+        const templateId: string = generateRandomString(8);
+        this.setTemplateData(templateId, path, params);
+        return `<div data-template="${templateId}"></div>`;
     }
 
-    public getTemplates(): string[] {
-        return this.templates;
+    private setTemplateData(templateId: string, path: string, params: string[]): void {
+        let index: number = 1;
+        const parameters: Map<string, string> = new Map();
+        for (const param of params) {
+            const [v1, ...arr]: string[] = param.split('=');
+            if (arr.length === 0) {
+                parameters.set(String(index), v1);
+                index++;
+            } else {
+                parameters.set(v1, arr.join('='));
+            }
+        }
+
+        this.templatesData.set(templateId, {path, parameters});
+    }
+
+    private getTemplateData(id: string): TemplateData {
+        if (!this.templatesData.has(id)) {
+            throw new Error(`Not found the template id: ${id}`);
+        }
+        return this.templatesData.get(id) as TemplateData;
+    }
+
+    public getParameter(templateId: string): Map<string, string> {
+        return this.getTemplateData(templateId).parameters;
+    }
+
+    public getWikiPath(templateId: string): string {
+        return this.getTemplateData(templateId).path;
+    }
+}
+
+
+class TemplateParameterHandler implements IMagicHandler {
+    public constructor(private parameters: Map<string, string>) {
+    }
+
+    public isTarget(content: string): boolean {
+        const [v1, ...arr] = content.split('|');
+        return arr.length !== 0 || this.parameters.has(v1);
+    }
+
+    public expand(content: string, toWikiURI: ToWikiURI): string {
+        const SEP: string = '|';
+        const [key, ...arr] = content.split(SEP);
+        const value: string|null = null;
+        if (this.parameters.has(key)) {
+            return this.parameters.get(key) as string;
+        }
+        return arr.join(SEP);
     }
 }
 
@@ -562,11 +613,13 @@ class NotFoundTemplateHandler implements IMagicHandler {
     }
 
     public isTarget(content: string): boolean {
-        return this.notExistingTemplate(content);
+        const [path, ...params] = content.split('|');
+        return this.notExistingTemplate(path);
     }
 
     public expand(content: string, toWikiURI: ToWikiURI): string {
-        return `<a href="${toWikiURI(content)}">${content}</a>`;
+        const [path, ...params] = content.split('|');
+        return `<a href="${toWikiURI(path)}">${path}</a>`;
     }
 }
 
@@ -694,4 +747,4 @@ class CategoryTreeHandler implements IMagicHandler {
 }
 
 
-export {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, NotFoundTemplateHandler, CategoryTreeHandler};
+export {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, TemplateParameterHandler, NotFoundTemplateHandler, CategoryTreeHandler};

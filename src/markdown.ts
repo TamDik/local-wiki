@@ -28,14 +28,14 @@ class WikiMD {
         this.value = value;
     }
 
-    public static expandMagics(html: string, handlers: IMagicHandler[], toWikiURI: ToWikiURI): string {
-        const MAGIC_PATTERN: RegExp = /{{[^{}]+}}/g;
+    public static expandMagics(html: string, handlers: IMagicHandler[], toWikiURI: ToWikiURI, brackets: number=2): string {
+        const MAGIC_PATTERN: RegExp = new RegExp('{'.repeat(brackets) + '[^{}]+' + '}'.repeat(brackets), 'g');
         const magicMatches: RegExpMatchArray|null = html.match(MAGIC_PATTERN);
         if (!magicMatches) {
             return html;
         }
         for (const magic of magicMatches) {
-            const innerMagic: string = magic.replace(/(^{{|}}$)/g, '');
+            const innerMagic: string = magic.slice(brackets, -brackets);
             for (const handler of handlers) {
                 if (!handler.isTarget(innerMagic)) {
                     continue;
