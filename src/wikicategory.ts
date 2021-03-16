@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import {compareLowerCase} from './utils';
 import {WikiLink} from './wikilink';
 import {WikiMD} from './markdown';
 import {CategoryHandler} from './markdown-magic-handler';
@@ -179,7 +180,7 @@ class Category {
                 categories.push(category);
             }
         }
-        return categories.sort((a, b) => a.name > b.name ? 1 : -1);
+        return categories.sort((a, b) => compareLowerCase(a.name, b.name));
     }
 }
 

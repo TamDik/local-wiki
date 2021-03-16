@@ -1,3 +1,4 @@
+import {compareLowerCase} from '../utils';
 import {ContentBody, IContentBodyDispatcher} from './content-body';
 import {WikiConfig, MergedNamespaceConfig} from '../wikiconfig';
 import {Category} from '../wikicategory';
@@ -97,7 +98,8 @@ class SpecialPagesBody extends SpecialContentBody {
     public get html(): string {
         const lines: string[] = [];
         for (const [contentType, label] of Object.entries(specialContentLabels)) {
-            const contentBodies: SpecialContentBody[] = this.specialContentBodies.filter(contentBody => contentBody.type === contentType);
+            const contentBodies: SpecialContentBody[] = this.specialContentBodies.filter(contentBody => contentBody.type === contentType)
+                                                                                 .sort((a, b) => compareLowerCase(a.name, b.name));
             if (contentBodies.length === 0) {
                 continue;
             }
@@ -130,20 +132,25 @@ class AllPagesBody extends SpecialContentBody {
         const history: WikiHistory = createHistory(this.wikiLink.namespace, 'Page');
         const currentData: VersionData[] = history.getCurrentList();
 
-        const lines: string[] = [
-            '<p>This special page shows all created pages.</p>'
-        ];
+        const lines: string[] = ['<p>This special page shows all created pages.</p>'];
         if (currentData.length !== 0) {
-            lines.push('<ul>');
-            const namespace: string = this.wikiLink.namespace;
-            const wikiType: WikiType = 'Page';
-            for (const data of currentData) {
-                const wikiLink: WikiLink = new WikiLink({namespace, name: data.name, type: wikiType});
-                const location: WikiLocation = new WikiLocation(wikiLink);
-                lines.push(`<li><a href="${location.toURI()}">${data.name}</a></li>`);
-            }
-            lines.push('</ul>');
+            lines.push(this.pageList(currentData));
         }
+        return lines.join('');
+    }
+
+    private pageList(dataList: VersionData[]): string {
+        dataList.sort((a, b) => compareLowerCase(a.name, b.name));
+        const lines: string[] = [];
+        lines.push('<ul class="column-count-3">');
+        const namespace: string = this.wikiLink.namespace;
+        const wikiType: WikiType = 'Page';
+        for (const data of dataList) {
+            const wikiLink: WikiLink = new WikiLink({namespace, name: data.name, type: wikiType});
+            const location: WikiLocation = new WikiLocation(wikiLink);
+            lines.push(`<li><a href="${location.toURI()}">${data.name}</a></li>`);
+        }
+        lines.push('</ul>');
         return lines.join('');
     }
 }
@@ -347,21 +354,30 @@ class CategoriesBody extends SpecialContentBody {
     public type: SpecialContentType = 'pages';
 
     public get html(): string {
-        const lines: string[] = [
-            '<p>The following category exists.</p>'
-        ];
-        const categories: Category[] = Category.allUnder(this.wikiLink.namespace);
+        const lines: string[] = [];
+        lines.push('<p>This special page shows all referenced categories.</p>');
+        lines.push(this.categoryList());
+        return lines.join('');
+    }
 
-        if (categories.length !== 0) {
-            lines.push('<ul>');
-            const namespace: string = this.wikiLink.namespace;
-            for (const category of categories) {
-                const wikiLink: WikiLink = category.toWikiLink();
-                const location: WikiLocation = new WikiLocation(wikiLink);
-                lines.push(`<li><a href="${location.toURI()}">${wikiLink.name}</a></li>`);
+    private categoryList(): string {
+        const categories: Category[] = Category.allUnder(this.wikiLink.namespace);
+        const lines: string[] = [];
+        lines.push('<ul>');
+        for (const category of categories) {
+            const wikiLink: WikiLink = category.toWikiLink();
+            const location: WikiLocation = new WikiLocation(wikiLink);
+            const members: number = category.refered.length;
+            lines.push('<li>');
+            lines.push(  `<a href="${location.toURI()}">${wikiLink.name}</a>`);
+            if (members === 1) {
+                lines.push(' (1 member)');
+            } else {
+                lines.push(` (${members} members)`);
             }
-            lines.push('</ul>');
+            lines.push('</li>');
         }
+        lines.push('</ul>');
         return lines.join('');
     }
 }

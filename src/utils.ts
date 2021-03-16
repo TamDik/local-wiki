@@ -107,4 +107,9 @@ function trim(s: string): string {
 }
 
 
-export {escapeRegex, escapeHtml, isInteger, isNaturalNumber, isNonNegativeNumber, extensionOf, generateRandomString, zeroPadding, dateToStr, bytesToStr, trim};
+function compareLowerCase(a: string, b: string): number {
+    return a.toLowerCase() > b.toLowerCase() ? 1 : -1;
+}
+
+
+export {escapeRegex, escapeHtml, isInteger, isNaturalNumber, isNonNegativeNumber, extensionOf, generateRandomString, zeroPadding, dateToStr, bytesToStr, trim, compareLowerCase};

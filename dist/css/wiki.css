@@ -332,6 +332,16 @@ a.new {
 }
 
 
+/* カラム数 */
+.column-count-2 {
+    column-count: 2
+}
+
+.column-count-3 {
+    column-count: 3
+}
+
+
 /* category tree */
 .category-tree-wrapper > div {
     padding: 0.5em;
