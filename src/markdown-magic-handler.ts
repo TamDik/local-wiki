@@ -624,12 +624,12 @@ class NotFoundTemplateHandler implements IMagicHandler {
 }
 
 
+type ToChildCategories = (parentPath: string|null) => string[];
 class CategoryTreeHandler implements IMagicHandler {
     private static KEYWORD: string = 'CategoryTree';
     private static ROOT: string = 'root';
 
-    public constructor(private readonly isCategory: IsTargetWikiLink,
-                       private readonly childCategories: (parentPath: string|null) => string[]) {
+    public constructor(private readonly isCategory: IsTargetWikiLink, private readonly toChildCategories: ToChildCategories) {
     }
 
     public isTarget(content: string): boolean {
@@ -640,7 +640,7 @@ class CategoryTreeHandler implements IMagicHandler {
     public expand(content: string, toWikiURI: ToWikiURI): string {
         const [keyword, ...options]: string[] = content.split('|');
         const remains: string[] = [];
-        const htmlOptions: {depth: number, border: boolean} = {depth: 1, border: false};
+        const htmlOptions: {root?: string, depth?: number, border?: boolean} = {};
         for (const option of options) {
             const depth: number|null = this.depth(option);
             if (depth !== null) {
@@ -654,8 +654,11 @@ class CategoryTreeHandler implements IMagicHandler {
             }
             remains.push(option);
         }
-        const {root, path} = this.remainOptions(remains);
-        return this.createHTML(root, path, toWikiURI, htmlOptions);
+        const {root} = this.remainOptions(remains);
+        if (typeof(root) === 'string') {
+            htmlOptions.root = root;
+        }
+        return CategoryTreeHandler.createHTML(toWikiURI, this.toChildCategories, htmlOptions);
     }
 
     private depth(option: string): number|null {
@@ -679,70 +682,73 @@ class CategoryTreeHandler implements IMagicHandler {
         return null;
     }
 
-    private remainOptions(options: string[]): {root: string, path: string|null} {
-        let root: string;
-        let path: string|null;
+    private remainOptions(options: string[]): {root: string|null} {
+        let root: string|null;
         if (options.length !== 0 && this.isCategory(options[0])) {
             root = options[0];
-            path = options[0]
         } else {
-            root = CategoryTreeHandler.ROOT;
-            path = null;
+            root = null;
         }
-        return {root, path};
+        return {root};
     }
 
-    private createHTML(root: string, path: string|null, toWikiURI: ToWikiURI, options: {depth: number, border: boolean}): string {
+    public static createHTML(toWikiURI: ToWikiURI, toChildCategories: ToChildCategories, options: {root?: string|null, depth?: number, border?: boolean}={}): string {
         const lines: string[] = [];
         if (options.border) {
             lines.push('<div class="category-tree-wrapper category-tree-border">');
         } else {
             lines.push('<div class="category-tree-wrapper">');
         }
-        lines.push(this.treeSection(root, this.childCategories(path), toWikiURI, options.depth));
+        const depth: number = options.depth === undefined ? 1 : options.depth;
+        const root: string|null = options.root === undefined ? null : options.root;
+        lines.push(CategoryTreeHandler.treeSection(toWikiURI, toChildCategories, root, depth));
         lines.push('</div>');
         return lines.join('');
     }
 
-    private treeSection(categoryPath: string, children: string[], toWikiURI: ToWikiURI, depth: number): string {
+    private static treeSection(toWikiURI: ToWikiURI, toChildCategories: ToChildCategories, categoryPath: string|null, depth: number): string {
         if (depth < 0) {
             return '';
         }
+        const children = toChildCategories(categoryPath);
         const lines: string[] = [];
         lines.push('<div class="category-tree-section">');
-        lines.push(  this.treeItem(categoryPath, toWikiURI, children.length !== 0, depth));
+        lines.push(  CategoryTreeHandler.treeItem(categoryPath, toWikiURI, children.length !== 0, depth));
         lines.push(  '<div class="category-tree-children">');
         for (const child of children) {
-            lines.push(this.treeSection(child, this.childCategories(child), toWikiURI, depth - 1));
+            lines.push(CategoryTreeHandler.treeSection(toWikiURI, toChildCategories, child, depth - 1));
         }
         lines.push(  '</div>');
         lines.push('</div>');
         return lines.join('');
     }
 
-    private treeItem(categoryPath: string, toWikiURI: ToWikiURI, hasChildren: boolean, depth: number): string {
-        const href: string = toWikiURI(categoryPath);
+    private static treeItem(categoryPath: string|null, toWikiURI: ToWikiURI, hasChildren: boolean, depth: number): string {
         const lines: string[] = [];
         lines.push('<div class="category-tree-item">');
         let bullet: string = '';
         if (!hasChildren) {
-            lines.push(this.bulletSpan(categoryPath, 'none'));
+            lines.push(CategoryTreeHandler.bulletSpan('none', categoryPath));
         } else if (depth === 0) {
-            lines.push(this.bulletSpan(categoryPath, 'collapsed'));
+            lines.push(CategoryTreeHandler.bulletSpan('collapsed', categoryPath));
         } else {
-            lines.push(this.bulletSpan(categoryPath, 'expanded'));
+            lines.push(CategoryTreeHandler.bulletSpan('expanded', categoryPath));
         }
-        lines.push(  `<a href="${href}">${categoryPath}</a>`);
+        if (categoryPath === null) {
+            lines.push(CategoryTreeHandler.ROOT);
+        } else {
+            const href: string = toWikiURI(categoryPath);
+            lines.push(  `<a href="${href}">${categoryPath}</a>`);
+        }
         lines.push('</div>');
         return lines.join('');
     }
 
-    private bulletSpan(categoryPath: string, status: 'none'|'collapsed'|'expanded'): string {
-        if (categoryPath === CategoryTreeHandler.ROOT) {
+    private static bulletSpan(status: 'none'|'collapsed'|'expanded', categoryPath: string|null): string {
+        if (categoryPath === null) {
             return `<span class="category-tree-bullet" data-status="${status}"></span>`;
-        } else {
-            return `<span class="category-tree-bullet" data-category="${categoryPath}" data-status="${status}"></span>`;
         }
+        return `<span class="category-tree-bullet" data-category="${categoryPath}" data-status="${status}"></span>`;
     }
 }
 

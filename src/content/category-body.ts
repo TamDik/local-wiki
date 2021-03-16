@@ -5,6 +5,7 @@ import {MarkdownEditorBody, MarkdownHistoryBody} from './markdown-body';
 import {ContentBodyDispatcher, ContentBody} from './content-body';
 import {WithVersionBody, NotFoundVersionBody} from './version-body';
 import {Category} from '../wikicategory';
+import {CategoryTreeHandler} from '../markdown-magic-handler';
 import * as markdown from './markdown';
 
 
@@ -62,21 +63,71 @@ class CategoryReadBody extends ContentBody {
     }
 
     private listHtml(): string {
-        const lines: string[] = [];
         const category: Category = new Category(this.wikiLink);
         const referedLinks: WikiLink[] = category.refered;
         if (referedLinks.length === 0) {
-            lines.push('This category currently contains no pages or media.');
-        } else {
-            lines.push(`<h2 class="pt-3">Pages in category "${this.wikiLink.name}"</h2>`);
-            lines.push(`The following ${referedLinks.length} pages are in this category.`);
-            lines.push('<ul>');
-            for (const refered of referedLinks) {
-                const location: WikiLocation = new WikiLocation(refered);
-                lines.push(`<li><a href="${location.toURI()}">${refered.toPath()}</a></li>`);
-            }
-            lines.push('</ul>');
+            return 'This category currently contains no pages or media.';
         }
+
+        const lines: string[] = [];
+
+        const categories: WikiLink[] = referedLinks.filter(wikiLink => wikiLink.type === 'Category');
+        if (categories.length !== 0) {
+            lines.push(this.categoryList(categories));
+        }
+
+        const pages: WikiLink[] = referedLinks.filter(wikiLink => wikiLink.type === 'Page');
+        if (pages.length !== 0) {
+            lines.push(this.pageList(pages));
+        }
+        return lines.join('');
+    }
+
+    private categoryList(wikiLinks: WikiLink[]): string {
+        const lines: string[] = [];
+        lines.push('<h2>Subcategories</h2>');
+        const categoryWord: string = wikiLinks.length === 1 ? 'subcategory' : 'subcategories';
+        lines.push(`This category has the following ${wikiLinks.length} ${categoryWord}.`);
+        for (const wikiLink of wikiLinks) {
+            const root: string = wikiLink.toFullPath();
+            lines.push(this.categoryTree(wikiLink));
+        }
+        return lines.join('');
+    }
+
+    private categoryTree(wikiLink: WikiLink): string {
+        const baseNamespace: string = this.wikiLink.namespace
+        return CategoryTreeHandler.createHTML(
+            (href: string) => {
+                const wikiLink: WikiLink = new WikiLink(href, baseNamespace);
+                const location: WikiLocation = new WikiLocation(wikiLink);
+                return location.toURI();
+            },
+            (parentPath: string|null) => {
+                let categories: Category[];
+                if (parentPath === null) {
+                    categories = Category.allUnder(baseNamespace).filter(category => category.parents.length === 0);
+                } else {
+                    categories = new Category(new WikiLink(parentPath, baseNamespace)).children;
+                }
+                return categories.map(category => category.toWikiLink().toFullPath());
+            },
+            {root: wikiLink.toFullPath(), depth: 0, border: false}
+        );
+    }
+
+    private pageList(wikiLinks: WikiLink[]): string {
+        const lines: string[] = [];
+        lines.push(`<h2>Pages in category "${this.wikiLink.name}"</h2>`);
+        const pageAndBe: string = wikiLinks.length === 1 ? 'page is' : 'pages are';
+        lines.push(`The following ${wikiLinks.length} ${pageAndBe} in this category.`);
+
+        lines.push('<ul class="column-count-3">');
+        for (const wikiLink of wikiLinks) {
+            const location: WikiLocation = new WikiLocation(wikiLink);
+            lines.push(`<li><a href="${location.toURI()}">${wikiLink.toPath()}</a></li>`);
+        }
+        lines.push('</ul>');
         return lines.join('');
     }
 }

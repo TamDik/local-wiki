@@ -358,17 +358,25 @@ a.new {
 }
 
 .category-tree-bullet:after {
-    content: '';
     font-family: sans-serif;
     display: inline-block;
     width: 1em;
-    cursor: pointer;
+}
+
+.category-tree-bullet[data-status="none"]:after {
+    content: '►';
+    color: #c0c0c0;
+    cursor: default;
 }
 
 .category-tree-bullet[data-status="collapsed"]:after {
     content: '►';
+    color: #0645ad;
+    cursor: pointer;
 }
 
 .category-tree-bullet[data-status="expanded"]:after {
     content: '▼';
+    color: #0645ad;
+    cursor: pointer;
 }
