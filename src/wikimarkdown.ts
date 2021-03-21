@@ -13,7 +13,8 @@ interface HTMLOptions {
     section?: number|null;   // htmlに変換する対象のsection
     edit?: boolean;          // 編集ボタンの表示非表示
     toc?: boolean;           // 目次の表示非表示
-    toFullPath?: ToFullPath;
+    template?: boolean;      // テンプレートの展開
+    toFullPath?: ToFullPath; // WikiLinkからファイルパスへの展開
 };
 
 
@@ -23,6 +24,7 @@ class HTMLOptionsComplementer implements HTMLOptions {
         section: null,
         edit: false,
         toc: true,
+        template: true,
         toFullPath: (wikiLink: WikiLink) => wikiLink.toPath(),
     };
 
@@ -53,6 +55,10 @@ class HTMLOptionsComplementer implements HTMLOptions {
 
     public get toc(): boolean {
         return this.complement<boolean>('toc');
+    }
+
+    public get template(): boolean {
+        return this.complement<boolean>('template');
     }
 
     public get toFullPath(): ToFullPath {
@@ -142,10 +148,16 @@ class TemplateExpander {
 class MarkdownParser {
     private wikiMD: WikiMD;
     private categoryHandler: CategoryHandler;
+    private readonly options: HTMLOptionsComplementer;
 
-    public constructor(private readonly options: HTMLOptionsComplementer, private wikiLink: WikiLink) {
-        const baseNamespace: string = this.baseNamespace;
-        const toFullPath: ToFullPath = this.toFullPath;
+    public constructor(private readonly markdown: string, private readonly wikiLink: WikiLink, options: HTMLOptionsComplementer|HTMLOptions) {
+        if (options instanceof HTMLOptionsComplementer) {
+            this.options = options;
+        } else {
+            this.options = new HTMLOptionsComplementer(options);
+        }
+        const baseNamespace: string = this.options.baseNamespace;
+        const toFullPath: ToFullPath = this.options.toFullPath;
 
         this.wikiMD = new WikiMD({
             isWikiLink: WikiLink.isWikiLink,
@@ -215,14 +227,6 @@ class MarkdownParser {
         this.wikiMD.addMagicHandler(treeHandler);
     }
 
-    public get baseNamespace(): string {
-        return this.options.baseNamespace;
-    }
-
-    private get toFullPath(): ToFullPath {
-        return this.options.toFullPath;
-    }
-
     private expandWikiLink(html: string, baseNamespace: string): string {
         html = this.expandInternalFileLink(html, 'img', 'src', 'error', baseNamespace);
         html = this.expandInternalFileLink(html, 'object', 'data', 'error', baseNamespace);
@@ -237,7 +241,7 @@ class MarkdownParser {
             if (wikiLink.type !== 'File') {
                 return replace === null ? s : replace;
             }
-            const fullPath: string|null = this.toFullPath(wikiLink);
+            const fullPath: string|null = this.options.toFullPath(wikiLink);
             if (fullPath === null) {
                 return replace === null ? s : replace;
             }
@@ -246,12 +250,17 @@ class MarkdownParser {
         return html;
     }
 
-    public execute(markdown: string): string {
-        const expander: TemplateExpander = new TemplateExpander(this.options, [this.wikiLink]);
-        const expanded: string = expander.execute(markdown);
+    public execute(): string {
+        let expanded: string;
+        if (this.options.template) {
+            const expander: TemplateExpander = new TemplateExpander(this.options, [this.wikiLink]);
+            expanded = expander.execute(this.markdown);
+        } else {
+            expanded = this.markdown;
+        }
         this.wikiMD.setValue(expanded);
         let html: string = this.wikiMD.toHTML();
-        html = this.expandWikiLink(html, this.baseNamespace);
+        html = this.expandWikiLink(html, this.options.baseNamespace);
         return html;
     }
 
@@ -336,8 +345,8 @@ class WikiMarkdown {
         this.checkSectionNum(complementedOptions.section);
 
         const markdown: string = this.refineAndDecorateMarkdown(complementedOptions);
-        const parser: MarkdownParser = new MarkdownParser(complementedOptions, this.wikiLink);
-        return {html: parser.execute(markdown), categories: parser.getCategories()};
+        const parser: MarkdownParser = new MarkdownParser(markdown, this.wikiLink, complementedOptions);
+        return {html: parser.execute(), categories: parser.getCategories()};
     }
 
     private refineAndDecorateMarkdown(options: HTMLOptionsComplementer): string {
@@ -385,4 +394,4 @@ class WikiMarkdown {
 }
 
 
-export {WikiMarkdown};
+export {MarkdownParser, WikiMarkdown};

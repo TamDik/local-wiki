@@ -1,6 +1,8 @@
 import marked from 'marked';
 import hljs from 'highlight.js';
+import * as utils from './utils';
 
+type ReferenceType = 'link'|'media'|'template'|'category';
 
 type ToWikiURI = (href: string) => string;
 
@@ -11,11 +13,12 @@ type WikiMDOption = {
     isWikiLink?: IsWikiLink,
 };
 
+
 class WikiMD {
     private value: string;
     private isWikiLink: IsWikiLink;
     private toWikiURI: ToWikiURI;
-    private readonly magicHandlers: IMagicHandler[] = [];
+    private readonly magicHandlers: MagicHandler[] = [];
     public static readonly NEW_CLASS_NAME = 'new';
 
     public constructor(options: WikiMDOption) {
@@ -28,7 +31,7 @@ class WikiMD {
         this.value = value;
     }
 
-    public static expandMagics(html: string, handlers: IMagicHandler[], toWikiURI: ToWikiURI, brackets: number=2): string {
+    public static expandMagics(html: string, handlers: MagicHandler[], toWikiURI: ToWikiURI, brackets: number=2): string {
         const MAGIC_PATTERN: RegExp = new RegExp('{'.repeat(brackets) + '[^{}]+' + '}'.repeat(brackets), 'g');
         const magicMatches: RegExpMatchArray|null = html.match(MAGIC_PATTERN);
         if (!magicMatches) {
@@ -58,35 +61,116 @@ class WikiMD {
     }
 
     private code(code: string, infostring: string): string {
+        let handler: HTMLTagCreator;
         if (infostring === 'math') {
-            return ['<p><math>', code , '</math></p>'].join('');
+            handler = new MathTagCreator(code);
+        } else {
+            handler = new CodeTagCreator(code, infostring);
         }
-        const validLanguage = hljs.getLanguage(infostring) ? infostring : 'plaintext';
-        return ['<pre><code>', hljs.highlight(validLanguage, code).value, '</code></pre>'].join('');
+        return handler.toHTML();
     }
 
     private link(href: string, title: string|null, text: string, isWikiLink: IsWikiLink): string {
-        title = title === null ? '' : title;
         if (isWikiLink(href)) {
+            this.foundWikiLink(href, 'link');
             href = this.toWikiURI(href);
         }
-        return `<a href="${href}" title="${title}">${text}</a>`;
+        const handler: LinkTagCreator = new LinkTagCreator(href, title, text);
+        return handler.toHTML();
     }
 
-    private image(href: string, title: string|null, text: string, isWikiLink: IsWikiLink): string {
-        title = title === null ? '' : title;
-        const alt: string = text;
-        const isInternal: boolean = isWikiLink(href);
-        const src: string = isInternal ? this.toWikiURI(href) : href;
-        let img: string = `<img src="${src}" alt="${alt}" title="${title}" decoding="async" width="300">`;
-        if (isInternal) {
-            img = `<a href="${this.toWikiURI(href)}" class="image">${img}</a>`;
+    private image(href: string, title: string|null, alt: string, isWikiLink: IsWikiLink): string {
+        let handler: ImageTagCreator;
+        if (isWikiLink(href)) {
+            this.foundWikiLink(href, 'media')
+            handler = new ImageTagCreator(this.toWikiURI(href), alt, title, this.toWikiURI(href));
+        } else {
+            handler = new ImageTagCreator(href, alt, title);
         }
+        return handler.toHTML();
+    }
+
+    public addMagicHandler(magicHandler: MagicHandler): void {
+        magicHandler.setWikiMD(this);
+        this.magicHandlers.push(magicHandler);
+    }
+
+    // NOTE: 参照関係を管理する場合にオーバーライドする．
+    //       MagicHandlerの参照関係も管理するため，アクス修飾子はprotectedではなくpublic．
+    public foundWikiLink(href: string, type: ReferenceType): void {
+    }
+}
+
+
+interface HTMLTagCreator {
+    toHTML(): string;
+}
+
+
+class LinkTagCreator implements HTMLTagCreator {
+    public constructor(private readonly href: string, private readonly title: string|null, private readonly text: string) {
+    }
+
+    public toHTML(): string {
+        if (this.title === null) {
+            return `<a href="${this.href}">${this.text}</a>`;
+        }
+        return `<a href="${this.href}" title="${this.title}">${this.text}</a>`;
+    }
+}
+
+
+class ImageTagCreator implements HTMLTagCreator {
+    private readonly params: {[key: string]: string|number|null};
+    public constructor(src: string, readonly alt: string|null, readonly title: string|null, private readonly href?: string) {
+        this.params = {src, alt, title, decoding: 'async', width: 300};
+    }
+
+    public toHTML(): string {
+        const img: string = this.imgTag();
+        if (!this.href) {
+            return img;
+        }
+        return `<a href="${this.href}" class="image">${img}</a>`;
+    }
+
+    private imgTag(): string {
+        let img: string = '<img';
+        for (const key in this.params) {
+            const value: string|number|null = this.params[key];
+            if (value === null) {
+                continue;
+            }
+            img += ` ${key}="${value}"`;
+        }
+        img += '>';
         return img;
     }
+}
 
-    public addMagicHandler(magicHandler: IMagicHandler): void {
-        this.magicHandlers.push(magicHandler);
+
+class MathTagCreator implements HTMLTagCreator {
+    public constructor(private readonly code: string) {
+    }
+
+    public toHTML(): string {
+        return `<p><math>${this.code}</math></p>`;
+    }
+}
+
+
+class CodeTagCreator implements HTMLTagCreator {
+    public constructor(private readonly code: string, private readonly infostring?: string) {
+    }
+
+    public toHTML(): string {
+        let validLanguage: string;
+        if (this.infostring) {
+            validLanguage = hljs.getLanguage(this.infostring) ? this.infostring : 'plaintext';
+        } else {
+            validLanguage = 'plaintext';
+        }
+        return '<pre><code>' + hljs.highlight(validLanguage, this.code).value + '</code></pre>';
     }
 }
 
@@ -100,4 +184,23 @@ interface IMagicHandler {
 }
 
 
-export {WikiMD, IMagicHandler, ToWikiURI}
+abstract class MagicHandler implements IMagicHandler {
+    private wmd: WikiMD|null = null;
+
+    public setWikiMD(wmd: WikiMD): void {
+        this.wmd = wmd;
+    }
+
+    protected foundWikiLink(href: string, type: ReferenceType): void {
+        if (this.wmd instanceof WikiMD) {
+            this.wmd.foundWikiLink(href, type);
+        }
+    }
+
+    abstract isTarget(content: string): boolean;
+
+    abstract expand(content: string, toWikiURI: ToWikiURI): string;
+}
+
+
+export {WikiMD, ReferenceType, MagicHandler, ToWikiURI};

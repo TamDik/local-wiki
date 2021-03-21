@@ -1,15 +1,16 @@
-import {IMagicHandler, ToWikiURI} from './markdown';
+import {MagicHandler, ToWikiURI} from './markdown';
 import {generateRandomString} from './utils';
 
 
 type IsTargetWikiLink = (path: string) => boolean;
 
 
-class FileHandler implements IMagicHandler {
+class FileHandler extends MagicHandler {
     private fileHandlers: AbstractFileHandler[] = [];
     private notImplementedHandler: AbstractFileHandler = new NotImplementedFileHandler();
 
     public constructor(private readonly isFile: (path: string) => boolean) {
+        super();
     }
 
     public addHandler(handler: AbstractFileHandler): void {
@@ -25,6 +26,7 @@ class FileHandler implements IMagicHandler {
         const path: string = content.split('|')[0];
         for (const handler of this.fileHandlers) {
             if (handler.isTargetFile(path)) {
+                this.foundWikiLink(path, 'media');
                 return handler.expand(content, toWikiURI);
             }
         }
@@ -512,9 +514,10 @@ class PDFFileHandler extends AbstractFileHandler {
 }
 
 
-class CategoryHandler implements IMagicHandler {
+class CategoryHandler extends MagicHandler {
     private categories: string[] = [];
     public constructor(private readonly isCategory: IsTargetWikiLink) {
+        super();
     }
 
     public isTarget(content: string): boolean {
@@ -526,6 +529,7 @@ class CategoryHandler implements IMagicHandler {
         if (!this.categories.includes(content)) {
             this.categories.push(content);
         }
+        this.foundWikiLink(content, 'category');
         return '';
     }
 
@@ -536,10 +540,11 @@ class CategoryHandler implements IMagicHandler {
 
 
 type TemplateData = {path: string, parameters: Map<string, string>};
-class TemplateHandler implements IMagicHandler {
+class TemplateHandler extends MagicHandler {
     private readonly templatesData: Map<string, TemplateData> = new Map();
 
     public constructor(private readonly existingTemplate: IsTargetWikiLink) {
+        super();
     }
 
     public isTarget(content: string): boolean {
@@ -551,6 +556,7 @@ class TemplateHandler implements IMagicHandler {
         const [path, ...params] = content.split('|');
         const templateId: string = generateRandomString(8);
         this.setTemplateData(templateId, path, params);
+        this.foundWikiLink(path, 'template');
         return `<div data-template="${templateId}"></div>`;
     }
 
@@ -587,8 +593,9 @@ class TemplateHandler implements IMagicHandler {
 }
 
 
-class TemplateParameterHandler implements IMagicHandler {
+class TemplateParameterHandler extends MagicHandler {
     public constructor(private parameters: Map<string, string>) {
+        super();
     }
 
     public isTarget(content: string): boolean {
@@ -608,8 +615,9 @@ class TemplateParameterHandler implements IMagicHandler {
 }
 
 
-class NotFoundTemplateHandler implements IMagicHandler {
+class NotFoundTemplateHandler extends MagicHandler {
     public constructor(private readonly notExistingTemplate: IsTargetWikiLink) {
+        super();
     }
 
     public isTarget(content: string): boolean {
@@ -619,17 +627,19 @@ class NotFoundTemplateHandler implements IMagicHandler {
 
     public expand(content: string, toWikiURI: ToWikiURI): string {
         const [path, ...params] = content.split('|');
+        this.foundWikiLink(path, 'template');
         return `<a href="${toWikiURI(path)}">${path}</a>`;
     }
 }
 
 
 type ToChildCategories = (parentPath: string|null) => string[];
-class CategoryTreeHandler implements IMagicHandler {
+class CategoryTreeHandler extends MagicHandler {
     private static KEYWORD: string = 'CategoryTree';
     private static ROOT: string = 'root';
 
     public constructor(private readonly isCategory: IsTargetWikiLink, private readonly toChildCategories: ToChildCategories) {
+        super();
     }
 
     public isTarget(content: string): boolean {

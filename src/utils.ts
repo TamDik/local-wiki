@@ -107,9 +107,25 @@ function trim(s: string): string {
 }
 
 
+function uniqueArr<T>(arr: T[]): T[] {
+    return arr.filter((v: T, i: number, a: T[]) => i === a.indexOf(v));
+}
+
+
+function countArr<T=any>(arr: T[], val: T): number {
+    let cnt: number = 0;
+    for (const v of arr) {
+        if (v === val) {
+            cnt++;
+        }
+    }
+    return cnt;
+}
+
+
 function compareLowerCase(a: string, b: string): number {
     return a.toLowerCase() > b.toLowerCase() ? 1 : -1;
 }
 
 
-export {escapeRegex, escapeHtml, isInteger, isNaturalNumber, isNonNegativeNumber, extensionOf, generateRandomString, zeroPadding, dateToStr, bytesToStr, trim, compareLowerCase};
+export {escapeRegex, escapeHtml, isInteger, isNaturalNumber, isNonNegativeNumber, extensionOf, generateRandomString, zeroPadding, dateToStr, bytesToStr, trim, uniqueArr, countArr, compareLowerCase};
