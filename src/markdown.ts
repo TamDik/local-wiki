@@ -14,7 +14,27 @@ type WikiMDOption = {
 };
 
 
-class WikiMD {
+interface WikiLinkCollectable {
+    addWikiLink(href: string, type: ReferenceType): void;
+}
+
+
+abstract class WikiLinkFinder {
+    private collector: WikiLinkCollectable|null = null;
+    public setCollector(collector: WikiLinkCollectable): void {
+        this.collector = collector;
+    }
+
+    public foundWikiLink(href: string, type: ReferenceType): void {
+        if (this.collector === null) {
+            return;
+        }
+        this.collector.addWikiLink(href, type);
+    }
+}
+
+
+class WikiMD extends WikiLinkFinder {
     private value: string;
     private isWikiLink: IsWikiLink;
     private toWikiURI: ToWikiURI;
@@ -22,6 +42,7 @@ class WikiMD {
     public static readonly NEW_CLASS_NAME = 'new';
 
     public constructor(options: WikiMDOption) {
+        super();
         this.value = '';
         this.toWikiURI = options.toWikiURI;
         this.isWikiLink = options.isWikiLink || (href => false);
@@ -91,13 +112,7 @@ class WikiMD {
     }
 
     public addMagicHandler(magicHandler: MagicHandler): void {
-        magicHandler.setWikiMD(this);
         this.magicHandlers.push(magicHandler);
-    }
-
-    // NOTE: 参照関係を管理する場合にオーバーライドする．
-    //       MagicHandlerの参照関係も管理するため，アクス修飾子はprotectedではなくpublic．
-    public foundWikiLink(href: string, type: ReferenceType): void {
     }
 }
 
@@ -175,32 +190,13 @@ class CodeTagCreator implements HTMLTagCreator {
 }
 
 
-interface IMagicHandler {
+abstract class MagicHandler extends WikiLinkFinder {
     // 中身がこのハンドラーが対象とする物であるかを判定
-    isTarget(content: string): boolean;
-
-    // 中身を展開
-    expand(content: string, toWikiURI: ToWikiURI): string;
-}
-
-
-abstract class MagicHandler implements IMagicHandler {
-    private wmd: WikiMD|null = null;
-
-    public setWikiMD(wmd: WikiMD): void {
-        this.wmd = wmd;
-    }
-
-    protected foundWikiLink(href: string, type: ReferenceType): void {
-        if (this.wmd instanceof WikiMD) {
-            this.wmd.foundWikiLink(href, type);
-        }
-    }
-
     abstract isTarget(content: string): boolean;
 
+    // 中身を展開
     abstract expand(content: string, toWikiURI: ToWikiURI): string;
 }
 
 
-export {WikiMD, ReferenceType, MagicHandler, ToWikiURI};
+export {WikiMD, WikiLinkCollectable, ReferenceType, MagicHandler, ToWikiURI};

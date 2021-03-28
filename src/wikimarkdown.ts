@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import {WikiLink, WikiLocation} from './wikilink';
 import {fileTypeOf} from './wikifile';
-import {WikiMD} from './markdown';
+import {WikiMD, MagicHandler} from './markdown';
 import {Category} from './wikicategory';
 import {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, TemplateParameterHandler, NotFoundTemplateHandler, CategoryTreeHandler} from './markdown-magic-handler';
 
@@ -198,18 +198,17 @@ class MarkdownParser {
 
         // category
         this.categoryHandler = new CategoryHandler((path: string) => new WikiLink(path, baseNamespace).type === 'Category');
-        this.wikiMD.addMagicHandler(this.categoryHandler);
+        this.wikiMD.addMagicHandler(fileHandler);
 
         // template
-        this.wikiMD.addMagicHandler(
-            new NotFoundTemplateHandler((path: string) => {
-                const wikiLink: WikiLink = new WikiLink(path, baseNamespace);
-                if (wikiLink.type !== 'Template') {
-                    return false;
-                }
-                return toFullPath(wikiLink) === null;
-            })
-        );
+        const notFoundTemplateHandler: NotFoundTemplateHandler = new NotFoundTemplateHandler((path: string) => {
+            const wikiLink: WikiLink = new WikiLink(path, baseNamespace);
+            if (wikiLink.type !== 'Template') {
+                return false;
+            }
+            return toFullPath(wikiLink) === null;
+        });
+        this.wikiMD.addMagicHandler(fileHandler);
 
         // Category tree
         const treeHandler: CategoryTreeHandler = new CategoryTreeHandler(
@@ -224,7 +223,7 @@ class MarkdownParser {
                 return categories.map(category => category.toWikiLink().toFullPath());
             },
         );
-        this.wikiMD.addMagicHandler(treeHandler);
+        this.wikiMD.addMagicHandler(fileHandler);
     }
 
     private expandWikiLink(html: string, baseNamespace: string): string {

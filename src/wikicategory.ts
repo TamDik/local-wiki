@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {compareLowerCase} from './utils';
 import {WikiLink} from './wikilink';
-import {WikiMD} from './markdown';
+import {WikiMD, WikiLinkCollectable, ReferenceType} from './markdown';
 import {CategoryHandler} from './markdown-magic-handler';
 import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
 
