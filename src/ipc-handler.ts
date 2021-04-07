@@ -121,6 +121,7 @@ ipcMain.handle('exists-link', async (event, wikiLink: IWikiLink, version?: numbe
     return version > 0 && version <= current.version;
 });
 
+
 // Pageをアップデートする
 ipcMain.handle('update-page', async (event, path: string, text: string, comment: string, section?: number): Promise<boolean> => {
     const wikiLink: WikiLink = new WikiLink(path);
@@ -140,6 +141,9 @@ ipcMain.handle('update-page', async (event, path: string, text: string, comment:
     const data: VersionData = history.add({name: wikiLink.name, comment, filename});
     fs.writeFileSync(data.filepath, markdown);
     updateCategories(wikiLink, extractCategories(namespace, markdown));
+
+    // TODO: 参照関係の保存
+    /* updateReferences(wikiLink, markdown) */
     return true;
 });
 
@@ -159,7 +163,7 @@ ipcMain.handle('upload-file', async (event, path: string, destName: string, sour
 ipcMain.handle('markdown-to-html', async (event, path: string, markdown: string): Promise<string> => {
     const wikiLink: WikiLink = new WikiLink(path);
     const wikiMarkdown: WikiMarkdown = new WikiMarkdown(markdown, wikiLink);
-    let html: string = wikiMarkdown.parse({baseNamespace: wikiLink.namespace, toFullPath}).html;
+    let html: string = wikiMarkdown.parse({toFullPath}).html;
     return html;
 });
 

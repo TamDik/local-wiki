@@ -515,7 +515,6 @@ class PDFFileHandler extends AbstractFileHandler {
 
 
 class CategoryHandler extends MagicHandler {
-    private categories: string[] = [];
     public constructor(private readonly isCategory: IsTargetWikiLink) {
         super();
     }
@@ -526,15 +525,8 @@ class CategoryHandler extends MagicHandler {
     }
 
     public expand(content: string, toWikiURI: ToWikiURI): string {
-        if (!this.categories.includes(content)) {
-            this.categories.push(content);
-        }
         this.foundWikiLink(content, 'category');
         return '';
-    }
-
-    public getCategories(): string[] {
-        return this.categories;
     }
 }
 

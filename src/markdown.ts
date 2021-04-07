@@ -20,7 +20,7 @@ interface WikiLinkCollectable {
 
 
 abstract class WikiLinkFinder {
-    private collector: WikiLinkCollectable|null = null;
+    protected collector: WikiLinkCollectable|null = null;
     public setCollector(collector: WikiLinkCollectable): void {
         this.collector = collector;
     }
@@ -52,22 +52,15 @@ class WikiMD extends WikiLinkFinder {
         this.value = value;
     }
 
-    public static expandMagics(html: string, handlers: MagicHandler[], toWikiURI: ToWikiURI, brackets: number=2): string {
-        const MAGIC_PATTERN: RegExp = new RegExp('{'.repeat(brackets) + '[^{}]+' + '}'.repeat(brackets), 'g');
-        const magicMatches: RegExpMatchArray|null = html.match(MAGIC_PATTERN);
-        if (!magicMatches) {
-            return html;
+    public static expandMagics(html: string, handlers: MagicHandler[], toWikiURI: ToWikiURI, collector?: WikiLinkCollectable|null, brackets: number=2): string {
+        const expander = new MagicExpander(toWikiURI, brackets);
+        if (collector) {
+            expander.setCollector(collector);
         }
-        for (const magic of magicMatches) {
-            const innerMagic: string = magic.slice(brackets, -brackets);
-            for (const handler of handlers) {
-                if (!handler.isTarget(innerMagic)) {
-                    continue;
-                }
-                html = html.replace(magic, handler.expand(innerMagic, toWikiURI));
-            }
+        for (const handler of handlers) {
+            expander.addHandler(handler);
         }
-        return html;
+        return expander.execute(html);
     }
 
     public toHTML(): string {
@@ -78,7 +71,7 @@ class WikiMD extends WikiLinkFinder {
         renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
         marked.use({renderer});
         let html: string = marked(this.value);
-        return WikiMD.expandMagics(html, this.magicHandlers, this.toWikiURI);
+        return WikiMD.expandMagics(html, this.magicHandlers, this.toWikiURI, this.collector);
     }
 
     private code(code: string, infostring: string): string {
@@ -196,6 +189,43 @@ abstract class MagicHandler extends WikiLinkFinder {
 
     // 中身を展開
     abstract expand(content: string, toWikiURI: ToWikiURI): string;
+}
+
+
+class MagicExpander extends WikiLinkFinder implements WikiLinkCollectable {
+    private readonly MAGIC_PATTERN: RegExp;
+    private readonly handlers: MagicHandler[] = [];
+
+    public constructor(private readonly toWikiURI: ToWikiURI, private readonly brackets: number=2) {
+        super();
+        this.MAGIC_PATTERN = new RegExp('{'.repeat(brackets) + '[^{}]+' + '}'.repeat(brackets), 'g');
+    }
+
+    public addWikiLink(href: string, type: ReferenceType): void {
+        this.foundWikiLink(href, type);
+    }
+
+    public addHandler(handler: MagicHandler): void {
+        handler.setCollector(this);
+        this.handlers.push(handler);
+    }
+
+    public execute(html: string): string {
+        const magicMatches: RegExpMatchArray|null = html.match(this.MAGIC_PATTERN);
+        if (!magicMatches) {
+            return html;
+        }
+        for (const magic of magicMatches) {
+            const innerMagic: string = magic.slice(this.brackets, -this.brackets);
+            for (const handler of this.handlers) {
+                if (!handler.isTarget(innerMagic)) {
+                    continue;
+                }
+                html = html.replace(magic, handler.expand(innerMagic, this.toWikiURI));
+            }
+        }
+        return html;
+    }
 }
 
 

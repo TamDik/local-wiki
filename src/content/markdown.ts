@@ -11,7 +11,7 @@ const css: string[] = [...WikiMarkdown.css];
 function parse(markdown: string, wikiLink: WikiLink, category: boolean=true): string {
     const wikiMarkdown: WikiMarkdown = new WikiMarkdown(markdown, wikiLink);
     const baseNamespace: string = wikiLink.namespace;
-    let {html, categories} = wikiMarkdown.parse({baseNamespace, toFullPath, edit: true});
+    let {html, categories} = wikiMarkdown.parse({toFullPath, edit: true});
     if (category) {
         html += categoryList(categories, baseNamespace);
     }

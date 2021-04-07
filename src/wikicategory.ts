@@ -186,19 +186,41 @@ class Category {
 
 
 function extractCategories(baseNamespace: string, markdown: string): Category[] {
-    const wikiMD: WikiMD = new WikiMD({
-        isWikiLink: WikiLink.isWikiLink,
-        toWikiURI: (href: string) => href
-    });
+    // TODO: WikiMarkdownに書き換え
+    const collector = new class implements WikiLinkCollectable {
+        private categoryWikiLinks: WikiLink[] = [];
+
+        public addWikiLink(href: string, type: ReferenceType): void {
+            if (type !== 'category') {
+                return;
+            }
+            const wikiLink: WikiLink = new WikiLink(href, baseNamespace);
+            if (wikiLink.type !== 'Category') {
+                return;
+            }
+            for (const wl of this.categoryWikiLinks) {
+                if (wl.equals(wikiLink)) {
+                    return;
+                }
+            }
+            this.categoryWikiLinks.push(wikiLink);
+        }
+
+        public getCategories(): Category[] {
+            return this.categoryWikiLinks.map(wikiLink => new Category(wikiLink));
+        }
+    }
+
     const handler: CategoryHandler = new CategoryHandler(
         (path: string) => new WikiLink(path, baseNamespace).type === 'Category'
     );
+    handler.setCollector(collector);
+
+    const wikiMD = new WikiMD ({isWikiLink: WikiLink.isWikiLink, toWikiURI: (href: string) => href});
     wikiMD.addMagicHandler(handler);
     wikiMD.setValue(markdown);
     wikiMD.toHTML();
-    return handler.getCategories().map(path => {
-        return new Category(new WikiLink(path, baseNamespace))
-    });
+    return collector.getCategories();
 }
 
 
