@@ -116,10 +116,9 @@ class TemplateExpander {
     private templateLoop(wikiLink: WikiLink): string {
         const text: string = wikiLink.toPath();
         return [
-            '<span class="text-danger">',
-              'Template loop detected: ',
-              `<span class="font-weight-bold">${text}</span>`,
-            '</span>'
+            '<div class="alert alert-danger">',
+                `Template loop detected: <span class="font-weight-bold">${text}</span>`,
+            '</div>'
         ].join('');
     }
 

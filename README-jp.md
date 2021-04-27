@@ -101,5 +101,3 @@ markdown中の参照で名前空間を省略した場合には，Markdownペー�
 Templateを適用するためにはTemplateのWikiLinkを使って`{{WikiLink}}`とする．作成されていないTemplateのWikiLinkが指定された場合には，Templateページへのリンクが作成される．
 
 Templateには位置パラメータ（`{{{1}}}`や`{{{2}}}`）とキーワードパラメータ（`{{{keyword}}}`）を定義できる．キーワードパラメータには`=`で値を設定する．例えば，Templateページ中の`{{{1}}}-{{{2}}}-{{{name}}}`に値を与えて`v1-v2-nv`とするためには`{{WikiLink|v1|v2|name=nv}}`や`{{WikiLink|name=nv|2=v2|1=v1}}`のようにする．指定がない場合には`{{{name}}}`のようにそのままの形で表示されるが，`{{{name|defalut value}}}`のようにデフォルトの値が設定されていた場合には`default value`が代用される．
-
-テンプレートの参照が循環した場合には，`Template loop detected: WikiLink`のようにエラー表示される．
