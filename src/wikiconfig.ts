@@ -238,12 +238,20 @@ class MergedNamespaceConfig {
     }
 
     public get iconPath(): string {
-        return MergedNamespaceConfig.toIconPath(this.rootDir);
+        if (this.hasIcon()) {
+            return MergedNamespaceConfig.toIconPath(this.rootDir);
+        }
+        return MergedNamespaceConfig.notFoundIconPath;
+    }
+
+    public hasIcon(): boolean {
+        return fs.existsSync(MergedNamespaceConfig.toIconPath(this.rootDir));
     }
 
     public updateIcon(base64Icon: string): void {
         const buffer: Buffer = Buffer.from(base64Icon, 'base64');
-        fs.writeFile(this.iconPath, buffer, (e) => {
+        const iconPath = MergedNamespaceConfig.toIconPath(this.rootDir);
+        fs.writeFile(iconPath, buffer, (e) => {
             if (e) console.log(e);
         });
     }
@@ -324,17 +332,14 @@ class WikiConfig {
         const mergedConfig: MergedNamespaceConfig = this.setNamespace(config);
         if (typeof(base64Icon) === 'string') {
             this.saveIcon(mergedConfig, base64Icon);
-        } else {
-            fs.copyFile(path.join(DIST_IMAGE_DIR, 'not-set-icon.png'), mergedConfig.iconPath, (e) => {
-                if (e) console.log(e);
-            });
         }
         return mergedConfig;
     }
 
     private saveIcon(config: MergedNamespaceConfig, base64Icon: string): void {
         const buffer: Buffer = Buffer.from(base64Icon, 'base64');
-        fs.writeFile(config.iconPath, buffer, (e) => {
+        const iconPath: string = MergedNamespaceConfig.toIconPath(config.rootDir);
+        fs.writeFile(iconPath, buffer, (e) => {
             if (e) console.log(e);
         });
     }

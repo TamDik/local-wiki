@@ -86,7 +86,7 @@ contextBridge.exposeInMainWorld(
             return ipcRenderer.invoke('current-version', path);
         },
         async getMainContent(mode: PageMode, path: string, params: {[key: string]: string}, version?: number):
-            Promise<{namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[], dependences: {css: string[], js: string[]}}> {
+            Promise<{namespaceIcon: string, noIcon: boolean, title: string, body: string, sideMenu: string, tabs: TopNavTabData[], dependences: {css: string[], js: string[]}}> {
             return ipcRenderer.invoke('get-html-contents', mode, path, params, version);
         },
         goBack(): void {

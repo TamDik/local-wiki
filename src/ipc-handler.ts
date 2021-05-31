@@ -53,7 +53,7 @@ ipcMain.on('reload', event => {
 
 // htmlに展開するコンテンツを返す
 ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, params: {[key: string]: string}, version?: number): Promise<{
-    namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[], dependences: {css: string[], js: string[]}}> => {
+    namespaceIcon: string, noIcon: boolean, title: string, body: string, sideMenu: string, tabs: TopNavTabData[], dependences: {css: string[], js: string[]}}> => {
     const wikiLink: WikiLink = new WikiLink(path);
     const title: string = ContentGenerator.title(mode, wikiLink);
     const sideMenu: string = ContentGenerator.sideMenu();
@@ -68,13 +68,17 @@ ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, 
 
     const wikiConfig: WikiConfig = new WikiConfig();
     let namespaceIcon: string;
+    let noIcon: boolean;
     if (wikiConfig.hasNamespace(wikiLink.namespace)) {
         const config: MergedNamespaceConfig = wikiConfig.getNamespaceConfig(wikiLink.namespace);
         namespaceIcon = config.iconPath;
+        noIcon = !config.hasIcon();
     } else {
+        // TODO: 新しい名前空間のときのアイコン表示
         namespaceIcon = MergedNamespaceConfig.notFoundIconPath;
+        noIcon = false;
     }
-    return {namespaceIcon, title, body: mainContent.html, sideMenu, tabs, dependences: {css: mainContent.css, js: mainContent.js}};
+    return {namespaceIcon, noIcon, title, body: mainContent.html, sideMenu, tabs, dependences: {css: mainContent.css, js: mainContent.js}};
 });
 
 // 生のPageデータを返す
