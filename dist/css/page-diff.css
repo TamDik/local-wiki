@@ -11,7 +11,7 @@
     border-left: none;
     border-right: none;
     white-space: pre;
-    font-family: SFMono-Regular;
+    font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
     font-size: 0.9em;
     margin: 0;
     width: 100%;
