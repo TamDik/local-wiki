@@ -131,7 +131,7 @@ function initTabs(namespace: string, tabs: TopNavTabData[]) {
     searchField.addEventListener('keypress', (event: KeyboardEvent) => {
         if (event.which === 13) {
             event.preventDefault();
-            location.href = window.localWiki.toURI({type: 'Special', name: 'Search'}, {search: searchField.value});
+            location.href = window.localWiki.toURI({namespace, type: 'Special', name: 'Search'}, {search: searchField.value});
         }
     });
 }
