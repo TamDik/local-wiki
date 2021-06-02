@@ -207,6 +207,7 @@ class NamespaceConfig extends AbstractConfig<NamespaceConfigData> {
 
 class MergedNamespaceConfig {
     public static notFoundIconPath: string = path.join(DIST_IMAGE_DIR, 'not-set-icon.png');
+    public static defaultIconPath: string = path.join(DIST_IMAGE_DIR, 'default-icon.png');
     private readonly masterData: MasterConfigData['namespace'][number];
 
     public constructor(masterConfig: MasterConfig, private readonly namespaceConfig: NamespaceConfig) {
@@ -330,9 +331,11 @@ class WikiConfig {
                 break;
         }
         const mergedConfig: MergedNamespaceConfig = this.setNamespace(config);
-        if (typeof(base64Icon) === 'string') {
-            this.saveIcon(mergedConfig, base64Icon);
+        if (base64Icon === null) {
+            const filePath: string = MergedNamespaceConfig.defaultIconPath;
+            base64Icon = fs.readFileSync(filePath, {encoding: 'base64'});
         }
+        this.saveIcon(mergedConfig, base64Icon);
         return mergedConfig;
     }
 

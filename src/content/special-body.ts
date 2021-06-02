@@ -556,7 +556,7 @@ class NewNamespaceBody extends SpecialContentBody {
 
     public static createURI(namespace: string): string {
         const location: WikiLocation = new WikiLocation(
-            new WikiLink({type: 'Special', name: NewNamespaceBody.wikiName})
+            new WikiLink({namespace: namespace, type: 'Special', name: NewNamespaceBody.wikiName})
         );
         location.addParam('new', namespace);
         return location.toURI();

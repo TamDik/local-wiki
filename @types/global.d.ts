@@ -35,7 +35,7 @@ interface IIpcApi {
     existsLink(wikiLink: IWikiLink): Promise<boolean>;
     currentVersion(path: string): Promise<number>;
     getMainContent(mode: PageMode, path: string, params: {[key: string]: string}, version?: number):
-        Promise<{namespaceIcon: string, noIcon: boolean, title: string, body: string, sideMenu: string, tabs: TopNavTabData[], dependences: {css: string[], js: string[]}}>;
+        Promise<{namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[], dependences: {css: string[], js: string[]}}>;
     goBack(): void;
     goForward(): void;
     reload(): void;

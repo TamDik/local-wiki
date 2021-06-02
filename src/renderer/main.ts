@@ -94,14 +94,10 @@ class View {
 }
 
 
-function initMainIcon(src: string, namespace: string, noIcon: boolean): void {
+function initMainIcon(src: string, namespace: string): void {
     const mainLogo: HTMLDivElement = document.getElementById('main-logo') as HTMLDivElement;
     const anchor: HTMLAnchorElement = document.createElement('a');
-    if (noIcon) {
-        anchor.href = window.localWiki.toURI({namespace, type: 'Special', name: 'NamespacePreferences'});
-    } else {
-        anchor.href = window.localWiki.toURI({namespace});
-    }
+    anchor.href = window.localWiki.toURI({namespace});
     const img: HTMLImageElement = document.createElement('img');
     img.src = src;
     img.alt = namespace;
@@ -207,7 +203,7 @@ function importJS(src: string): void{
     }
 }
 
-async function getMainContent(params: Params): Promise<{namespaceIcon: string, noIcon: boolean, title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
+async function getMainContent(params: Params): Promise<{namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[],
                                                         dependences: {css: string[], js: string[]}}> {
     const version: string = params.getValueOf('version');
     const optionals: {[key: string]: string} = {};
@@ -281,9 +277,9 @@ window.addEventListener('load', () => {
     initAccessArea(params);
 
     getMainContent(params)
-    .then(({namespaceIcon, noIcon, title, body, sideMenu, tabs, dependences}) => {
+    .then(({namespaceIcon, title, body, sideMenu, tabs, dependences}) => {
         const namespace: string = params.namespace;
-        initMainIcon(namespaceIcon, namespace, noIcon);
+        initMainIcon(namespaceIcon, namespace);
         initTabs(namespace, tabs);
         contentHead.innerHTML = title;
         contentBody.innerHTML = body;
