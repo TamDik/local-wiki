@@ -48,3 +48,33 @@ table tr:nth-child(2n) {
 img {
     max-width: 100%;
 }
+
+input[type="checkbox"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 19px;
+    vertical-align: middle;
+}
+
+input[type="checkbox"]:after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #656565;
+    border-radius: 4px;
+}
+
+input[type="checkbox"]:checked:before {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 9px;
+    margin-top: 3px;
+    margin-left: 6px;
+    border-right: 3px solid #0171bd;
+    border-bottom: 3px solid #0171bd;
+    transform: rotate(45deg);
+}
