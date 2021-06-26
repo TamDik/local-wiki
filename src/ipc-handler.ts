@@ -56,7 +56,7 @@ ipcMain.handle('get-html-contents', async (event, mode: PageMode, path: string, 
     namespaceIcon: string, title: string, body: string, sideMenu: string, tabs: TopNavTabData[], dependences: {css: string[], js: string[]}}> => {
     const wikiLink: WikiLink = new WikiLink(path);
     const title: string = ContentGenerator.title(mode, wikiLink);
-    const sideMenu: string = ContentGenerator.sideMenu();
+    const sideMenu: string = ContentGenerator.sideMenu(wikiLink);
     let mainContent: ContentBody;
     if (typeof(version) === 'number') {
         mainContent = ContentGenerator.mainContent(mode, wikiLink, version);

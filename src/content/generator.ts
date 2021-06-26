@@ -10,8 +10,8 @@ import {NotFoundNamespaceBody} from './not-found-namespace-body';
 
 
 class ContentGenerator {
-    public static sideMenu(): string {
-        return SideMenuGenerator.html;
+    public static sideMenu(wikiLink: WikiLink): string {
+        return SideMenuGenerator.html(wikiLink);
     }
 
     public static title(mode: PageMode, wikiLink: WikiLink): string {
@@ -82,39 +82,40 @@ class ContentGenerator {
 // SideMenuGenerator
 // -----------------------------------------------------------------------------
 class SideMenuGenerator {
-    public static get html(): string {
+    public static html(wikiLink: WikiLink): string {
         const config: WikiConfig = new WikiConfig();
         const {main, sub} = config.getSideMenu();
         const lines: string[] = [];
-        lines.push(SideMenuGenerator.mainSection(main));
+        const baseNamespace: string = wikiLink.namespace;
+        lines.push(SideMenuGenerator.mainSection(main, baseNamespace));
         for (const {title, data} of sub) {
-            lines.push(SideMenuGenerator.subSection(title, data));
+            lines.push(SideMenuGenerator.subSection(title, data, baseNamespace));
         }
         return lines.join('');
     }
 
-    private static mainSection(data: SideMenuSectionData): string {
+    private static mainSection(data: SideMenuSectionData, baseNamespace: string): string {
         return [
         '<nav id="wiki-side-main">',
           '<ul class="menu-contents">',
-            SideMenuGenerator.menuContents(data),
+            SideMenuGenerator.menuContents(data, baseNamespace),
           '</ul>',
         '</nav>'
         ].join('');
     }
 
-    private static subSection(title: string, data: SideMenuSectionData): string {
+    private static subSection(title: string, data: SideMenuSectionData, baseNamespace: string): string {
          return [
             '<nav class="wiki-side-sub">',
               `<h3 class="wiki-side-label">${title}</h3>`,
               '<ul class="menu-contents">',
-                SideMenuGenerator.menuContents(data),
+                SideMenuGenerator.menuContents(data, baseNamespace),
               '</ul>',
             '</nav>',
         ].join('');
     }
 
-    private static menuContents(data: SideMenuSectionData): string {
+    private static menuContents(data: SideMenuSectionData, baseNamespace: string): string {
         const lines: string[] = [];
         lines.push('<ul class="menu-contents">');
         for (const content of data) {
@@ -122,7 +123,7 @@ class SideMenuGenerator {
             if (content.type === 'text') {
                 lines.push(SideMenuGenerator.text(content.value));
             } else if (content.type === 'link') {
-                lines.push(SideMenuGenerator.link(content.text, content.path));
+                lines.push(SideMenuGenerator.link(content.text, content.path, baseNamespace));
             }
             lines.push('</li>');
         }
@@ -134,10 +135,10 @@ class SideMenuGenerator {
         return value;
     }
 
-    private static link(text: string, path: string): string {
+    private static link(text: string, path: string, baseNamespace: string): string {
         let href: string = path;
         if (WikiLink.isWikiLink(path)) {
-            href = new WikiLocation(new WikiLink(path)).toURI();
+            href = new WikiLocation(new WikiLink(path, baseNamespace)).toURI();
         }
         return `<a href="${href}">${text}</a>`;
     }
