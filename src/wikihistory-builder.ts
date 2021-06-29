@@ -8,7 +8,7 @@ function rootDirOf(namespace: string, wikiType: WikiType, markdown: boolean=fals
     const config: MergedNamespaceConfig = new WikiConfig().getNamespaceConfig(namespace);
     let rootDir: string;
     if (markdown && wikiType === 'File') {
-        rootDir = path.join(config.rootDir, 'FileDescritption');
+        rootDir = path.join(config.rootDir, 'FileDescription');
     } else {
         rootDir = path.join(config.rootDir, wikiType);
     }
