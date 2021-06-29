@@ -214,7 +214,7 @@ function extractCategories(baseNamespace: string, markdown: string): Category[] 
     const handler: CategoryHandler = new CategoryHandler(
         (path: string) => new WikiLink(path, baseNamespace).type === 'Category'
     );
-    handler.setCollector(collector);
+    handler.addCollector(collector);
 
     const wikiMD = new WikiMD ({isWikiLink: WikiLink.isWikiLink, toWikiURI: (href: string) => href});
     wikiMD.addMagicHandler(handler);

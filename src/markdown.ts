@@ -20,16 +20,15 @@ interface WikiLinkCollectable {
 
 
 abstract class WikiLinkFinder {
-    protected collector: WikiLinkCollectable|null = null;
-    public setCollector(collector: WikiLinkCollectable): void {
-        this.collector = collector;
+    protected collectors: WikiLinkCollectable[] = [];
+    public addCollector(collector: WikiLinkCollectable): void {
+        this.collectors.push(collector);
     }
 
     public foundWikiLink(href: string, type: ReferenceType): void {
-        if (this.collector === null) {
-            return;
+        for (const collector of this.collectors) {
+            collector.addWikiLink(href, type);
         }
-        this.collector.addWikiLink(href, type);
     }
 }
 
@@ -52,10 +51,12 @@ class WikiMD extends WikiLinkFinder {
         this.value = value;
     }
 
-    public static expandMagics(html: string, handlers: MagicHandler[], toWikiURI: ToWikiURI, collector?: WikiLinkCollectable|null, brackets: number=2): string {
+    public static expandMagics(html: string, handlers: MagicHandler[], toWikiURI: ToWikiURI, collectors?: WikiLinkCollectable[], brackets: number=2): string {
         const expander = new MagicExpander(toWikiURI, brackets);
-        if (collector) {
-            expander.setCollector(collector);
+        if (collectors) {
+            for (const collector of collectors) {
+                expander.addCollector(collector);
+            }
         }
         for (const handler of handlers) {
             expander.addHandler(handler);
@@ -71,7 +72,7 @@ class WikiMD extends WikiLinkFinder {
         renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
         marked.use({renderer});
         let html: string = marked(this.value);
-        return WikiMD.expandMagics(html, this.magicHandlers, this.toWikiURI, this.collector);
+        return WikiMD.expandMagics(html, this.magicHandlers, this.toWikiURI, this.collectors);
     }
 
     private code(code: string, infostring: string): string {
@@ -206,7 +207,7 @@ class MagicExpander extends WikiLinkFinder implements WikiLinkCollectable {
     }
 
     public addHandler(handler: MagicHandler): void {
-        handler.setCollector(this);
+        handler.addCollector(this);
         this.handlers.push(handler);
     }
 

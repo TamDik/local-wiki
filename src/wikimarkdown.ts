@@ -110,7 +110,7 @@ class TemplateExpander {
     private expandParameters(templateId: string, text: string): string {
         const parameters: Map<string, string> = this.handler.getParameter(templateId);
         const handler: TemplateParameterHandler = new TemplateParameterHandler(parameters);
-        return WikiMD.expandMagics(text, [handler], this.toWikiURI, null, 3);
+        return WikiMD.expandMagics(text, [handler], this.toWikiURI, [], 3);
     }
 
     private templateLoop(wikiLink: WikiLink): string {
@@ -161,7 +161,7 @@ class MarkdownParser {
 
         // References
         this.references = new ReferenceCollector(this.options.baseNamespace);
-        this.wikiMD.setCollector(this.references);
+        this.wikiMD.addCollector(this.references);
     }
 
     private createWikiMD(): WikiMD {

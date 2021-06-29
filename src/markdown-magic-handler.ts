@@ -525,7 +525,8 @@ class CategoryHandler extends MagicHandler {
     }
 
     public expand(content: string, toWikiURI: ToWikiURI): string {
-        this.foundWikiLink(content, 'category');
+        const path: string = content.split('|')[0];
+        this.foundWikiLink(path, 'category');
         return '';
     }
 }
