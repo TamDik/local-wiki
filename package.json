@@ -4,6 +4,7 @@
     "description": "description",
     "main": "dist/js/main.js",
     "scripts": {
+        "clean": "rm -rf data",
         "test": "jest",
         "compile": "npx tsc",
         "start": "npm run compile && electron .",
