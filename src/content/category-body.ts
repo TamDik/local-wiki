@@ -80,6 +80,11 @@ class CategoryReadBody extends ContentBody {
         if (pages.length !== 0) {
             lines.push(this.pageList(pages));
         }
+
+        const files: WikiLink[] = referedLinks.filter(wikiLink => wikiLink.type === 'File');
+        if (files.length !== 0) {
+            lines.push(this.fileList(files));
+        }
         return lines.join('');
     }
 
@@ -117,10 +122,18 @@ class CategoryReadBody extends ContentBody {
     }
 
     private pageList(wikiLinks: WikiLink[]): string {
+        return this.wikiLinkList(wikiLinks, 'page', 'pages');
+    }
+
+    private fileList(wikiLinks: WikiLink[]): string {
+        return this.wikiLinkList(wikiLinks, 'file', 'files');
+    }
+
+    private wikiLinkList(wikiLinks: WikiLink[], singular: string, plural: string): string {
         const lines: string[] = [];
-        lines.push(`<h2>Pages in category "${this.wikiLink.name}"</h2>`);
-        const pageAndBe: string = wikiLinks.length === 1 ? 'page is' : 'pages are';
-        lines.push(`The following ${wikiLinks.length} ${pageAndBe} in this category.`);
+        lines.push(`<h2>Files in category "${this.wikiLink.name}"</h2>`);
+        const typeAndBe: string = wikiLinks.length === 1 ? `${singular} is` : `${plural} are`;
+        lines.push(`The following ${wikiLinks.length} ${typeAndBe} in this category.`);
 
         lines.push('<ul class="column-count-3">');
         for (const wikiLink of wikiLinks) {
