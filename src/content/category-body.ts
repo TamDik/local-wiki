@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import {upperCaseFirst} from '../utils';
 import {WikiLink, WikiLocation} from '../wikilink';
 import {toFullPath} from '../wikihistory-builder';
 import {MarkdownEditorBody, MarkdownHistoryBody} from './markdown-body';
@@ -131,7 +132,7 @@ class CategoryReadBody extends ContentBody {
 
     private wikiLinkList(wikiLinks: WikiLink[], singular: string, plural: string): string {
         const lines: string[] = [];
-        lines.push(`<h2>Files in category "${this.wikiLink.name}"</h2>`);
+        lines.push(`<h2>${upperCaseFirst(plural)} in category "${this.wikiLink.name}"</h2>`);
         const typeAndBe: string = wikiLinks.length === 1 ? `${singular} is` : `${plural} are`;
         lines.push(`The following ${wikiLinks.length} ${typeAndBe} in this category.`);
 

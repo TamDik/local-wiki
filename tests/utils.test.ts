@@ -1,4 +1,4 @@
-import {escapeRegex, escapeHtml, isInteger, isNaturalNumber, isNonNegativeNumber, extensionOf} from '../src/utils';
+import {escapeRegex, escapeHtml, isInteger, isNaturalNumber, isNonNegativeNumber, extensionOf, upperCaseFirst} from '../src/utils';
 
 test('escapeRegex', () => {
     expect(escapeRegex('a')).toBe('a');
@@ -45,4 +45,11 @@ test('extensionOf', () => {
     expect(extensionOf('name.a')).toBe('a');
     expect(extensionOf('name.b.a')).toBe('a');
     expect(extensionOf('name')).toBe('');
+});
+
+test('upperCaseFirst', () => {
+    expect(upperCaseFirst('abc')).toBe('Abc');
+    expect(upperCaseFirst('ABC')).toBe('ABC');
+    expect(upperCaseFirst('a')).toBe('A');
+    expect(upperCaseFirst('')).toBe('');
 });

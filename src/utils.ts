@@ -107,6 +107,14 @@ function trim(s: string): string {
 }
 
 
+function upperCaseFirst(s: string): string {
+    if (s.length === 0) {
+        return s;
+    }
+    return s[0].toUpperCase() + s.slice(1);
+}
+
+
 function uniqueArr<T>(arr: T[]): T[] {
     return arr.filter((v: T, i: number, a: T[]) => i === a.indexOf(v));
 }
@@ -128,4 +136,4 @@ function compareLowerCase(a: string, b: string): number {
 }
 
 
-export {escapeRegex, escapeHtml, isInteger, isNaturalNumber, isNonNegativeNumber, extensionOf, generateRandomString, zeroPadding, dateToStr, bytesToStr, trim, uniqueArr, countArr, compareLowerCase};
+export {escapeRegex, escapeHtml, isInteger, isNaturalNumber, isNonNegativeNumber, extensionOf, generateRandomString, zeroPadding, dateToStr, bytesToStr, trim, upperCaseFirst, uniqueArr, countArr, compareLowerCase};
