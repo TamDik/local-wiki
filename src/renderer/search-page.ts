@@ -57,10 +57,13 @@
     function searchPage(): void {
         const searchValue: string = searchField.value;
         const keywords: string[] = splitSeachKeyword(searchValue);
-        const params: Params = new Params();
         ul.innerHTML = '';
+        if (keywords.length === 0) {
+            return;
+        }
         const p: HTMLParagraphElement = document.createElement('p');
         ul.appendChild(p);
+        const params: Params = new Params();
         window.ipcApi.searchPageByName(params.path, searchValue)
         .then(({exists, wikiLink}) => {
             if (exists) {
