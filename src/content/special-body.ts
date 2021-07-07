@@ -123,7 +123,7 @@ class SpecialPagesBody extends SpecialContentBody {
 
 
 class AllPagesBody extends SpecialContentBody {
-    public static wikiName: string = 'AllPages';
+    private static wikiName: string = 'AllPages';
     public name: string = AllPagesBody.wikiName;
     public title: string = 'All pages';
     public type: SpecialContentType = 'pages';
@@ -157,8 +157,7 @@ class AllPagesBody extends SpecialContentBody {
 
 
 class AllFilesBody extends SpecialContentBody {
-    public static wikiName: string = 'AllFiles';
-    public name: string = AllFilesBody.wikiName;
+    public name: string = 'AllFiles';
     public title: string = 'All files';
     public type: SpecialContentType = 'media';
 
@@ -415,8 +414,7 @@ class SideMenuBody extends SpecialContentBody {
 
 
 class NamespacePreferencesBody extends SpecialContentBody {
-    public static readonly wikiName: string = 'NamespacePreferences';
-    public readonly name: string = NamespacePreferencesBody.wikiName;
+    public readonly name: string = 'NamespacePreferences';
     public readonly title: string = 'Namespace preferences';
     public readonly type: SpecialContentType = 'namespace';
     public readonly js: string[] = [
@@ -526,17 +524,9 @@ class AllNamespacesBody extends SpecialContentBody {
 
     private namespaceLinks(config: MergedNamespaceConfig): string {
         const lines: string[] = [];
-        const names: string[] = [
-            SpecialPagesBody.wikiName,
-            AllPagesBody.wikiName,
-            AllFilesBody.wikiName,
-            NamespacePreferencesBody.wikiName,
-        ];
-        for (const name of names) {
-            const wikiLink: WikiLink = new WikiLink({namespace: config.name, type: 'Special', name});
-            const location: WikiLocation = new WikiLocation(wikiLink);
-            lines.push(`<a href="${location.toURI()}">${name}</a>`);
-        }
+        const wikiLink: WikiLink = new WikiLink({namespace: config.name});
+        const location: WikiLocation = new WikiLocation(wikiLink);
+        lines.push(`<a href="${location.toURI()}">${wikiLink.name}</a>`);
         return lines.join(', ');
     }
 }
