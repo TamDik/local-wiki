@@ -283,7 +283,6 @@ class WikiMarkdown {
     public static readonly css: string[] = [
         '../node_modules/highlight.js/styles/github-gist.css',
     ];
-    private static readonly SECTION_PATTERN: RegExp = /^(?=(?: {1,3})?#{1,6}\s)/;
     private static readonly EDIT_CLASS: string = 'edit-section';
     private static readonly TOC_CLASS: string = 'toc-target';
     private sections: string[];
@@ -297,23 +296,44 @@ class WikiMarkdown {
     }
 
     private splitWithSections(markdown: string): string[] {
-        return markdown.split(RegExp(WikiMarkdown.SECTION_PATTERN, 'm'));
+        if (markdown === '') {
+            return [markdown];
+        }
+
+        const sections: string[] = [];
+        let sectionLines: string[] = [];
+        let codeFence: string = '';
+        const OPENING_CODE_FENCE = /^((`|~){3,})(.*)/;
+        for (const line of markdown.split('\n')) {
+            const match: RegExpMatchArray | null = line.match(OPENING_CODE_FENCE);
+            if (match) {
+                const fence = match[1];
+                if (codeFence === '') {
+                    codeFence = fence;
+                } else if (fence.startsWith(codeFence)) {
+                    codeFence = '';
+                }
+            }
+
+            if (codeFence === '' && sectionLines.length !== 0 && this.startWithHeading(line)) {
+                sections.push(sectionLines.join('\n') + '\n');
+                sectionLines = [];
+            }
+            sectionLines.push(line)
+        }
+        if (sectionLines.length !== 0) {
+            sections.push(sectionLines.join('\n') + '\n');
+        }
+        return sections;
     }
 
     private startWithHeading(text: string): boolean {
-        return text.match(WikiMarkdown.SECTION_PATTERN) !== null;
+        const SECTION_PATTERN: RegExp = /^(?=(?: {1,3})?#{1,6}\s)/;
+        return text.match(SECTION_PATTERN) !== null;
     }
 
     private joinSections(sections: string[]): string {
-        let joined: string = '';
-        for (const section of sections) {
-            if (joined !== '' && !joined.endsWith('\n')) {
-                joined += '\n' + section;
-            } else {
-                joined += section;
-            }
-        }
-        return joined;
+        return sections.join('');
     }
 
     public setSection(section: number, text: string): void {
