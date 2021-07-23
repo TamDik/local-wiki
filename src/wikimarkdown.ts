@@ -316,13 +316,13 @@ class WikiMarkdown {
             }
 
             if (codeFence === '' && sectionLines.length !== 0 && this.startWithHeading(line)) {
-                sections.push(sectionLines.join('\n') + '\n');
+                sections.push(sectionLines.join('\n'));
                 sectionLines = [];
             }
             sectionLines.push(line)
         }
         if (sectionLines.length !== 0) {
-            sections.push(sectionLines.join('\n') + '\n');
+            sections.push(sectionLines.join('\n'));
         }
         return sections;
     }
@@ -333,7 +333,7 @@ class WikiMarkdown {
     }
 
     private joinSections(sections: string[]): string {
-        return sections.join('');
+        return sections.join('\n');
     }
 
     public setSection(section: number, text: string): void {
@@ -377,19 +377,19 @@ class WikiMarkdown {
     }
 
     private refineAndDecorateMarkdown(options: HTMLOptionsComplementer): string {
-        let text: string = '';
         const section: number|null = options.section;
+        const lines: string[] = [];
         for (let si: number = 0, len = this.sections.length; si < len; si++) {
             const sectionText: string = this.sections[si];
             if (section === null) {
-                text += this.decorateSection(sectionText, si, options);
+                lines.push(this.decorateSection(sectionText, si, options));
             }
             if (section === si) {
-                text = this.decorateSection(sectionText, si, options);
+                lines.push(this.decorateSection(sectionText, si, options));
                 break;
             }
         }
-        return text;
+        return lines.join('\n');
     }
 
     private decorateSection(text: string, section: number, options: HTMLOptionsComplementer): string {
