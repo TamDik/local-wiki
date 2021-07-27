@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import {upperCaseFirst} from '../utils';
+import {upperCaseFirst, compareLowerCase} from '../utils';
 import {WikiLink, WikiLocation} from '../wikilink';
 import {toFullPath} from '../wikihistory-builder';
 import {MarkdownEditorBody, MarkdownHistoryBody} from './markdown-body';
@@ -137,13 +137,44 @@ class CategoryReadBody extends ContentBody {
         lines.push(`The following ${wikiLinks.length} ${typeAndBe} in this category.`);
 
         lines.push('<ul class="column-count-3">');
-        for (const wikiLink of wikiLinks) {
+        for (const wikiLink of this.sortWikiLinksByNamespaceAndName(wikiLinks)) {
             const location: WikiLocation = new WikiLocation(wikiLink);
-            const text: string = wikiLink.name;
+            let text: string = wikiLink.name;
+            if (wikiLink.namespace !== this.wikiLink.namespace) {
+                text += ` (${wikiLink.namespace})`;
+            }
             lines.push(`<li><a href="${location.toURI()}">${text}</a></li>`);
         }
         lines.push('</ul>');
         return lines.join('');
+    }
+
+    private sortWikiLinksByNamespaceAndName(wikiLinks: WikiLink[]): WikiLink[] {
+        const sortedByNamespace: Map<string, WikiLink[]> = new Map();
+        const namespaces: string[] = [];
+        for (const wikilink of wikiLinks) {
+            const ns: string = wikilink.namespace;
+            if (!sortedByNamespace.has(ns)) {
+                sortedByNamespace.set(ns, []);
+                namespaces.push(ns);
+            }
+            sortedByNamespace.get(ns)!.push(wikilink);
+        }
+        for (const wikiLinks of sortedByNamespace.values()) {
+            wikiLinks.sort((w1, w2) => compareLowerCase(w1.name, w2.name));
+        }
+
+        const sorted: WikiLink[] = []
+        if (sortedByNamespace.has(this.wikiLink.namespace)) {
+            sorted.push(...sortedByNamespace.get(this.wikiLink.namespace)!);
+        }
+        for (const ns of namespaces.sort()) {
+            if (ns === this.wikiLink.namespace) {
+                continue;
+            }
+            sorted.push(...sortedByNamespace.get(ns)!);
+        }
+        return sorted;
     }
 }
 
