@@ -71,7 +71,7 @@
         });
     }, false);
 
-    destInput.addEventListener('change', () => {
+    destInput.addEventListener('input', () => {
         uploadButton.disabled = !canUpload();
         const destName: string|null = getDestName();
         if (typeof(destName) === 'string') {
