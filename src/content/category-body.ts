@@ -139,7 +139,8 @@ class CategoryReadBody extends ContentBody {
         lines.push('<ul class="column-count-3">');
         for (const wikiLink of wikiLinks) {
             const location: WikiLocation = new WikiLocation(wikiLink);
-            lines.push(`<li><a href="${location.toURI()}">${wikiLink.toPath()}</a></li>`);
+            const text: string = wikiLink.name;
+            lines.push(`<li><a href="${location.toURI()}">${text}</a></li>`);
         }
         lines.push('</ul>');
         return lines.join('');
