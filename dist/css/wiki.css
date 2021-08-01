@@ -314,6 +314,26 @@ a.new {
 }
 
 
+/* コピーボタン */
+.code-wrapper {
+    position: relative;
+}
+.copy-button {
+    color: #818a91;
+    position: absolute;
+    margin: 5px;
+    padding: 3px 6px;
+    right: 0;
+    top: 0;
+    font-size: 85%;
+    cursor: pointer;
+    border-radius: .25em;
+}
+.copy-button:hover {
+    color: #fff;
+    background: #027de7;
+}
+
 /* 編集リンク */
 .edit-section {
     font-size: small;

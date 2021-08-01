@@ -1,6 +1,21 @@
 const DEFAULT_MODE: PageMode = 'read';
 const DEFAULT_PATH: string = 'Main';
 
+type ContextualClass = 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark';
+
+function showShortMessage(innerHTML: string, context: ContextualClass, timeout: number=3000) {
+    const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
+    const alertDiv: HTMLDivElement = document.createElement('div');
+    alertDiv.classList.add('alert', 'alert-' + context);
+    alertDiv.innerHTML = innerHTML;
+    contentBody.parentElement!.insertBefore(alertDiv, contentBody);
+    if (timeout < 0) {
+        return;
+    }
+    setTimeout(() => {
+        alertDiv.remove();
+    }, timeout);
+}
 
 class Params {
     private params: URLSearchParams;

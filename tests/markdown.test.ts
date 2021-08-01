@@ -16,8 +16,8 @@ describe('test code', () => {
         '    pass',
         '```',
     ], [
-        '<pre><code>class foo:',
-        '    pass</code></pre>',
+        '<div class="code-wrapper"><pre><code>class foo:',
+        '    pass</code></pre><div class="copy-button">Copy</div></div>',
     ]);
 
     testCode([
@@ -26,8 +26,8 @@ describe('test code', () => {
         '    pass',
         '```',
     ], [
-        '<pre><code><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">foo</span>:</span>',
-        '    <span class="hljs-keyword">pass</span></code></pre>',
+        '<div class="code-wrapper"><pre><code><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">foo</span>:</span>',
+        '    <span class="hljs-keyword">pass</span></code></pre><div class="copy-button">Copy</div></div>',
     ]);
 
     testCode([

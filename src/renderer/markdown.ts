@@ -115,4 +115,20 @@ function createTOC(): void {
 }
 
 
+function registerCopyEvent(): void {
+    const targets: HTMLCollectionOf<HTMLDivElement> = document.getElementsByClassName('copy-button') as HTMLCollectionOf<HTMLDivElement>;
+    for (const target of targets) {
+        target.addEventListener('click', event => {
+            const pre: HTMLPreElement = target.previousElementSibling as HTMLPreElement;
+            const code: string = pre.innerText;
+            navigator.clipboard.writeText(code)
+            .then(e => {
+                showShortMessage('Copied!', 'success', 2500);
+            });
+        });
+    }
+}
+
+
 View.addUpdateAction(createTOC);
+View.addUpdateAction(registerCopyEvent);

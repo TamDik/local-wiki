@@ -179,7 +179,9 @@ class CodeTagCreator implements HTMLTagCreator {
         } else {
             validLanguage = 'plaintext';
         }
-        return '<pre><code>' + hljs.highlight(validLanguage, this.code).value + '</code></pre>';
+        const precode: string = '<pre><code>' + hljs.highlight(validLanguage, this.code).value + '</code></pre>';
+        const copyButton: string = '<div class="copy-button">Copy</div>';
+        return '<div class="code-wrapper">' + precode + copyButton + '</div>';
     }
 }
 
