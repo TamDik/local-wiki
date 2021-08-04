@@ -116,14 +116,21 @@ function createTOC(): void {
 
 
 function registerCopyEvent(): void {
-    const targets: HTMLCollectionOf<HTMLDivElement> = document.getElementsByClassName('copy-button') as HTMLCollectionOf<HTMLDivElement>;
-    for (const target of targets) {
-        target.addEventListener('click', event => {
-            const pre: HTMLPreElement = target.previousElementSibling as HTMLPreElement;
+    const buttons: HTMLCollectionOf<HTMLDivElement> = document.getElementsByClassName('copy-button') as HTMLCollectionOf<HTMLDivElement>;
+    for (const button of buttons) {
+        button.addEventListener('click', event => {
+            const pre: HTMLPreElement = button.previousElementSibling as HTMLPreElement;
             const code: string = pre.innerText;
             navigator.clipboard.writeText(code)
             .then(e => {
-                showShortMessage('Copied!', 'success', 2500);
+                const borderColor: string = pre.style.borderColor;
+                const backgroundColor: string = pre.style.backgroundColor;
+                pre.style.borderColor = '#027de7';
+                pre.style.backgroundColor = '#e7edfb';
+                setTimeout(() => {
+                    pre.style.borderColor = borderColor;
+                    pre.style.backgroundColor = backgroundColor;
+                }, 700);
             });
         });
     }

@@ -3,18 +3,11 @@ const DEFAULT_PATH: string = 'Main';
 
 type ContextualClass = 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark';
 
-function showShortMessage(innerHTML: string, context: ContextualClass, timeout: number=3000) {
-    const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
+function createAlertMessage(innerHTML: string, context: ContextualClass): HTMLDivElement {
     const alertDiv: HTMLDivElement = document.createElement('div');
     alertDiv.classList.add('alert', 'alert-' + context);
     alertDiv.innerHTML = innerHTML;
-    contentBody.parentElement!.insertBefore(alertDiv, contentBody);
-    if (timeout < 0) {
-        return;
-    }
-    setTimeout(() => {
-        alertDiv.remove();
-    }, timeout);
+    return alertDiv;
 }
 
 class Params {
@@ -312,12 +305,8 @@ window.addEventListener('load', () => {
     })
     .catch(e => {
         contentHead.innerHTML = 'This page is not working...';
-        const lines: string[] = [
-            '<div class="alert alert-danger" role="alert">',
-              'We\'re sorry, but something went wrong.',
-            '</div>',
-        ];
-        contentBody.innerHTML = lines.join('');
+        contentBody.innerHTML = '';
+        contentBody.prepend(createAlertMessage('We\'re sorry, but something went wrong.', 'danger'));
         console.log(e);
     });
 });
