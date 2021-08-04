@@ -70,7 +70,16 @@ class WikiMD extends WikiLinkFinder {
         renderer.code = this.code;
         renderer.link = (href: string, title: string|null, text: string) => this.link(href, title, text, this.isWikiLink);
         renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
-        marked.use({renderer});
+        const walkTokens = (token: any) => {
+            if (token.type === 'heading') {
+                if (token.depth === 1) {
+                    token.depth = 2;
+                }
+            }
+        };
+
+        marked.use({renderer, walkTokens});
+
         let html: string = marked(this.value);
         return WikiMD.expandMagics(html, this.magicHandlers, this.toWikiURI, this.collectors);
     }

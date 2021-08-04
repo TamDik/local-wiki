@@ -106,7 +106,7 @@ function createTOC(): void {
 
     for (const target of targets) {
         const heading: HTMLHeadingElement = getHeading(target);
-        const level: number = Number(heading.tagName[1]);
+        const level: number = Number(heading.tagName[1]) - 1;
         toc.add(level, heading.innerText, heading);
     }
 
