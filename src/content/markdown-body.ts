@@ -9,7 +9,6 @@ import {PageDiffBody} from './special-body';
 
 class MarkdownEditorBody extends ContentBody {
     public css: string[] = [
-        '../node_modules/highlight.js/styles/github-gist.css',
         '../node_modules/simplemde/dist/simplemde.min.css',
         './css/editor.css',
         ...WikiMarkdown.css,
