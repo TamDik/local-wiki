@@ -108,6 +108,18 @@ markdown中の参照で名前空間を省略した場合には、Markdownペー�
 
 画像ファイルの埋め込みは`![alt](WikiLink)`で可能です。画像以外のメディアファイルも`{{WikiLink}}`を使用することによってページ中に可能な限り埋め込まれます。
 
+### 数式
+
+`math`が指定されたコードブロック内はLaTeXコマンドとして解釈され数式を描画します。
+
+~~~tex
+```math
+f(a) = \frac{1}{2 \pi i} \oint_{\gamma} \frac{f(z)}{z - a} dz
+```
+~~~
+
+<img width="200" alt="formula-example" src="https://user-images.githubusercontent.com/59227885/132283591-279332fd-9c65-4a90-864e-41b7d460b83b.png">
+
 ### カテゴリ
 
 ページをカテゴリに追加して、関連するページをまとめて管理することができます。ページをカテゴリに追加するためには、CategoryのWikiLinkを`{{WikiLink}}`という形式でページのどこかに記述します。この`{{WikiLink}}`はどこにでもいくつでも記述することができますが、表示上はページの最下部にカテゴリのリストとして表示されます。
