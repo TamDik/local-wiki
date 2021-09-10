@@ -6,6 +6,7 @@ import {ContentGenerator, ContentBody} from './content/generator';
 import {WikiConfig, MergedNamespaceConfig, usedAsAnExternalNamespace, parseNamespaceConfig} from './wikiconfig';
 import {WikiLink} from './wikilink';
 import {WikiMarkdown} from './wikimarkdown';
+import {parse} from './content/markdown';
 import {escapeRegex, extensionOf, generateRandomString} from './utils';
 import {extractCategories, updateCategories, Category} from './wikicategory';
 import {WikiHistory, createHistory, toFullPath, VersionData} from './wikihistory-builder';
@@ -163,9 +164,7 @@ ipcMain.handle('upload-file', async (event, path: string, destName: string, sour
 // マークダウンをHTMLに変換
 ipcMain.handle('markdown-to-html', async (event, path: string, markdown: string): Promise<string> => {
     const wikiLink: WikiLink = new WikiLink(path);
-    const wikiMarkdown: WikiMarkdown = new WikiMarkdown(markdown, wikiLink);
-    let html: string = wikiMarkdown.parse({toFullPath}).html;
-    return html;
+    return parse(markdown, wikiLink);
 });
 
 // キーワードでページを検索
