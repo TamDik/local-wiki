@@ -532,10 +532,7 @@ class CategoryHandler extends MagicHandler {
 }
 
 
-type TemplateData = {path: string, parameters: Map<string, string>};
 class TemplateHandler extends MagicHandler {
-    private readonly templatesData: Map<string, TemplateData> = new Map();
-
     public constructor(private readonly existingTemplate: IsTargetWikiLink) {
         super();
     }
@@ -547,13 +544,13 @@ class TemplateHandler extends MagicHandler {
 
     public expand(content: string, toWikiURI: ToWikiURI): string {
         const [path, ...params] = content.split('|');
-        const templateId: string = generateRandomString(8);
-        this.setTemplateData(templateId, path, params);
         this.foundWikiLink(path, 'template');
-        return `<div data-template="${templateId}"></div>`;
+        const parameters: Map<string, string> = this.getParameterMap(params);
+        const div: string = this.createDiv(path, parameters);
+        return div;
     }
 
-    private setTemplateData(templateId: string, path: string, params: string[]): void {
+    private getParameterMap(params: string[]): Map<string, string> {
         let index: number = 1;
         const parameters: Map<string, string> = new Map();
         for (const param of params) {
@@ -565,23 +562,16 @@ class TemplateHandler extends MagicHandler {
                 parameters.set(v1, arr.join('='));
             }
         }
-
-        this.templatesData.set(templateId, {path, parameters});
+        return parameters;
     }
 
-    private getTemplateData(id: string): TemplateData {
-        if (!this.templatesData.has(id)) {
-            throw new Error(`Not found the template id: ${id}`);
+    private createDiv(path: string, parameters: Map<string, string>): string {
+        let div: string = `<div data-template-path="${path}"`;
+        for (const [key, value] of parameters) {
+            div += ` data-parameter-${key}="${value}"`
         }
-        return this.templatesData.get(id) as TemplateData;
-    }
-
-    public getParameter(templateId: string): Map<string, string> {
-        return this.getTemplateData(templateId).parameters;
-    }
-
-    public getWikiPath(templateId: string): string {
-        return this.getTemplateData(templateId).path;
+        div += `>[applying a template: ${path}]</div>`;
+        return div;
     }
 }
 

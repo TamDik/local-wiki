@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import {WikiLink, WikiLocation} from './wikilink';
 import {fileTypeOf} from './wikifile';
-import {WikiMD, MagicHandler} from './markdown';
+import {WikiMD, MagicExpander, MagicHandler} from './markdown';
 import {ReferenceCollector} from './reference-collector';
 import {Category} from './wikicategory';
 import {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, TemplateParameterHandler, NotFoundTemplateHandler, CategoryTreeHandler} from './markdown-magic-handler';
@@ -69,48 +69,53 @@ class HTMLOptionsComplementer implements HTMLOptions {
 
 
 class TemplateExpander {
-    private handler: TemplateHandler;
+    public constructor(private readonly options: HTMLOptionsComplementer, private readonly ignoringTemplates: WikiLink[]) {
+    }
 
-    public constructor(private readonly options: HTMLOptionsComplementer, private readonly loops: WikiLink[]) {
-        this.handler = new TemplateHandler((path: string) => {
-            const wikiLink: WikiLink = new WikiLink(path, this.baseNamespace);
-            if (wikiLink.type !== 'Template') {
-                return false;
+    public expand(text: string): string {
+        const PARAM: string = 'data-parameter-([^=]*)="([^"]*)"';
+        const PATTERN: RegExp = RegExp(`<div data-template-path="(?<path>[^"]*)"(?<parameters>(?: ${PARAM})*)>(?:.*)<\\/div>`, 'g');
+        const PARAM_PATTERN: RegExp = RegExp(PARAM, 'g');
+        for (const match1 of (text as any).matchAll(PATTERN)) {
+            const wikiLink: WikiLink = new WikiLink(match1.groups.path, this.options.baseNamespace);
+            const parameters: Map<string, string> = new Map();
+            for (const match2 of match1.groups.parameters.matchAll(PARAM_PATTERN)) {
+                parameters.set(match2[1], match2[2]);
             }
-            const fullPath: string|null = this.toFullPath(new WikiLink(path, this.baseNamespace));
-            return typeof(fullPath) === 'string';
-        });
+            text = text.replace(match1[0], this.expandTemplate(wikiLink, parameters));
+        }
+        return text;
     }
 
-    public execute(text: string): string {
-        const PATTERN: RegExp = /<div data-template="([^"]*)"><\/div>/g;
-        // NOTE: テンプレートを展開後にマークダウンの解析は行われるのでWikiLinkCollectableは不要
-        const expanded: string = WikiMD.expandMagics(text, [this.handler], this.toWikiURI);
-        return expanded.replace(PATTERN, s => {
-            const templateId: string = s.slice(20, -8);
-            return this.expandTemplate(templateId);
-        });
-    }
-
-    private expandTemplate(templateId: string): string {
-        const path: string = this.handler.getWikiPath(templateId);
-        const wikiLink: WikiLink = new WikiLink(path, this.baseNamespace)
+    private expandTemplate(wikiLink: WikiLink, parameters: Map<string, string>): string {
         if (this.isIgnoredTemplage(wikiLink)) {
             return this.templateLoop(wikiLink);
         }
-
-        const filepath: string = this.toFullPath(wikiLink) as string;
-        let markdown: string = fs.readFileSync(filepath, 'utf-8');
-        markdown = this.expandParameters(templateId, markdown);
-        const ignores: WikiLink[] = [...this.loops, wikiLink];
-        const expander: TemplateExpander = new TemplateExpander(this.options, ignores);
-        return expander.execute(markdown);
+        const filepath: string = this.options.toFullPath(wikiLink) as string;
+        const markdown: string = this.expandParameters(fs.readFileSync(filepath, 'utf-8'), parameters);
+        const ignoringTemplates = [...this.ignoringTemplates, wikiLink];
+        const parser: MarkdownParser = new MarkdownParser(markdown, wikiLink, this.options, ignoringTemplates);
+        return parser.parse();
     }
 
-    private expandParameters(templateId: string, text: string): string {
-        const parameters: Map<string, string> = this.handler.getParameter(templateId);
+    private expandParameters(markdown: string, parameters: Map<string, string>): string {
         const handler: TemplateParameterHandler = new TemplateParameterHandler(parameters);
-        return WikiMD.expandMagics(text, [handler], this.toWikiURI, [], 3);
+        const expander: MagicExpander = new MagicExpander((href: string) => {
+            const wikiLink: WikiLink = new WikiLink(href, this.options.baseNamespace);
+            const location: WikiLocation = new WikiLocation(wikiLink);
+            return location.toURI();
+        }, 3);
+        expander.addHandler(handler);
+        return expander.expand(markdown);
+    }
+
+    private isIgnoredTemplage(wikiLink: WikiLink): boolean {
+        for (const ignore of this.ignoringTemplates) {
+            if (wikiLink.equals(ignore)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private templateLoop(wikiLink: WikiLink): string {
@@ -121,29 +126,6 @@ class TemplateExpander {
             '</div>'
         ].join('');
     }
-
-    private isIgnoredTemplage(wikiLink: WikiLink): boolean {
-        for (const ignore of this.loops) {
-            if (wikiLink.equals(ignore)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private toWikiURI(href: string): string {
-        const wikiLink: WikiLink = new WikiLink(href, this.baseNamespace);
-        const location: WikiLocation = new WikiLocation(wikiLink);
-        return location.toURI();
-    }
-
-    private get baseNamespace(): string {
-        return this.options.baseNamespace;
-    }
-
-    private get toFullPath(): ToFullPath {
-        return this.options.toFullPath;
-    }
 }
 
 class MarkdownParser {
@@ -151,11 +133,14 @@ class MarkdownParser {
     private readonly options: HTMLOptionsComplementer;
     private readonly references: ReferenceCollector;
 
-    public constructor(private readonly markdown: string, private readonly wikiLink: WikiLink, options: HTMLOptionsComplementer|HTMLOptions) {
+    public constructor(private readonly markdown: string, private readonly wikiLink: WikiLink, options: HTMLOptionsComplementer|HTMLOptions, private readonly ignoringTemplates: WikiLink[]=[]) {
         if (options instanceof HTMLOptionsComplementer) {
             this.options = options;
         } else {
             this.options = new HTMLOptionsComplementer(options);
+        }
+        if (this.ignoringTemplates.length === 0) {
+            this.ignoringTemplates.push(this.wikiLink);
         }
         this.wikiMD = this.createWikiMD();
 
@@ -204,6 +189,16 @@ class MarkdownParser {
         wikiMD.addMagicHandler(categoryHandler);
 
         // template
+        const templateHandler: TemplateHandler = new TemplateHandler((path: string) => {
+            const wikiLink: WikiLink = new WikiLink(path, this.options.baseNamespace);
+            if (wikiLink.type !== 'Template') {
+                return false;
+            }
+            const fullPath: string|null = this.options.toFullPath(new WikiLink(path, this.options.baseNamespace));
+            return typeof(fullPath) === 'string';
+        });
+        wikiMD.addMagicHandler(templateHandler);
+
         const notFoundTemplateHandler: NotFoundTemplateHandler = new NotFoundTemplateHandler((path: string) => {
             const wikiLink: WikiLink = new WikiLink(path, baseNamespace);
             if (wikiLink.type !== 'Template') {
@@ -253,17 +248,14 @@ class MarkdownParser {
         return html;
     }
 
-    public execute(): string {
-        let expanded: string;
-        if (this.options.template) {
-            const expander: TemplateExpander = new TemplateExpander(this.options, [this.wikiLink]);
-            expanded = expander.execute(this.markdown);
-        } else {
-            expanded = this.markdown;
-        }
-        this.wikiMD.setValue(expanded);
+    public parse(): string {
+        this.wikiMD.setValue(this.markdown);
         let html: string = this.wikiMD.toHTML();
         html = this.expandWikiLink(html, this.options.baseNamespace);
+        if (this.options.template) {
+            const expander: TemplateExpander = new TemplateExpander(this.options, this.ignoringTemplates);
+            html = expander.expand(html);
+        }
         return html;
     }
 
@@ -373,7 +365,7 @@ class WikiMarkdown {
 
         const markdown: string = this.refineAndDecorateMarkdown(complementedOptions);
         const parser: MarkdownParser = new MarkdownParser(markdown, this.wikiLink, complementedOptions);
-        return {html: parser.execute(), categories: parser.getCategories()};
+        return {html: parser.parse(), categories: parser.getCategories()};
     }
 
     private refineAndDecorateMarkdown(options: HTMLOptionsComplementer): string {

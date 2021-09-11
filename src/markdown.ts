@@ -51,22 +51,10 @@ class WikiMD extends WikiLinkFinder {
         this.value = value;
     }
 
-    public static expandMagics(html: string, handlers: MagicHandler[], toWikiURI: ToWikiURI, collectors?: WikiLinkCollectable[], brackets: number=2): string {
-        const expander = new MagicExpander(toWikiURI, brackets);
-        if (collectors) {
-            for (const collector of collectors) {
-                expander.addCollector(collector);
-            }
-        }
-        for (const handler of handlers) {
-            expander.addHandler(handler);
-        }
-        return expander.execute(html);
-    }
-
     public toHTML(): string {
         marked.setOptions({pedantic: false, gfm: true, silent: false});
         const renderer: marked.Renderer = new marked.Renderer();
+        renderer.text = (text: string) => this.text(text);
         renderer.code = this.code;
         renderer.link = (href: string, title: string|null, text: string) => this.link(href, title, text, this.isWikiLink);
         renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
@@ -77,11 +65,19 @@ class WikiMD extends WikiLinkFinder {
                 }
             }
         };
-
         marked.use({renderer, walkTokens});
+        return marked(this.value);
+    }
 
-        let html: string = marked(this.value);
-        return WikiMD.expandMagics(html, this.magicHandlers, this.toWikiURI, this.collectors);
+    private text(text: string): string {
+        const expander = new MagicExpander(this.toWikiURI);
+        for (const collector of this.collectors) {
+            expander.addCollector(collector);
+        }
+        for (const handler of this.magicHandlers) {
+            expander.addHandler(handler);
+        }
+        return expander.expand(text);
     }
 
     private code(code: string, infostring: string): string {
@@ -205,12 +201,10 @@ abstract class MagicHandler extends WikiLinkFinder {
 
 
 class MagicExpander extends WikiLinkFinder implements WikiLinkCollectable {
-    private readonly MAGIC_PATTERN: RegExp;
     private readonly handlers: MagicHandler[] = [];
 
     public constructor(private readonly toWikiURI: ToWikiURI, private readonly brackets: number=2) {
         super();
-        this.MAGIC_PATTERN = new RegExp('{'.repeat(brackets) + '[^{}]+' + '}'.repeat(brackets), 'g');
     }
 
     public addWikiLink(href: string, type: ReferenceType): void {
@@ -222,18 +216,28 @@ class MagicExpander extends WikiLinkFinder implements WikiLinkCollectable {
         this.handlers.push(handler);
     }
 
-    public execute(html: string): string {
-        const magicMatches: RegExpMatchArray|null = html.match(this.MAGIC_PATTERN);
-        if (!magicMatches) {
-            return html;
+    public static magics(text: string, brackets: number): {raw: string, text: string}[] {
+        const PATTERN: RegExp = new RegExp(
+            '(?<!{)' + '{'.repeat(brackets) + '[^{}]+' + '}'.repeat(brackets) + '(?!})', 'g');
+        const matchs: RegExpMatchArray|null = text.match(PATTERN);
+        if (!matchs) {
+            return [];
         }
-        for (const magic of magicMatches) {
-            const innerMagic: string = magic.slice(this.brackets, -this.brackets);
+        const magics: {raw: string, text: string}[] = [];
+        for (const raw of matchs) {
+            const text: string = raw.slice(brackets, -brackets);
+            magics.push({raw, text});
+        }
+        return magics;
+    }
+
+    public expand(html: string): string {
+        for (const {raw, text} of MagicExpander.magics(html, this.brackets)) {
             for (const handler of this.handlers) {
-                if (!handler.isTarget(innerMagic)) {
+                if (!handler.isTarget(text)) {
                     continue;
                 }
-                html = html.replace(magic, handler.expand(innerMagic, this.toWikiURI));
+                html = html.replace(raw, handler.expand(text, this.toWikiURI));
             }
         }
         return html;
@@ -241,4 +245,4 @@ class MagicExpander extends WikiLinkFinder implements WikiLinkCollectable {
 }
 
 
-export {WikiMD, WikiLinkCollectable, ReferenceType, MagicHandler, ToWikiURI};
+export {WikiMD, WikiLinkCollectable, ReferenceType, MagicExpander, MagicHandler, ToWikiURI};
