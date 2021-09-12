@@ -1,6 +1,11 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import marked from 'marked';
 import hljs from 'highlight.js';
-import * as utils from './utils';
+import {APP_DIR} from './data-dir';
+
+const DIST_IMAGE_DIR: string = path.join(APP_DIR, 'dist/images')
+const DIST_JS_DIR: string = path.join(APP_DIR, 'dist/js')
 
 type ReferenceType = 'link'|'media'|'template'|'category';
 
@@ -54,7 +59,7 @@ class WikiMD extends WikiLinkFinder {
     public toHTML(): string {
         marked.setOptions({pedantic: false, gfm: true, silent: false});
         const renderer: marked.Renderer = new marked.Renderer();
-        renderer.text = (text: string) => this.text(text);
+        renderer.text = (text: string) => this.text(text, new EmojiReplacer('apple'));
         renderer.code = this.code;
         renderer.link = (href: string, title: string|null, text: string) => this.link(href, title, text, this.isWikiLink);
         renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
@@ -69,7 +74,9 @@ class WikiMD extends WikiLinkFinder {
         return marked(this.value);
     }
 
-    private text(text: string): string {
+    private text(text: string, emojiReplacer: EmojiReplacer): string {
+        text = emojiReplacer.replace(text);
+
         const expander = new MagicExpander(this.toWikiURI);
         for (const collector of this.collectors) {
             expander.addCollector(collector);
@@ -244,5 +251,70 @@ class MagicExpander extends WikiLinkFinder implements WikiLinkCollectable {
     }
 }
 
+
+type EmojiSet = 'apple' | 'facebook' | 'google' | 'twitter';
+
+type Emoji = {
+    name: string,
+    unified: string,
+    sheet_x: number,
+    sheet_y: number,
+    short_name: string,
+    short_names: string[],
+    category: string,
+    subcategory: string,
+    sort_order: number
+};
+
+class EmojiReplacer {
+    private readonly PATTERN: RegExp = /:[^:\s]+:/g
+    private readonly emojiData: Emoji[];
+
+    public constructor(private emojiSet: EmojiSet) {
+        const jsonPath: string = path.join(DIST_JS_DIR, 'emoji.json');
+        this.emojiData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+    }
+
+    public replace(text: string): string {
+        const matches: RegExpMatchArray|null = text.match(this.PATTERN);
+        if (!matches) {
+            return text;
+        }
+        for (const match of matches) {
+            const content: string = match.slice(1, -1);
+            const emoji: Emoji|null = this.searchEmoji(content);
+            if (emoji === null) {
+                continue;
+            }
+            text = text.replace(match, this.emojiImg(emoji));
+        }
+        return text;
+    }
+
+    private searchEmoji(content: string): Emoji|null {
+        const SPACE_PATTERN: RegExp = /[-\s]/g;
+        const unified: string = content.replace(SPACE_PATTERN, '_');
+        for (const emoji of this.emojiData) {
+            for (const short_name of emoji.short_names) {
+                if (short_name.replace(SPACE_PATTERN, '_') === unified) {
+                    return emoji;
+                }
+            }
+        }
+        return null;
+    }
+
+    private emojiImg(emoji: Emoji): string {
+        const alt: string = emoji.name;
+        const em: number = 1.2;
+        const url: string = path.join(DIST_IMAGE_DIR, `emoji/sheet_${this.emojiSet}_64.png`);
+        let style: string = 'display: inline-block;'
+        style += `width: ${em}em; height: ${em}em;`
+        style += `background-image: url(${url});`
+        style += `background-size: ${em * 60}em;`
+        style += `background-position: -${emoji.sheet_x * em}em -${emoji.sheet_y * em}em;`;
+        return `<span style="${style}"></span>`
+    }
+}
 
 export {WikiMD, WikiLinkCollectable, ReferenceType, MagicExpander, MagicHandler, ToWikiURI};
