@@ -67,6 +67,7 @@ class EmojiReplacer {
         style += `background-image: url(${url});`
         style += `background-size: ${em * 60}em;`
         style += `background-position: -${emoji.sheet_x * em}em -${emoji.sheet_y * em}em;`;
+        style += `vertical-align: middle;`;
         return `<span style="${style}"></span>`
     }
 }
