@@ -5,6 +5,7 @@ import {WikiMarkdown} from '../wikimarkdown';
 import {ContentBody} from './content-body';
 import {toFullPath, WikiHistory, VersionData, createHistory} from '../wikihistory-builder';
 import {PageDiffBody} from './special-body';
+import {EmojiReplacer} from '../emoji';
 
 
 class MarkdownEditorBody extends ContentBody {
@@ -173,7 +174,9 @@ class MarkdownHistoryBody extends ContentBody {
         lines.push('</span>');
         if (data.comment !== '') {
             lines.push(separator);
-            lines.push(`<span class="comment">${data.comment}</span>`);
+            const emojiReplacer: EmojiReplacer = new EmojiReplacer('apple');
+            const text: string = emojiReplacer.replace(data.comment);
+            lines.push(`<span class="comment">${text}</span>`);
         }
         lines.push('</li>');
         return lines.join('');
