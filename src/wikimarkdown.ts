@@ -255,7 +255,18 @@ class MarkdownParser {
             const expander: TemplateExpander = new TemplateExpander(this.options, this.ignoringTemplates);
             html = expander.expand(html);
         }
-        return html;
+        const progressBar: string = this.progressBar();
+        return progressBar + html;
+    }
+
+    private progressBar(): string {
+        const total: number = this.wikiMD.checkboxProgress['total'];
+        if (total === 0) {
+            return '';
+        }
+        const checked: number = this.wikiMD.checkboxProgress['checked'];
+        const width: number = Math.round(100 * checked / total);
+        return `<div class="progress mb-2"><div class="progress-bar bg-info" style="width: ${width}%">${width}%</div></div>`;
     }
 
     public getCategories(): string[] {
