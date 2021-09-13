@@ -38,17 +38,15 @@ class WikiMD extends WikiLinkFinder {
     private isWikiLink: IsWikiLink;
     private toWikiURI: ToWikiURI;
     private readonly magicHandlers: MagicHandler[] = [];
+    public readonly checkboxProgress: {total: number, checked: number};
     public static readonly NEW_CLASS_NAME = 'new';
 
-    public constructor(options: WikiMDOption) {
+    public constructor(options: WikiMDOption, markdown: string) {
         super();
-        this.value = '';
+        this.value = markdown;
+        this.checkboxProgress  = {total: 0, checked: 0};
         this.toWikiURI = options.toWikiURI;
         this.isWikiLink = options.isWikiLink || (href => false);
-    }
-
-    public setValue(value: string): void {
-        this.value = value;
     }
 
     public toHTML(): string {
@@ -58,6 +56,8 @@ class WikiMD extends WikiLinkFinder {
         renderer.code = this.code;
         renderer.link = (href: string, title: string|null, text: string) => this.link(href, title, text, this.isWikiLink);
         renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
+        renderer.checkbox = (checked: boolean) => this.checked(checked);
+
         const walkTokens = (token: any) => {
             if (token.type === 'heading') {
                 if (token.depth === 1) {
@@ -110,6 +110,15 @@ class WikiMD extends WikiLinkFinder {
             handler = new ImageTagCreator(href, alt, title);
         }
         return handler.toHTML();
+    }
+
+    private checked(checked: boolean): string {
+        this.checkboxProgress.total++;
+        if (checked) {
+            this.checkboxProgress.checked++;
+            return '<input disabled="" type="checkbox" checked></input>';
+        }
+        return '<input disabled="" type="checkbox"></input>';
     }
 
     public addMagicHandler(magicHandler: MagicHandler): void {

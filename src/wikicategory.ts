@@ -216,9 +216,11 @@ function extractCategories(baseNamespace: string, markdown: string): Category[] 
     );
     handler.addCollector(collector);
 
-    const wikiMD = new WikiMD ({isWikiLink: WikiLink.isWikiLink, toWikiURI: (href: string) => href});
+    const wikiMD = new WikiMD (
+        {isWikiLink: WikiLink.isWikiLink, toWikiURI: (href: string) => href},
+        markdown
+    );
     wikiMD.addMagicHandler(handler);
-    wikiMD.setValue(markdown);
     wikiMD.toHTML();
     return collector.getCategories();
 }

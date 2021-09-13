@@ -160,7 +160,7 @@ class MarkdownParser {
                 const location: WikiLocation = new WikiLocation(wikiLink);
                 return location.toURI();
             }
-        });
+        }, this.markdown);
 
         // file
         const fileHandler: FileHandler = new FileHandler((path: string) => new WikiLink(path, baseNamespace).type === 'File');
@@ -249,7 +249,6 @@ class MarkdownParser {
     }
 
     public parse(): string {
-        this.wikiMD.setValue(this.markdown);
         let html: string = this.wikiMD.toHTML();
         html = this.expandWikiLink(html, this.options.baseNamespace);
         if (this.options.template) {

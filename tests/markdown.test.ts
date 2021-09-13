@@ -4,8 +4,7 @@ import {FileHandler, ImageFileHandler, PDFFileHandler} from '../src/markdown-mag
 describe('test code', () => {
     function testCode(value: string[], expected: string[]): void {
         const element: HTMLElement = document.createElement('div');
-        const wmd: WikiMD = new WikiMD({toWikiURI: (href: string) => href});
-        wmd.setValue(value.join('\n'));
+        const wmd: WikiMD = new WikiMD({toWikiURI: (href: string) => href}, value.join('\n'));
         element.innerHTML = wmd.toHTML();
         test(`'${value.join('\\n')}'`, () => expect(element.innerHTML).toBe(expected.join('\n')));
     }
@@ -45,8 +44,7 @@ describe('test ImageFileHandler', () => {
         const wmd: WikiMD = new WikiMD({
             toWikiURI: (href: string) => href,
             isWikiLink: (href: string) => true
-        });
-        wmd.setValue(value);
+        }, value);
 
         const fileHandler: FileHandler = new FileHandler(path => true);
         fileHandler.addHandler(new ImageFileHandler(path => true));
@@ -213,8 +211,7 @@ describe('test PDFFileHandler', () => {
         const wmd: WikiMD = new WikiMD({
             toWikiURI: (href: string) => href,
             isWikiLink: (href: string) => true
-        });
-        wmd.setValue(value);
+        }, value);
 
         const fileHandler: FileHandler = new FileHandler(path => true);
         fileHandler.addHandler(new PDFFileHandler(path => true));
