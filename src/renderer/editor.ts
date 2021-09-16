@@ -1,5 +1,5 @@
 (() => {
-    const mdTextArea: HTMLTextAreaElement = document.getElementById('markdown-edit-area') as HTMLTextAreaElement;
+    const mdTextArea: HTMLDivElement = document.getElementById('markdown-edit-area') as HTMLDivElement;
     const commentArea: HTMLInputElement = document.getElementById('comment-edit-area') as HTMLInputElement;
     const params: Params = new Params();
     let mde: SimpleMDE|null = null;
@@ -117,7 +117,7 @@
 
     function getText(): string {
         if (mde === null) {
-            return mdTextArea.value;
+            return mdTextArea.innerText;
         }
         return mde.value();
     }
