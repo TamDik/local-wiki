@@ -12,7 +12,7 @@ class RichMDE {
         this.element.contentEditable = 'true';
         this.textarea.hidden = true;
         this.textareaSplit = {front: this.textarea.value, behind: ''};
-        this.updateInnerHTML();
+        this.updateInnerHTML(false);
 
         textarea.parentElement?.insertBefore(this.emojiHelper, textarea);
         textarea.parentElement?.insertBefore(this.element, textarea);
@@ -198,7 +198,7 @@ class RichMDE {
         this.textareaSplit.front = this.textareaSplit.front + text;
     }
 
-    private updateInnerHTML(): void {
+    private updateInnerHTML(caret: boolean=true): void {
         const scroll: number = this.element.scrollTop;
         this.element.innerHTML = this.value().split('\n').reduce((acc, cur) => {
             if (cur === '') {
@@ -208,7 +208,9 @@ class RichMDE {
         }, '');
         this.updateStyle();
         this.element.focus();
-        this.setCaret(this.textareaSplit.front.replace(/\n/g, '').length);
+        if (caret) {
+            this.setCaret(this.textareaSplit.front.replace(/\n/g, '').length);
+        }
         this.element.scrollTop = scroll;
     }
 
