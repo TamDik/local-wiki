@@ -44,6 +44,7 @@ interface IIpcApi {
     updatePage(path: string, text: string, comment: string, section?: number): Promise<boolean>;
     getRawPageText(path: string, version?: number): Promise<string>;
     markdownToHtml(path: string, markdown: string): Promise<string>;
+    likeEmojis(name: string): Promise<Set<{name: string, html: string}>>;
     searchPageByKeywords(path: string, keywords: string[]): void;
     searchPageByName(path: string, name: string): Promise<{exists: boolean, wikiLink: IWikiLink}>;
     searchPageResult(lister: (wikiLink: IWikiLink, body: string, created: Date, keywords: string[]) => void): void;

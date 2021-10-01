@@ -10,6 +10,7 @@ import {parse} from './content/markdown';
 import {escapeRegex, extensionOf, generateRandomString} from './utils';
 import {extractCategories, updateCategories, Category} from './wikicategory';
 import {WikiHistory, createHistory, toFullPath, VersionData} from './wikihistory-builder';
+import {createEmojiList, EmojiList} from './emoji';
 
 
 // MathJax
@@ -165,6 +166,18 @@ ipcMain.handle('upload-file', async (event, path: string, destName: string, sour
 ipcMain.handle('markdown-to-html', async (event, path: string, markdown: string): Promise<string> => {
     const wikiLink: WikiLink = new WikiLink(path);
     return parse(markdown, wikiLink);
+});
+
+// 絵文字を検索
+ipcMain.handle('like-emoji', async (event, name): Promise<Set<{name: string, html: string}>> => {
+    const emojiList: EmojiList = createEmojiList('apple');
+    const names: Set<string> = emojiList.like(name);
+    const emojis: Set<{name: string, html: string}> = new Set();
+    for (const name of names) {
+        const html: string = emojiList.html(name) as string;
+        emojis.add({name, html});
+    }
+    return emojis;
 });
 
 // キーワードでページを検索

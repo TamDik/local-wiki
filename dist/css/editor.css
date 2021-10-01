@@ -1,5 +1,40 @@
-#markdown-edit-area, .CodeMirror {
+#markdown-edit-area, .rich-markdown-edit-area, .CodeMirror {
     height: 280px;
     resize: vertical;
     font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
+.rich-markdown-edit-area {
+    overflow: auto;
+    white-space: pre;
+}
+
+#emoji-list {
+    display: none;
+    position: absolute;
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: .25rem;
+    width: 400px;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.possible-emoji {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+#emoji-list .list-group-item {
+    cursor: pointer;
+}
+
+#emoji-list .list-group-item:hover {
+    background: #4b80ff;
+    color: #fff;
+}
+
+#emoji-list .hightlight {
+    background: #fff854;
+    color: #000;
 }

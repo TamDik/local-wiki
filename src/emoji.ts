@@ -45,7 +45,7 @@ class MergedEmojiList extends EmojiList {
     public like(name: string): Set<string> {
         let names: Set<string> = new Set();
         for (const emojiList of this.emojiLists) {
-            names = new Set(emojiList.like(name));
+            names = new Set([...names, ...emojiList.like(name)]);
         }
         return names;
     }
@@ -144,14 +144,18 @@ class DefaultEmojiList extends SpriteEmojiList {
 }
 
 
+function createEmojiList(emojiSet: EmojiSet): EmojiList {
+    const emojiList: MergedEmojiList = new MergedEmojiList();
+    emojiList.add(new DefaultEmojiList(emojiSet));
+    return emojiList;
+}
+
+
 class EmojiReplacer {
     public readonly emojiList: EmojiList;
 
     public constructor(private emojiSet: EmojiSet) {
-        const jsonPath: string = path.join(DIST_JS_DIR, 'emoji.json');
-        const emojiList: MergedEmojiList = new MergedEmojiList();
-        emojiList.add(new DefaultEmojiList(emojiSet));
-        this.emojiList = emojiList;
+        this.emojiList = createEmojiList(emojiSet);
     }
 
     public replace(text: string): string {
@@ -171,4 +175,4 @@ class EmojiReplacer {
     }
 }
 
-export {EmojiReplacer};
+export {createEmojiList, EmojiList, EmojiReplacer};

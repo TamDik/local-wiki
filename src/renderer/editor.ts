@@ -1,8 +1,253 @@
+class RichMDE {
+    private emojiHelper: HTMLDivElement = document.createElement('div');
+    public readonly element: HTMLDivElement = document.createElement('div');
+    private readonly textareaSplit: {front: string, behind: string};
+    private behindColon: string = '';
+
+    public constructor(private readonly textarea: HTMLTextAreaElement) {
+        const EMOJI_MARK = ':';
+
+        this.emojiHelper.id = 'emoji-list';
+        this.element.classList.add('rich-markdown-edit-area', 'form-control');
+        this.element.contentEditable = 'true';
+        this.textarea.hidden = true;
+        this.textareaSplit = {front: this.textarea.value, behind: ''};
+        this.updateInnerHTML();
+
+        textarea.parentElement?.insertBefore(this.emojiHelper, textarea);
+        textarea.parentElement?.insertBefore(this.element, textarea);
+
+        this.element.addEventListener('input', async (event: any) => {
+            const data: null | string = event.data;
+            const {front, behind} = this.splitByCaret();
+            if (data !== null && front.length !== this.textareaSplit.front.length + 1) {
+                this.behindColon = '';
+            }
+            this.textareaSplit.front = front;
+            this.textareaSplit.behind = behind;
+
+            if (data === null) {
+
+            } else if (data === ' ') {
+                this.behindColon = '';
+            } else if (data === EMOJI_MARK) {
+                if (this.behindColon !== '' && this.behindColon !== ':' && await this.isEmoji(this.behindColon.substr(1))) {
+                    this.behindColon = '';
+                } else {
+                    this.behindColon = EMOJI_MARK;
+                }
+            } else {
+                if (this.behindColon !== '') {
+                    this.behindColon += data;
+                }
+            }
+            this.updateStyle();
+        }, false);
+
+        this.element.addEventListener('keydown', event => {
+            const keyCode: number = event.keyCode;
+            const H_CODE: 72 = 72;
+            const BACKSPACE_CODE: 8 = 8;
+            const ENTER_CODE: 13 = 13;
+            const TAB_CODE: 9 = 9;
+            if ((keyCode === BACKSPACE_CODE) || (keyCode === H_CODE && event.ctrlKey)) {
+                const selected: string = (window.getSelection() as Selection).toString();
+                const sliceLength: number = this.behindColon.length - Math.max(1, selected.length);
+                this.behindColon = this.behindColon.slice(0, sliceLength);
+            } else if (keyCode === ENTER_CODE) {
+                this.behindColon = '';
+            } else if (keyCode === TAB_CODE) {
+                event.preventDefault();
+                const {front, behind} = this.splitByCaret();
+                this.textareaSplit.front = front;
+                this.textareaSplit.behind = behind;
+                const spaces: number = 4;
+                this.insertText(' '.repeat(spaces));
+                this.updateInnerHTML();
+            }
+        }, false);
+    }
+
+    public value(): string {
+        return this.textareaSplit.front + this.textareaSplit.behind;
+    }
+
+    private async possibleEmojis(name: string): Promise<Map<string, string>> {
+        const likeEmojis: Set<{name: string, html: string}> = await window.ipcApi.likeEmojis(name);
+        const emojis: Map<string, string> = new Map();
+        for (const emoji of likeEmojis) {
+            emojis.set(':' + emoji.name + ':', emoji.html);
+        }
+        return emojis;
+    }
+
+    private async isEmoji(name: string): Promise<boolean> {
+        const emojis: Map<string, string> = await this.possibleEmojis(name);
+        if (emojis.size !== 1) {
+            return false;
+        }
+        return emojis.has(this.behindColon);
+    }
+
+    private getCaretPosition(): DOMRect {
+        const range: Range = (window.getSelection() as Selection).getRangeAt(0);
+        const clone: Range = range.cloneRange();
+        const fixedPosition: number = range.endOffset;
+        let rect: DOMRect;
+        if (fixedPosition >= (range.endContainer as Text).length || range.endContainer === this.element) {
+            const dummy: Text = document.createTextNode('&#8203;');
+            clone.insertNode(dummy);
+            clone.selectNode(dummy);
+            rect = clone.getBoundingClientRect();
+            (dummy.parentNode as Node & ParentNode).removeChild(dummy);
+        } else {
+            clone.setStart(range.endContainer, fixedPosition);
+            clone.setEnd(range.endContainer, fixedPosition + 1);
+            rect = clone.getBoundingClientRect();
+        }
+        clone.detach();
+        return rect;
+    }
+
+    private splitByCaret(): {front: string, behind: string} {
+        const range: Range = (window.getSelection() as Selection).getRangeAt(0);
+        let baseNode: Node = range.commonAncestorContainer;
+        if (baseNode === this.element) {
+            return {front: '', behind: ''};
+        }
+        while (baseNode.parentNode !== this.element) {
+            while (baseNode.previousSibling) {
+                baseNode = baseNode.previousSibling;
+            }
+            baseNode = baseNode.parentNode as Node & ParentNode;
+        }
+        // text in flont of the caret
+        let frontNode: Node = baseNode;
+        let front: string = (frontNode.textContent as string).substr(0, range.endOffset);
+        while (frontNode.previousSibling) {
+            frontNode = frontNode.previousSibling;
+            front = frontNode.textContent + '\n' + front;
+        }
+        // text behind the caret
+        let behindNode: Node = baseNode;
+        let behind: string = (behindNode.textContent as string).substr(range.endOffset);
+        while (behindNode.nextSibling) {
+            behindNode = behindNode.nextSibling;
+            behind = behind + '\n' + behindNode.textContent;
+        }
+        return {front, behind};
+    }
+
+    private setCaret(offset: number): void {
+        function searchNode(node: Node): Node {
+            if( node.childNodes.length ){
+                var child = node.childNodes;
+                var idx = 0;
+                while(offset > child[idx].textContent!.length){
+                    offset -= child[idx].textContent!.length;
+                    idx++;
+                }
+                return searchNode(child[idx]);
+            } else {
+                return node;
+            }
+        }
+        const node: Node = searchNode(this.element);
+        const selection: Selection = window.getSelection() as Selection;
+        selection.removeAllRanges();
+        const range: Range = document.createRange();
+        range.setStart(node, offset);
+        range.collapse(true);
+        selection.addRange(range);
+    }
+
+    private async updateStyle(): Promise<void> {
+        if (this.behindColon !== '' && this.behindColon !== ':') {
+            const emojis: Map<string, string> = await this.possibleEmojis(this.behindColon.substr(1));
+            if (emojis.size > 0) {
+                this.createEmojiList(emojis);
+                const caretRect: DOMRect = this.getCaretPosition();
+                const parentRect: DOMRect = this.element.parentElement!.getBoundingClientRect();
+                this.emojiHelper.style.display = 'block';
+                this.emojiHelper.style.top  = (caretRect.top - parentRect.top - this.emojiHelper.clientHeight) + 'px';
+                this.emojiHelper.style.left = (caretRect.left - parentRect.left) + 'px';
+                return;
+            }
+        }
+        this.emojiHelper.style.display = 'none';
+    }
+
+    private deleteText(count: number): string {
+        if (count === 0) {
+            return '';
+        }
+        let deleted: string;
+        if (count > 0) {
+            const length: number = this.textareaSplit.front.length - count;
+            deleted = this.textareaSplit.front.substr(length);
+            this.textareaSplit.front = this.textareaSplit.front.substr(0, length);
+        } else {
+            const length: number = -count;
+            deleted = this.textareaSplit.behind.substr(0, length);
+            this.textareaSplit.behind = this.textareaSplit.behind.substr(length);
+        }
+        return deleted;
+    }
+
+    private insertText(text: string): void {
+        this.textareaSplit.front = this.textareaSplit.front + text;
+    }
+
+    private updateInnerHTML(): void {
+        const scroll: number = this.element.scrollTop;
+        this.element.innerHTML = this.value().split('\n').reduce((acc, cur) => {
+            if (cur === '') {
+                cur = '<br>';
+            }
+            return acc + '<div>' + cur + '</div>';
+        }, '');
+        this.updateStyle();
+        this.element.focus();
+        this.setCaret(this.textareaSplit.front.replace(/\n/g, '').length);
+        this.element.scrollTop = scroll;
+    }
+
+    private createEmojiList(emojis: Map<string, string>): void {
+        const ul: HTMLUListElement = document.createElement('ul');
+        ul.classList.add('list-group');
+        this.emojiHelper.innerHTML = '';
+        this.emojiHelper.appendChild(ul);
+        for (const [name, html] of emojis) {
+            const li: HTMLLIElement = this.createEmojiLi(name, html);
+            ul.appendChild(li);
+            li.addEventListener('click', event => {
+                const selectedEmoji: string = li.dataset.emoji as string;
+                const back: number = this.behindColon.length;
+                this.behindColon = '';
+                this.deleteText(back);
+                this.insertText(selectedEmoji);
+                this.updateInnerHTML();
+            }, false);
+        }
+    }
+
+    private createEmojiLi(fullName: string, previewHTML: string): HTMLLIElement {
+        const name: string = this.behindColon.substr(1);
+        const li: HTMLLIElement = document.createElement('li');
+        li.classList.add('list-group-item', 'possible-emoji');
+        li.dataset.emoji = fullName;
+        li.innerHTML = previewHTML + ' ' + fullName.replace(name, `<span class="hightlight">${name}</span>`)
+        return li;
+    }
+}
+
 (() => {
-    const mdTextArea: HTMLDivElement = document.getElementById('markdown-edit-area') as HTMLDivElement;
+    const mdTextArea: HTMLTextAreaElement = document.getElementById('markdown-edit-area') as HTMLTextAreaElement;
     const commentArea: HTMLInputElement = document.getElementById('comment-edit-area') as HTMLInputElement;
     const params: Params = new Params();
-    let mde: SimpleMDE|null = null;
+    let simpleMDE: SimpleMDE|null = null;
+    let richMDE: RichMDE|null = null;
+
     const shortcuts: SimpleMDE.ShortcutsArray = {
         'toggleBlockquote': null,
         'toggleBold': null,
@@ -116,10 +361,12 @@
     ];
 
     function getText(): string {
-        if (mde === null) {
-            return mdTextArea.innerText;
+        if (simpleMDE !== null) {
+            return simpleMDE.value();
+        } else if (richMDE !== null) {
+            return richMDE.value();
         }
-        return mde.value();
+        return mdTextArea.value;
     }
 
     async function updatePage(): Promise<boolean> {
@@ -161,24 +408,22 @@
     goToEditArea.addEventListener('click', (event) => {
         event.preventDefault();
         let target: HTMLElement;
-        if (mde === null) {
-            target = mdTextArea;
+        if (simpleMDE !== null) {
+            target = simpleMDE.codemirror.display.wrapper;
+        } else if (richMDE !== null) {
+            target = richMDE.element;
         } else {
-            target = mde.codemirror.display.wrapper;
+            target = mdTextArea;
         }
         const rect: DOMRect = target.getBoundingClientRect();
         scrollTo(0, rect.top);
     }, false);
 
 
-    function setTextArea(simple: boolean): void {
-        if (!simple && mde !== null) {
-            mde.toTextArea();
-            mde = null;
-            return;
-        }
-        if (simple && mde === null) {
-            mde = new SimpleMDE({
+    const mode: string = params.getValueOf('editor');
+    switch (mode) {
+        case 'simple':
+            simpleMDE = new SimpleMDE({
                 element: mdTextArea,
                 status: false,
                 toolbar: toolbar,
@@ -189,9 +434,10 @@
                 shortcuts: shortcuts,
                 spellChecker: false,
             });
-            return;
-        }
+            break;
+        case 'textarea':
+            break;
+        default:
+            richMDE = new RichMDE(mdTextArea);
     }
-
-    setTextArea(params.getValueOf('editor') === 'simple');
 })();

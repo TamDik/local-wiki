@@ -113,6 +113,9 @@ contextBridge.exposeInMainWorld(
         async markdownToHtml(path: string, markdown: string): Promise<string> {
             return ipcRenderer.invoke('markdown-to-html', path, markdown);
         },
+        async likeEmojis(name: string): Promise<Set<{name: string, html: string}>> {
+            return ipcRenderer.invoke('like-emoji', name);
+        },
         async searchPageByName(path: string, name: string): Promise<{exists: boolean, path: string}> {
             return ipcRenderer.invoke('search-page-by-name', path, name);
         },
