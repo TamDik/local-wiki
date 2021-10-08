@@ -269,6 +269,8 @@ function addDnamicEventLister(type: string, tagName: string, listener: (event: E
 }
 
 window.addEventListener('load', () => {
+    window.ipcApi.openInternalLink(location.href);
+
     const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
     addDnamicEventLister('click', 'A', (event: Event, element: HTMLElement) => {
         const anchor: HTMLAnchorElement = element as HTMLAnchorElement;

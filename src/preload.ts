@@ -79,6 +79,9 @@ contextBridge.exposeInMainWorld(
         async openExternalLink(path: string): Promise<void> {
             ipcRenderer.invoke('open-external-link', path);
         },
+        async openInternalLink(uri: string): Promise<void> {
+            ipcRenderer.invoke('open-internal-link', uri);
+        },
         async existsLink(wikiLink: IWikiLink): Promise<boolean> {
             return ipcRenderer.invoke('exists-link', wikiLink);
         },

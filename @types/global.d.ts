@@ -32,6 +32,7 @@ interface IUtils {
 
 interface IIpcApi {
     openExternalLink(path: string): Promise<void>;
+    openInternalLink(path: string): Promise<void>;
     existsLink(wikiLink: IWikiLink): Promise<boolean>;
     currentVersion(path: string): Promise<number>;
     getMainContent(mode: PageMode, path: string, params: {[key: string]: string}, version?: number):

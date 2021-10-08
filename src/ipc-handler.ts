@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {ipcMain, shell, IpcMainInvokeEvent} from 'electron'
+import {ipcMain, shell, IpcMainInvokeEvent} from 'electron';
+import {PageTransition} from './page-transition';
 import {tex2svg, tex2chtml} from './mathematical-expression';
 import {ContentGenerator, ContentBody} from './content/generator';
 import {WikiConfig, MergedNamespaceConfig, usedAsAnExternalNamespace, parseNamespaceConfig} from './wikiconfig';
@@ -11,6 +12,9 @@ import {escapeRegex, extensionOf, generateRandomString} from './utils';
 import {extractCategories, updateCategories, Category} from './wikicategory';
 import {WikiHistory, createHistory, toFullPath, VersionData} from './wikihistory-builder';
 import {createEmojiList, EmojiList} from './emoji';
+
+
+const pageTransition: PageTransition = new PageTransition();
 
 
 // MathJax
@@ -35,18 +39,28 @@ ipcMain.handle('open-external-link', async (event: IpcMainInvokeEvent, path: str
     shell.openExternal(path);
 });
 
+ipcMain.handle('open-internal-link', async (event: IpcMainInvokeEvent, path: string): Promise<void> => {
+    pageTransition.goTo(path);
+});
+
 ipcMain.handle('can-go-back-or-forward', async (event: IpcMainInvokeEvent): Promise<{back: boolean, forward: boolean}> => {
-    const back: boolean = event.sender.canGoBack();
-    const forward: boolean = event.sender.canGoForward();
+    const back: boolean = pageTransition.canGoBack();
+    const forward: boolean = pageTransition.canGoForward();
     return {back, forward};
 });
 
 ipcMain.on('go-back', (event: IpcMainInvokeEvent) => {
-    event.sender.goBack();
+    const path: string|null = pageTransition.goBack();
+    if (typeof(path) === 'string') {
+        event.sender.loadURL(path);
+    }
 });
 
 ipcMain.on('go-forward', (event: IpcMainInvokeEvent) => {
-    event.sender.goForward();
+    const path: string|null = pageTransition.goForward();
+    if (typeof(path) === 'string') {
+        event.sender.loadURL(path);
+    }
 });
 
 ipcMain.on('reload', (event: IpcMainInvokeEvent) => {

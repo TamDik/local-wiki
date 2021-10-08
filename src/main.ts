@@ -1,4 +1,5 @@
-import {BrowserWindow, app, screen} from 'electron'
+import {BrowserWindow, app, screen} from 'electron';
+import {WikiLink, WikiLocation} from './wikilink';
 require('./setup');
 require('./ipc-handler');
 
@@ -17,9 +18,10 @@ app.on('ready', () => {
         },
     });
 
-    const indexPath: string = 'file://' + __dirname + '/../index.html';
+    const location: WikiLocation = new WikiLocation(new WikiLink());
+    const indexPath: string = 'file://' + __dirname + '/../index.html' + location.toURI();
     mainWindow.loadURL(indexPath);
-    mainWindow.on('closed', function() {
+    mainWindow.on('closed', () => {
         mainWindow = null;
     });
 });
