@@ -28,7 +28,7 @@ class PageTransition {
         const url: URL = new URL(path);
         const params: URLSearchParams = url.searchParams;
         const mode: string|null = params.get('mode');
-        return mode == 'edit';
+        return mode !== 'edit';
     }
 
     public goTo(path: string): string {
@@ -38,7 +38,7 @@ class PageTransition {
         }
 
         // 前回のパスが履歴管理の対象外ならば削除する
-        if (this.history.length !== 0 && this.isTargetPath(this.history[this.index])) {
+        if (this.history.length !== 0 && !this.isTargetPath(this.history[this.index])) {
             this.history = this.history.slice(0, this.index);
         } else {
             this.history = this.history.slice(0, this.index + 1);
