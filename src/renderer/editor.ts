@@ -1,11 +1,11 @@
 class RichMDE {
+    private readonly EMOJI_MARK = ':';
     private emojiHelper: HTMLDivElement = document.createElement('div');
     public readonly element: HTMLDivElement = document.createElement('div');
     private readonly textareaSplit: {front: string, behind: string};
     private behindColon: string = '';
 
     public constructor(private readonly textarea: HTMLTextAreaElement) {
-        const EMOJI_MARK = ':';
 
         this.emojiHelper.id = 'emoji-list';
         this.element.classList.add('rich-markdown-edit-area', 'form-control');
@@ -30,11 +30,11 @@ class RichMDE {
 
             } else if (data === ' ') {
                 this.behindColon = '';
-            } else if (data === EMOJI_MARK) {
-                if (this.behindColon !== '' && this.behindColon !== ':' && await this.isEmoji(this.behindColon.substr(1))) {
+            } else if (data === this.EMOJI_MARK) {
+                if (this.behindColon !== '' && this.behindColon !== this.EMOJI_MARK && await this.isEmoji(this.behindColon.substr(1))) {
                     this.behindColon = '';
                 } else {
-                    this.behindColon = EMOJI_MARK;
+                    this.behindColon = this.EMOJI_MARK;
                 }
             } else {
                 if (this.behindColon !== '') {
@@ -76,7 +76,7 @@ class RichMDE {
         const likeEmojis: Set<{name: string, html: string}> = await window.ipcApi.likeEmojis(name);
         const emojis: Map<string, string> = new Map();
         for (const emoji of likeEmojis) {
-            emojis.set(':' + emoji.name + ':', emoji.html);
+            emojis.set(this.EMOJI_MARK + emoji.name +this.EMOJI_MARK , emoji.html);
         }
         return emojis;
     }
@@ -162,7 +162,7 @@ class RichMDE {
     }
 
     private async updateStyle(): Promise<void> {
-        if (this.behindColon !== '' && this.behindColon !== ':') {
+        if (this.behindColon !== '' && this.behindColon !== this.EMOJI_MARK) {
             const emojis: Map<string, string> = await this.possibleEmojis(this.behindColon.substr(1));
             if (emojis.size > 0) {
                 this.createEmojiList(emojis);
