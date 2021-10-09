@@ -194,8 +194,7 @@ class MarkdownParser {
             if (wikiLink.type !== 'Template') {
                 return false;
             }
-            const fullPath: string|null = this.options.toFullPath(new WikiLink(path, this.options.baseNamespace));
-            return typeof(fullPath) === 'string';
+            return toFullPath(wikiLink) !== null;
         });
         wikiMD.addMagicHandler(templateHandler);
 
@@ -267,6 +266,18 @@ class MarkdownParser {
         const checked: number = this.wikiMD.checkboxProgress['checked'];
         const width: number = Math.round(100 * checked / total);
         return `<div class="progress mb-2"><div class="progress-bar bg-info" style="width: ${width}%">${width}%</div></div>`;
+    }
+
+    public getLinks(): string[] {
+        return this.references.getLinks();
+    }
+
+    public getMedias(): string[] {
+        return this.references.getMedias();
+    }
+
+    public getTemplates(): string[] {
+        return this.references.getTemplates();
     }
 
     public getCategories(): string[] {
@@ -368,14 +379,20 @@ class WikiMarkdown {
         return this.sections.length - 1;
     }
 
-    public parse(options: HTMLOptions={}): {html: string, categories: string[]} {
+    public parse(options: HTMLOptions={}): {html: string, links: string[], medias: string[], templates: string[], categories: string[]} {
         options.baseNamespace = this.baseNamespace;
         const complementedOptions: HTMLOptionsComplementer = new HTMLOptionsComplementer(options);
         this.checkSectionNum(complementedOptions.section);
 
         const markdown: string = this.refineAndDecorateMarkdown(complementedOptions);
         const parser: MarkdownParser = new MarkdownParser(markdown, this.wikiLink, complementedOptions);
-        return {html: parser.parse(), categories: parser.getCategories()};
+        return {
+            html: parser.parse(),
+            links: parser.getLinks(),
+            medias: parser.getMedias(),
+            templates: parser.getTemplates(),
+            categories: parser.getCategories(),
+        };
     }
 
     private refineAndDecorateMarkdown(options: HTMLOptionsComplementer): string {

@@ -5,6 +5,8 @@ import {WikiLink} from './wikilink';
 import {WikiMD, WikiLinkCollectable, ReferenceType} from './markdown';
 import {CategoryHandler} from './markdown-magic-handler';
 import {WikiConfig, MergedNamespaceConfig} from './wikiconfig';
+import {WikiMarkdown} from './wikimarkdown';
+import {toFullPath} from './wikihistory-builder';
 
 
 interface CategoryData {
@@ -186,43 +188,12 @@ class Category {
 
 
 function extractCategories(baseNamespace: string, markdown: string): Category[] {
-    // TODO: WikiMarkdownに書き換え
-    const collector = new class implements WikiLinkCollectable {
-        private categoryWikiLinks: WikiLink[] = [];
-
-        public addWikiLink(href: string, type: ReferenceType): void {
-            if (type !== 'category') {
-                return;
-            }
-            const wikiLink: WikiLink = new WikiLink(href, baseNamespace);
-            if (wikiLink.type !== 'Category') {
-                return;
-            }
-            for (const wl of this.categoryWikiLinks) {
-                if (wl.equals(wikiLink)) {
-                    return;
-                }
-            }
-            this.categoryWikiLinks.push(wikiLink);
-        }
-
-        public getCategories(): Category[] {
-            return this.categoryWikiLinks.map(wikiLink => new Category(wikiLink));
-        }
-    }
-
-    const handler: CategoryHandler = new CategoryHandler(
-        (path: string) => new WikiLink(path, baseNamespace).type === 'Category'
-    );
-    handler.addCollector(collector);
-
-    const wikiMD = new WikiMD (
-        {isWikiLink: WikiLink.isWikiLink, toWikiURI: (href: string) => href},
-        markdown
-    );
-    wikiMD.addMagicHandler(handler);
-    wikiMD.toHTML();
-    return collector.getCategories();
+    const wikiMarkdown: WikiMarkdown = new WikiMarkdown(markdown, new WikiLink({namespace: baseNamespace}));
+    const {categories} = wikiMarkdown.parse({toFullPath});
+    const extractedCategories: Category[] = [];
+    return categories.map(path => new WikiLink(path, baseNamespace))
+                     .filter(wikiLink => wikiLink.type === 'Category')
+                     .map(wikiLink => new Category(wikiLink));
 }
 
 

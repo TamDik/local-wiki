@@ -55,15 +55,6 @@ class ReferenceCollector implements WikiLinkCollectable {
     public getCategories(): string[] {
         return this.reference.category;
     }
-
-    public getReferences(): string[] {
-        return [
-            ...this.getLinks(),
-            ...this.getMedias(),
-            ...this.getTemplates(),
-            ...this.getCategories(),
-        ];
-    }
 }
 
 
