@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as markdown from './markdown';
 import {isInteger, escapeHtml, dateToStr} from '../utils';
 import {WikiLocation} from '../wikilink';
 import {WikiMarkdown} from '../markdown/markdown';
@@ -12,12 +13,12 @@ class MarkdownEditorBody extends ContentBody {
     public css: string[] = [
         '../node_modules/simplemde/dist/simplemde.min.css',
         './css/editor.css',
-        ...WikiMarkdown.css,
+        ...markdown.css,
     ];
     public js: string[] = [
         '../node_modules/simplemde/dist/simplemde.min.js',
         './js/renderer/editor.js',
-        ...WikiMarkdown.js,
+        ...markdown.js,
     ];
     private section: string = '';
 
