@@ -8,7 +8,7 @@ import {WikiConfig, MergedNamespaceConfig, usedAsAnExternalNamespace, parseNames
 import {WikiLink} from './wikilink';
 import {WikiMarkdown} from './markdown/markdown';
 import {parse} from './content/markdown';
-import {escapeRegex, extensionOf, generateRandomString} from './utils';
+import {extensionOf, generateRandomString} from './utils';
 import {extractCategories, updateCategories, Category} from './wikicategory';
 import {WikiHistory, createHistory, toFullPath, VersionData} from './wikihistory-builder';
 import {createEmojiList, EmojiList} from './markdown/emoji';
