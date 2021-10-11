@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {APP_DIR} from './data-dir';
+import {APP_DIR} from '../data-dir';
 
 
 abstract class EmojiList {
@@ -174,5 +174,6 @@ class EmojiReplacer {
         return text;
     }
 }
+
 
 export {createEmojiList, EmojiList, EmojiReplacer};

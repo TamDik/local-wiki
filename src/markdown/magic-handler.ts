@@ -1,8 +1,18 @@
-import {MagicHandler, ToWikiURI} from './markdown';
-import {generateRandomString} from './utils';
+import {WikiLinkFinder} from './reference';
+import {generateRandomString} from '../utils';
 
 
 type IsTargetWikiLink = (path: string) => boolean;
+type ToWikiURI = (href: string) => string;
+
+
+abstract class MagicHandler extends WikiLinkFinder {
+    // 中身がこのハンドラーが対象とする物であるかを判定
+    abstract isTarget(content: string): boolean;
+
+    // 中身を展開
+    abstract expand(content: string, toWikiURI: ToWikiURI): string;
+}
 
 
 class FileHandler extends MagicHandler {
@@ -746,4 +756,4 @@ class CategoryTreeHandler extends MagicHandler {
 }
 
 
-export {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, TemplateParameterHandler, NotFoundTemplateHandler, CategoryTreeHandler};
+export {MagicHandler, FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, TemplateParameterHandler, NotFoundTemplateHandler, CategoryTreeHandler};

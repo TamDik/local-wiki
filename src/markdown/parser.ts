@@ -1,13 +1,19 @@
 import * as fs from 'fs';
-import {WikiLink, WikiLocation} from './wikilink';
-import {fileTypeOf} from './wikifile';
-import {WikiMD, MagicExpander, MagicHandler} from './markdown';
-import {ReferenceCollector} from './reference-collector';
-import {Category} from './wikicategory';
-import {FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, TemplateParameterHandler, NotFoundTemplateHandler, CategoryTreeHandler} from './markdown-magic-handler';
+import marked from 'marked';
+import {fileTypeOf} from '../wikifile';
+import {WikiLink, WikiLocation} from '../wikilink';
+import {Category} from '../wikicategory';
+import {EmojiReplacer} from './emoji';
+import {HTMLTagCreator, LinkTagCreator, ImageTagCreator, MathTagCreator, CodeTagCreator} from './tag-creator';
+import {WikiLinkCollectable, WikiLinkFinder, ReferenceType} from './reference';
+import {MagicHandler, FileHandler, NotFoundFileHandler, ImageFileHandler, PDFFileHandler, CategoryHandler, TemplateHandler, TemplateParameterHandler, NotFoundTemplateHandler, CategoryTreeHandler} from './magic-handler';
 
 
 type ToFullPath = (wikiLink: WikiLink) => string|null;
+type IsWikiLink = (href: string) => boolean;
+type ToWikiURI = (href: string) => string;
+type WikiMDOption = {toWikiURI: ToWikiURI, isWikiLink?: IsWikiLink};
+
 
 interface HTMLOptions {
     baseNamespace?: string;  // 基準になる名前空間
@@ -64,6 +70,51 @@ class HTMLOptionsComplementer implements HTMLOptions {
 
     public get toFullPath(): ToFullPath {
         return this.complement<ToFullPath>('toFullPath');
+    }
+}
+
+
+class MagicExpander extends WikiLinkFinder implements WikiLinkCollectable {
+    private readonly handlers: MagicHandler[] = [];
+
+    public constructor(private readonly toWikiURI: ToWikiURI, private readonly brackets: number=2) {
+        super();
+    }
+
+    public addWikiLink(href: string, type: ReferenceType): void {
+        this.foundWikiLink(href, type);
+    }
+
+    public addHandler(handler: MagicHandler): void {
+        handler.addCollector(this);
+        this.handlers.push(handler);
+    }
+
+    public static magics(text: string, brackets: number): {raw: string, text: string}[] {
+        const PATTERN: RegExp = new RegExp(
+            '(?<!{)' + '{'.repeat(brackets) + '[^{}]+' + '}'.repeat(brackets) + '(?!})', 'g');
+        const matchs: RegExpMatchArray|null = text.match(PATTERN);
+        if (!matchs) {
+            return [];
+        }
+        const magics: {raw: string, text: string}[] = [];
+        for (const raw of matchs) {
+            const text: string = raw.slice(brackets, -brackets);
+            magics.push({raw, text});
+        }
+        return magics;
+    }
+
+    public expand(html: string): string {
+        for (const {raw, text} of MagicExpander.magics(html, this.brackets)) {
+            for (const handler of this.handlers) {
+                if (!handler.isTarget(text)) {
+                    continue;
+                }
+                html = html.replace(raw, handler.expand(text, this.toWikiURI));
+            }
+        }
+        return html;
     }
 }
 
@@ -127,6 +178,101 @@ class TemplateExpander {
         ].join('');
     }
 }
+
+
+class WikiMD extends WikiLinkFinder {
+    private value: string;
+    private isWikiLink: IsWikiLink;
+    private toWikiURI: ToWikiURI;
+    private readonly magicHandlers: MagicHandler[] = [];
+    public readonly checkboxProgress: {total: number, checked: number};
+    public static readonly NEW_CLASS_NAME = 'new';
+
+    public constructor(options: WikiMDOption, markdown: string) {
+        super();
+        this.value = markdown;
+        this.checkboxProgress  = {total: 0, checked: 0};
+        this.toWikiURI = options.toWikiURI;
+        this.isWikiLink = options.isWikiLink || (href => false);
+    }
+
+    public toHTML(): string {
+        marked.setOptions({pedantic: false, gfm: true, silent: false});
+        const renderer: marked.Renderer = new marked.Renderer();
+        renderer.text = (text: string) => this.text(text, new EmojiReplacer('apple'));
+        renderer.code = this.code;
+        renderer.link = (href: string, title: string|null, text: string) => this.link(href, title, text, this.isWikiLink);
+        renderer.image = (href: string, title: string|null, text: string) => this.image(href, title, text, this.isWikiLink);
+        renderer.checkbox = (checked: boolean) => this.checked(checked);
+
+        const walkTokens = (token: any) => {
+            if (token.type === 'heading') {
+                if (token.depth === 1) {
+                    token.depth = 2;
+                }
+            }
+        };
+        marked.use({renderer, walkTokens});
+        return marked(this.value);
+    }
+
+    private text(text: string, emojiReplacer: EmojiReplacer): string {
+        text = emojiReplacer.replace(text);
+
+        const expander = new MagicExpander(this.toWikiURI);
+        for (const collector of this.collectors) {
+            expander.addCollector(collector);
+        }
+        for (const handler of this.magicHandlers) {
+            expander.addHandler(handler);
+        }
+        return expander.expand(text);
+    }
+
+    private code(code: string, infostring: string): string {
+        let handler: HTMLTagCreator;
+        if (infostring === 'math') {
+            handler = new MathTagCreator(code);
+        } else {
+            handler = new CodeTagCreator(code, infostring);
+        }
+        return handler.toHTML();
+    }
+
+    private link(href: string, title: string|null, text: string, isWikiLink: IsWikiLink): string {
+        if (isWikiLink(href)) {
+            this.foundWikiLink(href, 'link');
+            href = this.toWikiURI(href);
+        }
+        const handler: LinkTagCreator = new LinkTagCreator(href, title, text);
+        return handler.toHTML();
+    }
+
+    private image(href: string, title: string|null, alt: string, isWikiLink: IsWikiLink): string {
+        let handler: ImageTagCreator;
+        if (isWikiLink(href)) {
+            this.foundWikiLink(href, 'media')
+            handler = new ImageTagCreator(this.toWikiURI(href), alt, title, this.toWikiURI(href));
+        } else {
+            handler = new ImageTagCreator(href, alt, title);
+        }
+        return handler.toHTML();
+    }
+
+    private checked(checked: boolean): string {
+        this.checkboxProgress.total++;
+        if (checked) {
+            this.checkboxProgress.checked++;
+            return '<input disabled="" type="checkbox" checked></input>';
+        }
+        return '<input disabled="" type="checkbox"></input>';
+    }
+
+    public addMagicHandler(magicHandler: MagicHandler): void {
+        this.magicHandlers.push(magicHandler);
+    }
+}
+
 
 class MarkdownParser {
     private wikiMD: WikiMD;
@@ -286,158 +432,46 @@ class MarkdownParser {
 }
 
 
-class WikiMarkdown {
-    public static readonly js: string[] = [
-        './js/renderer/markdown.js',
-        // NOTE: オプション的な機能を分離しておく
-        './js/renderer/mathjax.js',
-        './js/renderer/category-tree.js'
-    ];
-    public static readonly css: string[] = [
-        '../node_modules/highlight.js/styles/github-gist.css',
-    ];
-    private static readonly EDIT_CLASS: string = 'edit-section';
-    private static readonly TOC_CLASS: string = 'toc-target';
-    private sections: string[];
+class ReferenceCollector implements WikiLinkCollectable {
+    private readonly reference: {link: string[], media: string[], template: string[], category: string[]};
 
-    public constructor(markdown: string, private wikiLink: WikiLink) {
-        this.sections = this.splitWithSections(markdown);
+    public constructor(private readonly baseNamespace: string) {
+        this.reference = {link: [], media: [], template: [], category: []};
     }
 
-    public get baseNamespace(): string {
-        return this.wikiLink.namespace;
-    }
-
-    private splitWithSections(markdown: string): string[] {
-        if (markdown === '') {
-            return [markdown];
-        }
-
-        const sections: string[] = [];
-        let sectionLines: string[] = [];
-        let codeFence: string = '';
-        const OPENING_CODE_FENCE = /^((`|~){3,})(.*)/;
-        for (const line of markdown.split('\n')) {
-            const match: RegExpMatchArray | null = line.match(OPENING_CODE_FENCE);
-            if (match) {
-                const fence = match[1];
-                if (codeFence === '') {
-                    codeFence = fence;
-                } else if (fence.startsWith(codeFence)) {
-                    codeFence = '';
-                }
-            }
-
-            if (codeFence === '' && sectionLines.length !== 0 && this.startWithHeading(line)) {
-                sections.push(sectionLines.join('\n'));
-                sectionLines = [];
-            }
-            sectionLines.push(line)
-        }
-        if (sectionLines.length !== 0) {
-            sections.push(sectionLines.join('\n'));
-        }
-        return sections;
-    }
-
-    private startWithHeading(text: string): boolean {
-        const SECTION_PATTERN: RegExp = /^(?=(?: {1,3})?#{1,6}\s)/;
-        return text.match(SECTION_PATTERN) !== null;
-    }
-
-    private joinSections(sections: string[]): string {
-        return sections.join('\n');
-    }
-
-    public setSection(section: number, text: string): void {
-        this.checkSectionNum(section);
-        const sections: string[] = [...this.sections];
-        sections[section] = text;
-        const markdown: string = this.joinSections(sections);
-        this.sections = this.splitWithSections(markdown);
-    }
-
-    public getSection(section: number): string {
-        this.checkSectionNum(section);
-        return this.sections[section];
-    }
-
-    public getRawText(): string {
-        return this.joinSections(this.sections)
-    }
-
-    private checkSectionNum(section: number|null): void {
-        if (section === null) {
+    public addWikiLink(href: string, type: ReferenceType): void {
+        const wikiLink: WikiLink = new WikiLink(href, this.baseNamespace);
+        if (type === 'template' && wikiLink.type !== 'Template') {
             return;
         }
-        if (section < 0 || section > this.getMaxSection()) {
-            throw new Error(`section must be in the range 0-${this.getMaxSection()} but ${section} is given`);
+        if (type === 'category' && wikiLink.type !== 'Category') {
+            return;
         }
-    }
-
-    public getMaxSection(): number {
-        return this.sections.length - 1;
-    }
-
-    public parse(options: HTMLOptions={}): {html: string, links: string[], medias: string[], templates: string[], categories: string[]} {
-        options.baseNamespace = this.baseNamespace;
-        const complementedOptions: HTMLOptionsComplementer = new HTMLOptionsComplementer(options);
-        this.checkSectionNum(complementedOptions.section);
-
-        const markdown: string = this.refineAndDecorateMarkdown(complementedOptions);
-        const parser: MarkdownParser = new MarkdownParser(markdown, this.wikiLink, complementedOptions);
-        return {
-            html: parser.parse(),
-            links: parser.getLinks(),
-            medias: parser.getMedias(),
-            templates: parser.getTemplates(),
-            categories: parser.getCategories(),
-        };
-    }
-
-    private refineAndDecorateMarkdown(options: HTMLOptionsComplementer): string {
-        const section: number|null = options.section;
-        const lines: string[] = [];
-        for (let si: number = 0, len = this.sections.length; si < len; si++) {
-            const sectionText: string = this.sections[si];
-            if (section === null) {
-                lines.push(this.decorateSection(sectionText, si, options));
-            }
-            if (section === si) {
-                lines.push(this.decorateSection(sectionText, si, options));
-                break;
+        for (const reference of this.reference[type]) {
+            const wl: WikiLink = new WikiLink(reference, this.baseNamespace);
+            if (wl.equals(wikiLink)) {
+                return;
             }
         }
-        return lines.join('\n');
+        this.reference[type].push(href);
     }
 
-    private decorateSection(text: string, section: number, options: HTMLOptionsComplementer): string {
-        const [heading, ...lines]: string[] = text.split('\n');
-        if (!this.startWithHeading(text)) {
-            return text;
-        }
-        const sectionMarkdown: string[] = [heading];
-        if (options.edit) {
-            sectionMarkdown[0] += this.editButton(section);
-        }
-        if (options.toc) {
-            sectionMarkdown[0] += this.tocMark();
-        }
-        sectionMarkdown.push(...lines);
-        return sectionMarkdown.join('\n');
+    public getLinks(): string[] {
+        return this.reference.link;
     }
 
-    private editButton(section: number): string {
-        const location: WikiLocation = new WikiLocation(this.wikiLink as WikiLink);
-        location.addParam('mode', 'edit')
-        location.addParam('section', String(section));
-        return `<span class="${WikiMarkdown.EDIT_CLASS}"><a href="${location.toURI()}"></a></span>`;
+    public getMedias(): string[] {
+        return this.reference.media;
     }
 
-    private tocMark(): string {
-        return `<span class="${WikiMarkdown.TOC_CLASS}"></span>`;
+    public getTemplates(): string[] {
+        return this.reference.template;
+    }
+
+    public getCategories(): string[] {
+        return this.reference.category;
     }
 }
 
 
-export {MarkdownParser, WikiMarkdown};
+export {WikiMD, MarkdownParser, HTMLOptions, HTMLOptionsComplementer};

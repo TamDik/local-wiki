@@ -1,5 +1,6 @@
-import {WikiMD} from '../src/markdown';
-import {FileHandler, ImageFileHandler, PDFFileHandler} from '../src/markdown-magic-handler';
+import {WikiMD} from '../src/markdown/parser';
+import {FileHandler, ImageFileHandler, PDFFileHandler} from '../src/markdown/magic-handler';
+
 
 describe('test code', () => {
     function testCode(value: string[], expected: string[]): void {

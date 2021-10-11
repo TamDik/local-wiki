@@ -1,4 +1,4 @@
-import {MarkdownParser, WikiMarkdown} from '../src/wikimarkdown';
+import {WikiMarkdown} from '../src/markdown/markdown';
 import {WikiLink} from '../src/wikilink';
 
 

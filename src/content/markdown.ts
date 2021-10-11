@@ -1,4 +1,4 @@
-import {WikiMarkdown} from '../wikimarkdown';
+import {WikiMarkdown} from '../markdown/markdown';
 import {WikiLink, WikiLocation} from '../wikilink';
 import {toFullPath} from '../wikihistory-builder';
 import {CategoriesBody} from './special-body';

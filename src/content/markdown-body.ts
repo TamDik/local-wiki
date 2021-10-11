@@ -1,11 +1,11 @@
 import * as fs from 'fs';
 import {isInteger, escapeHtml, dateToStr} from '../utils';
 import {WikiLocation} from '../wikilink';
-import {WikiMarkdown} from '../wikimarkdown';
+import {WikiMarkdown} from '../markdown/markdown';
 import {ContentBody} from './content-body';
 import {toFullPath, WikiHistory, VersionData, createHistory} from '../wikihistory-builder';
 import {PageDiffBody} from './special-body';
-import {EmojiReplacer} from '../emoji';
+import {EmojiReplacer} from '../markdown/emoji';
 
 
 class MarkdownEditorBody extends ContentBody {

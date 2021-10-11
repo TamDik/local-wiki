@@ -6,7 +6,7 @@ import {MarkdownEditorBody, MarkdownHistoryBody} from './markdown-body';
 import {ContentBodyDispatcher, ContentBody} from './content-body';
 import {WithVersionBody, NotFoundVersionBody} from './version-body';
 import {Category} from '../wikicategory';
-import {CategoryTreeHandler} from '../markdown-magic-handler';
+import {CategoryTreeHandler} from '../markdown/magic-handler';
 import * as markdown from './markdown';
 
 

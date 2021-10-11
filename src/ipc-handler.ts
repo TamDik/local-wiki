@@ -6,12 +6,12 @@ import {tex2svg, tex2chtml} from './mathematical-expression';
 import {ContentGenerator, ContentBody} from './content/generator';
 import {WikiConfig, MergedNamespaceConfig, usedAsAnExternalNamespace, parseNamespaceConfig} from './wikiconfig';
 import {WikiLink} from './wikilink';
-import {WikiMarkdown} from './wikimarkdown';
+import {WikiMarkdown} from './markdown/markdown';
 import {parse} from './content/markdown';
 import {escapeRegex, extensionOf, generateRandomString} from './utils';
 import {extractCategories, updateCategories, Category} from './wikicategory';
 import {WikiHistory, createHistory, toFullPath, VersionData} from './wikihistory-builder';
-import {createEmojiList, EmojiList} from './emoji';
+import {createEmojiList, EmojiList} from './markdown/emoji';
 
 
 const pageTransition: PageTransition = new PageTransition();
