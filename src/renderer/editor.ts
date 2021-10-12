@@ -66,6 +66,10 @@ class RichMDE {
                 this.updateInnerHTML();
             }
         }, false);
+
+        this.element.addEventListener('blur', event => {
+            this.hideHelper();
+        }, false);
     }
 
     public value(): string {
@@ -161,6 +165,14 @@ class RichMDE {
         selection.addRange(range);
     }
 
+    private showHelper(): void {
+        this.emojiHelper.style.display = 'block';
+    }
+
+    private hideHelper(): void {
+        this.emojiHelper.style.display = 'none';
+    }
+
     private async updateStyle(): Promise<void> {
         if (this.behindColon !== '' && this.behindColon !== this.EMOJI_MARK) {
             const emojis: Map<string, string> = await this.possibleEmojis(this.behindColon.substr(1));
@@ -168,13 +180,13 @@ class RichMDE {
                 this.createEmojiList(emojis);
                 const caretRect: DOMRect = this.getCaretPosition();
                 const parentRect: DOMRect = this.element.parentElement!.getBoundingClientRect();
-                this.emojiHelper.style.display = 'block';
+                this.showHelper();
                 this.emojiHelper.style.top  = (caretRect.top - parentRect.top - this.emojiHelper.clientHeight) + 'px';
                 this.emojiHelper.style.left = (caretRect.left - parentRect.left) + 'px';
                 return;
             }
         }
-        this.emojiHelper.style.display = 'none';
+        this.hideHelper();
     }
 
     private deleteText(count: number): string {
