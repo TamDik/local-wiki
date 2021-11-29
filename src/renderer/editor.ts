@@ -451,7 +451,10 @@ class RichMDE {
             break;
         case 'textarea':
             break;
-        default:
+        case 'rich':
             richMDE = new RichMDE(mdTextArea);
+            break;
+        default:
+            break;
     }
 })();
