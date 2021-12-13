@@ -3,7 +3,7 @@
     const params: Params = new Params();
     type ItemStatus = 'none'|'collapsed'|'expanded';
 
-    addDnamicEventLister('click', 'span', (event: Event, element: HTMLElement) => {
+    addDinamicEventLister('click', 'span', (event: Event, element: HTMLElement) => {
         if (!element.classList.contains(BULLET_CLASS_NAME)) {
             return false;
         }

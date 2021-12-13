@@ -253,7 +253,7 @@ function markAnchorTags(): void {
 
 View.addUpdateAction(markAnchorTags);
 
-function addDnamicEventLister(type: string, tagName: string, listener: (event: Event, element: HTMLElement) => boolean, options: boolean=false): void {
+function addDinamicEventLister(type: string, tagName: string, listener: (event: Event, element: HTMLElement) => boolean, options: boolean=false): void {
     const upperTageName: string = tagName.toUpperCase();
     document.body.addEventListener(type, (event: Event) => {
         let element: HTMLElement|null = event.target as HTMLElement;
@@ -272,7 +272,7 @@ window.addEventListener('load', () => {
     window.ipcApi.openInternalLink(location.href);
 
     const contentBody: HTMLElement = document.getElementById('content-body') as HTMLElement;
-    addDnamicEventLister('click', 'A', (event: Event, element: HTMLElement) => {
+    addDinamicEventLister('click', 'A', (event: Event, element: HTMLElement) => {
         const anchor: HTMLAnchorElement = element as HTMLAnchorElement;
         if (isExternalLink(anchor.href)) {
             window.ipcApi.openExternalLink(anchor.href);
