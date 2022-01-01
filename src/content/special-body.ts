@@ -43,6 +43,7 @@ class SpecialContentBodyDispatcher implements IContentBodyDispatcher {
             new NamespacePreferencesBody(wikiLink),
             new AllNamespacesBody(wikiLink),
             new NewNamespaceBody(wikiLink),
+            new MathBody(wikiLink),
         ];
         for (const special of specials) {
             specialPages.addSpecialContentBody(special);
@@ -651,6 +652,31 @@ class NewNamespaceBody extends SpecialContentBody {
         const lines: string[] = [
             '<div id="namespace-name-alert" class="alert alert-danger d-none" role="alert">',
               'The namespace is already in use!',
+            '</div>',
+        ];
+        return lines.join('');
+    }
+}
+
+
+class MathBody extends SpecialContentBody {
+    public readonly name: string = 'Math';
+    public readonly title: string = 'Math';
+    public readonly type: SpecialContentType = 'others';
+    public js: string[] = ['./js/renderer/special-math.js'];
+    public css: string[] = ['./css/special-math.css'];
+
+    public get html(): string {
+        const lines = [
+            '<div class="row">',
+              '<div class="col-12">',
+                '<textarea id="editor" class="form-control" placeholder="Equation"></textarea>',
+              '</div>',
+            '</div>',
+            '<div class="row">',
+              '<div class="col-12">',
+                '<div id="preview" class="mt-3 d-none"></div>',
+              '</div>',
             '</div>',
         ];
         return lines.join('');
