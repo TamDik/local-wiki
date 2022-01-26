@@ -4,9 +4,9 @@ class RichMDE {
     public readonly element: HTMLDivElement = document.createElement('div');
     private readonly textareaSplit: {front: string, behind: string};
     private behindColon: string = '';
+    private readonly mousePosition = {x: 0, y: 0};
 
     public constructor(private readonly textarea: HTMLTextAreaElement) {
-
         this.emojiHelper.id = 'emoji-list';
         this.element.classList.add('rich-markdown-edit-area', 'form-control');
         this.element.contentEditable = 'true';
@@ -16,6 +16,11 @@ class RichMDE {
 
         textarea.parentElement?.insertBefore(this.emojiHelper, textarea);
         textarea.parentElement?.insertBefore(this.element, textarea);
+
+        window.addEventListener('mousemove', event => {
+            this.mousePosition.x = event.screenX;
+            this.mousePosition.y = event.screenY;
+        });
 
         this.element.addEventListener('input', async (event: any) => {
             const data: null | string = event.data;
@@ -68,7 +73,13 @@ class RichMDE {
         }, false);
 
         this.element.addEventListener('blur', event => {
-            this.hideHelper();
+            const rect = this.emojiHelper.getBoundingClientRect();
+            if (this.mousePosition.y <= rect.top
+                || this.mousePosition.y >= rect.bottom
+                || this.mousePosition.x <= rect.left
+                || this.mousePosition.x >= rect.right) {
+                this.hideHelper();
+            }
         }, false);
     }
 
