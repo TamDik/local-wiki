@@ -90,6 +90,7 @@ WikiNameはページの識別名です。ページのタイトルにも使われ
 | SpecialPages         | Specialの一覧        |
 | PageDiff             | ページ間の差分       |
 | SideMenu             | サイドメニューの編集 |
+| Math                 | 数式プレビュー       |
 
 
 ## Markdown
